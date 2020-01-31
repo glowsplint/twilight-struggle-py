@@ -2,9 +2,9 @@ USSR = {
     "country_name": "USSR",
     "country_index": 1,
     "superpower": True,
-    "adjacent_countries": ["Finland", "Poland", "Romania", "Afghanistan", "North Korea", "Chinese Civil War"],
+    "adjacent_countries": ["Finland", "Poland", "Romania", "Afghanistan", "North_Korea", "Chinese_Civil_War"],
     "us_influence": 0,
-    "ussr_influence": 0,
+    "ussr_influence": 999,
 }
 
 USA = {
@@ -12,7 +12,7 @@ USA = {
     "country_index": 2,
     "superpower": True,
     "adjacent_countries": ["Japan", "Mexico", "Cuba", "Canada"],
-    "us_influence": 0,
+    "us_influence": 999,
     "ussr_influence": 0,
 }
 
@@ -71,7 +71,7 @@ Denmark = {
     "country_index": 8,
     "region": "Western Europe",
     "stability": 3,
-    "adjacent_countries": ["Sweden", "West Germany"],
+    "adjacent_countries": ["Sweden", "West_Germany"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
@@ -81,7 +81,7 @@ Benelux = {
     "country_index": 9,
     "region": "Western Europe",
     "stability": 3,
-    "adjacent_countries": ["UK", "West Germany"],
+    "adjacent_countries": ["UK", "West_Germany"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
@@ -92,13 +92,13 @@ France = {
     "region": "Western Europe",
     "stability": 3,
     "battleground": True,
-    "adjacent_countries": ["UK", "West Germany", "Spain/Portugal", "Italy", "Algeria"],
+    "adjacent_countries": ["UK", "West_Germany", "Spain_Portugal", "Italy", "Algeria"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
 
 Spain_Portugal = {
-    "country_name": "Spain/Portugal",
+    "country_name": "Spain_Portugal",
     "country_index": 11,
     "region": "Western Europe",
     "stability": 2,
@@ -113,7 +113,7 @@ Italy = {
     "region": "Western Europe",
     "stability": 2,
     "battleground": True,
-    "adjacent_countries": ["France", "Spain/Portugal", "Austria", "Yugoslavia", "Greece"],
+    "adjacent_countries": ["France", "Spain_Portugal", "Austria", "Yugoslavia", "Greece"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
@@ -133,30 +133,30 @@ Austria = {
     "country_index": 14,
     "region": "Europe",
     "stability": 4,
-    "adjacent_countries": ["West Germany", "East Germany", "Hungary", "Italy"],
+    "adjacent_countries": ["West_Germany", "East_Germany", "Hungary", "Italy"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
 
 West_Germany = {
-    "country_name": "West Germany",
+    "country_name": "West_Germany",
     "country_index": 15,
     "region": "Western Europe",
     "stability": 4,
     "battleground": True,
-    "adjacent_countries": ["France", "Benelux", "Denmark", "East Germany", "Austria"],
+    "adjacent_countries": ["France", "Benelux", "Denmark", "East_Germany", "Austria"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
 
 
 East_Germany = {
-    "country_name": "East Germany",
+    "country_name": "East_Germany",
     "country_index": 16,
     "region": "Eastern Europe",
     "stability": 3,
     "battleground": True,
-    "adjacent_countries": ["West Germany", "Austria", "Czechoslovakia", "Poland"],
+    "adjacent_countries": ["West_Germany", "Austria", "Czechoslovakia", "Poland"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
@@ -168,7 +168,7 @@ Poland = {
     "region": "Eastern Europe",
     "stability": 3,
     "battleground": True,
-    "adjacent_countries": ["East Germany", "Czechoslovakia", "USSR"],
+    "adjacent_countries": ["East_Germany", "Czechoslovakia", "USSR"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
@@ -179,7 +179,7 @@ Czechoslovakia = {
     "country_index": 18,
     "region": "Eastern Europe",
     "stability": 3,
-    "adjacent_countries": ["East Germany", "Poland", "Hungary"],
+    "adjacent_countries": ["East_Germany", "Poland", "Hungary"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
@@ -304,7 +304,7 @@ Iraq = {
     "region": "Middle East",
     "stability": 3,
     "battleground": True,
-    "adjacent_countries": ["Jordan", "Saudi Arabia", "Gulf States", "Iran"],
+    "adjacent_countries": ["Jordan", "Saudi_Arabia", "Gulf_States", "Iran"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
@@ -327,30 +327,30 @@ Jordan = {
     "country_index": 31,
     "region": "Middle East",
     "stability": 2,
-    "adjacent_countries": ["Iraq", "Israel", "Lebanon", "Saudi Arabia"],
+    "adjacent_countries": ["Iraq", "Israel", "Lebanon", "Saudi_Arabia"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
 
 
 Gulf_States = {
-    "country_name": "Gulf States",
+    "country_name": "Gulf_States",
     "country_index": 32,
     "region": "Middle East",
     "stability": 3,
-    "adjacent_countries": ["Iraq", "Saudi Arabia"],
+    "adjacent_countries": ["Iraq", "Saudi_Arabia"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
 
 
 Saudi_Arabia = {
-    "country_name": "Saudi Arabia",
+    "country_name": "Saudi_Arabia",
     "country_index": 33,
     "region": "Middle East",
     "stability": 3,
     "battleground": True,
-    "adjacent_countries": ["Iraq", "Jordan", "Gulf States"],
+    "adjacent_countries": ["Iraq", "Jordan", "Gulf_States"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
@@ -396,14 +396,14 @@ Burma = {
     "country_index": 37,
     "region": "Southeast Asia",
     "stability": 2,
-    "adjacent_countries": ["India", "Laos/Cambodia"],
+    "adjacent_countries": ["India", "Laos_Cambodia"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
 
 
 Laos_Cambodia = {
-    "country_name": "Laos/Cambodia",
+    "country_name": "Laos_Cambodia",
     "country_index": 38,
     "region": "Southeast Asia",
     "stability": 1,
@@ -419,7 +419,7 @@ Thailand = {
     "region": "Southeast Asia",
     "stability": 2,
     "battleground": True,
-    "adjacent_countries": ["Laos/Cambodia", "Vietnam", "Malaysia"],
+    "adjacent_countries": ["Laos_Cambodia", "Vietnam", "Malaysia"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
@@ -430,7 +430,7 @@ Vietnam = {
     "country_index": 40,
     "region": "Southeast Asia",
     "stability": 1,
-    "adjacent_countries": ["Laos/Cambodia", "Thailand"],
+    "adjacent_countries": ["Laos_Cambodia", "Thailand"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
@@ -486,7 +486,7 @@ Japan = {
     "region": "Asia",
     "stability": 4,
     "battleground": True,
-    "adjacent_countries": ["Philippines", "Taiwan", "South Korea", "USA"],
+    "adjacent_countries": ["Philippines", "Taiwan", "South_Korea", "USA"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
@@ -497,31 +497,31 @@ Taiwan = {
     "country_index": 46,
     "region": "Asia",
     "stability": 3,
-    "adjacent_countries": ["Japan", "South Korea"],
+    "adjacent_countries": ["Japan", "South_Korea"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
 
 
 South_Korea = {
-    "country_name": "South Korea",
+    "country_name": "South_Korea",
     "country_index": 47,
     "region": "Asia",
     "stability": 3,
     "battleground": True,
-    "adjacent_countries": ["Japan", "Taiwan", "North Korea"],
+    "adjacent_countries": ["Japan", "Taiwan", "North_Korea"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
 
 
 North_Korea = {
-    "country_name": "North Korea",
+    "country_name": "North_Korea",
     "country_index": 48,
     "region": "Asia",
     "stability": 3,
     "battleground": True,
-    "adjacent_countries": ["South Korea", "USSR"],
+    "adjacent_countries": ["South_Korea", "USSR"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
@@ -533,7 +533,7 @@ Algeria = {
     "region": "Africa",
     "stability": 2,
     "battleground": True,
-    "adjacent_countries": ["Morocco", "Saharan States", "Tunisia", "France"],
+    "adjacent_countries": ["Morocco", "Saharan_States", "Tunisia", "France"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
@@ -544,7 +544,7 @@ Morocco = {
     "country_index": 50,
     "region": "Africa",
     "stability": 3,
-    "adjacent_countries": ["Algeria", "West African States", "Spain/Portugal"],
+    "adjacent_countries": ["Algeria", "West_African_States", "Spain_Portugal"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
@@ -562,29 +562,29 @@ Tunisia = {
 
 
 West_African_States = {
-    "country_name": "West African States",
+    "country_name": "West_African_States",
     "country_index": 52,
     "region": "Africa",
     "stability": 2,
-    "adjacent_countries": ["Morocco", "Ivory Coast"],
+    "adjacent_countries": ["Morocco", "Ivory_Coast"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
 
 
 Ivory_Coast = {
-    "country_name": "Ivory Coast",
+    "country_name": "Ivory_Coast",
     "country_index": 53,
     "region": "Africa",
     "stability": 2,
-    "adjacent_countries": ["West African States", "Nigeria"],
+    "adjacent_countries": ["West_African_States", "Nigeria"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
 
 
 Saharan_States = {
-    "country_name": "Saharan States",
+    "country_name": "Saharan_States",
     "country_index": 54,
     "region": "Africa",
     "stability": 1,
@@ -600,7 +600,7 @@ Nigeria = {
     "region": "Africa",
     "stability": 1,
     "battleground": True,
-    "adjacent_countries": ["Ivory Coast", "Saharan States", "Cameroon"],
+    "adjacent_countries": ["Ivory_Coast", "Saharan_States", "Cameroon"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
@@ -635,14 +635,14 @@ Angola = {
     "region": "Africa",
     "stability": 1,
     "battleground": True,
-    "adjacent_countries": ["Zaire", "Botswana", "South Africa"],
+    "adjacent_countries": ["Zaire", "Botswana", "South_Africa"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
 
 
 South_Africa = {
-    "country_name": "South Africa",
+    "country_name": "South_Africa",
     "country_index": 59,
     "region": "Africa",
     "stability": 3,
@@ -658,7 +658,7 @@ Botswana = {
     "country_index": 60,
     "region": "Africa",
     "stability": 2,
-    "adjacent_countries": ["Angola", "South Africa", "Zimbabwe"],
+    "adjacent_countries": ["Angola", "South_Africa", "Zimbabwe"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
@@ -669,14 +669,14 @@ Zimbabwe = {
     "country_index": 61,
     "region": "Africa",
     "stability": 1,
-    "adjacent_countries": ["Zaire", "Botswana", "SE African States"],
+    "adjacent_countries": ["Zaire", "Botswana", "SE_African_States"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
 
 
 SE_African_States = {
-    "country_name": "SE African States",
+    "country_name": "SE_African_States",
     "country_index": 62,
     "region": "Africa",
     "stability": 1,
@@ -691,7 +691,7 @@ Kenya = {
     "country_index": 63,
     "region": "Africa",
     "stability": 2,
-    "adjacent_countries": ["SE African States", "Somalia"],
+    "adjacent_countries": ["SE_African_States", "Somalia"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
@@ -747,14 +747,14 @@ Guatemala = {
     "country_index": 68,
     "region": "Central America",
     "stability": 1,
-    "adjacent_countries": ["Mexico", "El Salvador", "Honduras"],
+    "adjacent_countries": ["Mexico", "El_Salvador", "Honduras"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
 
 
 El_Salvador = {
-    "country_name": "El Salvador",
+    "country_name": "El_Salvador",
     "country_index": 69,
     "region": "Central America",
     "stability": 1,
@@ -769,14 +769,14 @@ Honduras = {
     "country_index": 70,
     "region": "Central America",
     "stability": 2,
-    "adjacent_countries": ["Guatemala", "El Salvador", "Costa Rica", "Nicaragua"],
+    "adjacent_countries": ["Guatemala", "El_Salvador", "Costa_Rica", "Nicaragua"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
 
 
 Costa_Rica = {
-    "country_name": "Costa Rica",
+    "country_name": "Costa_Rica",
     "country_index": 71,
     "region": "Central America",
     "stability": 3,
@@ -792,7 +792,7 @@ Panama = {
     "region": "Central America",
     "stability": 2,
     "battleground": True,
-    "adjacent_countries": ["Costa Rica", "Colombia"],
+    "adjacent_countries": ["Costa_Rica", "Colombia"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
@@ -803,7 +803,7 @@ Nicaragua = {
     "country_index": 73,
     "region": "Central America",
     "stability": 1,
-    "adjacent_countries": ["Costa Rica", "Honduras", "Cuba"],
+    "adjacent_countries": ["Costa_Rica", "Honduras", "Cuba"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
@@ -826,14 +826,14 @@ Haiti = {
     "country_index": 75,
     "region": "Central America",
     "stability": 1,
-    "adjacent_countries": ["Cuba", "Dominican Republic"],
+    "adjacent_countries": ["Cuba", "Dominican_Republic"],
     "us_influence": 0,
     "ussr_influence": 0,
 }
 
 
 Dominican_Republic = {
-    "country_name": "Dominican Republic",
+    "country_name": "Dominican_Republic",
     "country_index": 76,
     "region": "Central America",
     "stability": 1,
@@ -957,7 +957,7 @@ Venezuela = {
 
 
 Chinese_Civil_War = {
-    "country_name": "Chinese Civil War",
+    "country_name": "Chinese_Civil_War",
     "country_index": 87,
     "chinese_civil_war": True,
     "region": "Asia",
