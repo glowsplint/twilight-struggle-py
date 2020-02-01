@@ -142,7 +142,6 @@ Romanian_Abdication = {
 	'event_effects' : {
 		{ 'RemoveAllOpponentInfluenceInRomania', 0,
 		{ 'GainInfluenceForControlInRomania', 0,
-		{ '', 0,
 	},
 	'event_text' : 'Remove all US Influence in Romania. USSR gains sufficient Influence in Romania for Control.',
 	'remove_if_used_as_event' = True,
@@ -153,11 +152,8 @@ Arab-Israeli_War = {
 	'card_name' : 'Arab-Israeli War',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
-
 	'card_number' : 13,
-
 	'operations_points' : 2,
-
 	'event_owner' : 'USSR',
 	'event_effects' : {
 		usageconditions = {
@@ -173,11 +169,8 @@ COMECON = {
 	'card_name' : 'COMECON',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
-
 	'card_number' : 14,
-
 	'operations_points' : 3,
-
 	'event_owner' : 'USSR',
 	'event_effects' : {
 		{ 'AddInfluenceInUncontrolledEasternEuropeMax1', 4,
@@ -190,16 +183,12 @@ Nasser = {
 	'card_name' : 'Nasser',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
-
 	'card_number' : 15,
-
 	'operations_points' : 1,
-
 	'event_owner' : 'USSR',
 	'event_effects' : {
 		{ 'GainInfluenceInEgypt', 2,
 		{ 'RemoveHalfOpponentInfluenceInEgpyt', 0,
-		{ '', 0,
 	},
 	'event_text' : 'Add 2 USSR Influence in Egypt. Remove half (rounded up) of the US Influence in Egypt.',
 	'remove_if_used_as_event' = True,
@@ -209,11 +198,8 @@ Warsaw_Pact_Formed = {
 	'card_name' : 'Warsaw Pact Formed',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
-
 	'card_number' : 16,
-
 	'operations_points' : 3,
-
 	'event_owner' : 'USSR',
 	'event_effects' : {
 		{ 'ChooseFromEffectList',
@@ -221,7 +207,7 @@ Warsaw_Pact_Formed = {
 				prompt = 'Choose for Eastern Europe:',
 				{
 					{ 'RemoveAllOpponentInfluenceFromEasternEurope', 4,
-					{ '', 0,
+
 					description = 'Remove 4 US Countries in Eastern Europe',
 				},
 				{
@@ -249,7 +235,6 @@ De_Gaulle_Leads_France = {
 	'event_effects' : {
 		{ 'RemoveOpponentInfluenceInFrance', 2,
 		{ 'GainInfluenceInFrance', 1,
-		{ '', 0,
 		{ 'PutThisCardInPlay', 0,
 	},
 	'event_text' : 'Remove 2 US Influence in France, add 1 USSR Influence. Cancels effects of NATO for France.',
@@ -286,7 +271,6 @@ Truman_Doctrine = {
 	'event_owner' : 'USA',
 	'event_effects' : {
 		{ 'RemoveAllOpponentInfluenceFromUncontrolledInEurope', 1,
-		{ '', 0,
 	},
 	'event_text' : 'Remove all USSR Influence markers in one uncontrolled country in Europe.',
 	'remove_if_used_as_event' = True,
@@ -432,7 +416,6 @@ CIA_Created = {
 	'event_owner' : 'USA',
 	'event_effects' : {
 		{ 'CommitPlayerDecision', 0,
-		{ '', 0,
 		{ 'OpponentRevealsHand', 0,
 		{ 'ConductOperationsWithThisCard', 1,
 	},
@@ -452,7 +435,6 @@ US/Japan_Mutual_Defense_Pact = {
 	'event_owner' : 'USA',
 	'event_effects' : {
 		{ 'GainInfluenceForControlInJapan', 0,
-		{ '', 0,
 		{ 'PutThisCardInPlay', 0,
 	},
 	'continuous_effects' : {
@@ -479,7 +461,6 @@ Suez_Crisis = {
 			{ 'IfCrisisResult1945UKElectionIsNot6', 0,
 		},
 		{ 'RemoveOpponentInfluenceForSuezCrisis', 4,
-		{ '', 0,
 	},
 	'event_text' : 'Remove a total of 4 US Influence from France, the United Kingdom or Israel. Remove no more than 2 Influence per country.',
 	'remove_if_used_as_event' = True,
@@ -498,7 +479,6 @@ East_European_Unrest = {
 	'event_effects' : {
 		{ 'Remove1OpponentInfluenceFromEasternEuropeCountries', 3, condition={'IfTurnNumberLessThan',7},
 		{ 'Remove2OpponentInfluenceFromEasternEuropeCountries', 3, condition={'IfTurnNumberGreaterThan',8},
-		{ '', 0,
 	},
 	'event_text' : 'In Early or Mid War: Remove 1 USSR Influence from three countries in Eastern Europe.\nIn Late War: Remove 2 USSR Influence from three countries in Eastern Europe.',
 }
@@ -648,13 +628,10 @@ Defectors = {
 	'card_name' : 'Defectors',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
-
 	'card_number' : 103,
-
 	'operations_points' : 2,
-
 	'event_owner' : 'USA',
-	resolve_headline_first = True,
+	'resolve_headline_first' = True,
 	'event_effects' : {
 		{ 'CancelPlayerHeadline', 0, condition={'IfIsHeadlinePhase',0},
 		{ 'GainVictoryPoints', 1, condition={'IfIsOpponentActionRound',0},
@@ -865,7 +842,7 @@ Cuban_Missile_Crisis = {
 				{ 'IfPlayerHasInfluenceInCuba', 2,
 			},
 			{ 'RemoveInfluenceInCuba', 2,
-			{ '', 0,
+
 			{ 'RemoveThisCardFromPlay', 1,
 		},
 		{
@@ -876,7 +853,7 @@ Cuban_Missile_Crisis = {
 				{ 'IfPlayerHasInfluenceInWestGermany', 2,
 			},
 			{ 'RemoveInfluenceInWestGermany', 2,
-			{ '', 0,
+
 			{ 'RemoveThisCardFromPlay', 1,
 		},
 		{
@@ -887,7 +864,7 @@ Cuban_Missile_Crisis = {
 				{ 'IfPlayerHasInfluenceInTurkey', 2,
 			},
 			{ 'RemoveInfluenceInTurkey', 2,
-			{ '', 0,
+
 			{ 'RemoveThisCardFromPlay', 1,
 		},
 	},
@@ -1010,7 +987,6 @@ Summit = {
 	'event_owner' : 'Neutral',
 	'event_effects' : {
 		{ 'CommitPlayerDecision', 0,
-		{ '', 0,
 		{ 'ResolveSummit', 2,
 	},
 	'event_text' : 'Both players roll a die.  Each adds 1 for each Region they Dominate or Control. igh roller gains 2 VP and may move DEFCON marker one level in either direction. o not reroll ties.',
@@ -1106,7 +1082,6 @@ We_Will_Bury_You = {
 
 	'event_owner' : 'USSR',
 	'event_effects' : {
-		{ '', 0,
 		{ 'DegradeDEFCONLevel', 1,
 		{ 'PutThisCardInPlay', 1,
 	},
@@ -1214,7 +1189,6 @@ Portuguese_Empire_Crumbles = {
 	'event_effects' : {
 		{ 'GainInfluenceInSEAfricanStates', 2,
 		{ 'GainInfluenceInAngola', 2,
-		{ '', 0,
 	},
 	'event_text' : 'Add 2 USSR Influence in both SE African States and Angola.',
 	'remove_if_used_as_event' = True,
@@ -1237,13 +1211,13 @@ South_African_Unrest = {
 				prompt = 'Choose for South Africa:',
 				{
 					{ 'GainInfluenceInSouthAfrica', 2,
-					{ '', 0,
+
 					description = 'Gain 2 Influence in South Africa',
 				},
 				{
 					{ 'GainInfluenceInSouthAfrica', 1,
 					{ 'AddInfluenceAdjacentToSouthAfrica', 2,
-					{ '', 0,
+
 					description = 'Add Influence Adjacent to South Africa',
 				},
 			}
@@ -1265,7 +1239,6 @@ Allende = {
 	'event_owner' : 'USSR',
 	'event_effects' : {
 		{ 'GainInfluenceInChile', 2,
-		{ '', 0,
 	},
 	'event_text' : 'USSR receives 2 Influence in Chile.',
 	'remove_if_used_as_event' = True,
@@ -1310,7 +1283,6 @@ Muslim_Revolution = {
 			{ 'IfHasNotBeenPlayedAWACSSaleToSaudis', 0,
 		},
 		{ 'RemoveAllOpponentInfluenceForMuslimRevolution', 2,
-		{ '', 0,
 	},
 	'event_text' : 'Remove all US Influence in two of the following countries: Sudan, Iran, Iraq, Egypt, Libya, Saudi Arabia, Syria, Jordan.',
 }
@@ -1459,7 +1431,6 @@ Lone_Gunman = {
 	'event_owner' : 'USSR',
 	'event_effects' : {
 		{ 'CommitPlayerDecision', 0,
-		{ '', 0,
 		{ 'OpponentRevealsHand', 0,
 		{ 'ConductOperationsWithThisCard', 1,
 	},
@@ -1499,7 +1470,6 @@ Panama_Canal_Returned = {
 		{ 'GainInfluenceInPanama', 1,
 		{ 'GainInfluenceInCostaRica', 1,
 		{ 'GainInfluenceInVenezuela', 1,
-		{ '', 0,
 	},
 	'event_text' : 'Add 1 US Influence in Panama, Costa Rica, and Venezuela.',
 	'remove_if_used_as_event' = True,
@@ -1521,7 +1491,6 @@ Camp_David_Accords = {
 		{ 'GainInfluenceInIsrael', 1,
 		{ 'GainInfluenceInJordan', 1,
 		{ 'GainInfluenceInEgypt', 1,
-		{ '', 0,
 		{ 'PutThisCardInPlay', 0,
 	},
 	'event_text' : 'US gains 1 VP.\nUS receives 1 Influence in Israel, Jordan and Egypt.\nArab-Israeli War event no longer playable.',
@@ -1559,7 +1528,6 @@ Grain_Sales_to_Soviets = {
 	'event_owner' : 'USA',
 	'event_effects' : {
 		{ 'CommitPlayerDecision', 0,
-		{ '', 0,
 		{ 'MayPlayRandomCardFromOpponentHand', 0,
 		{ 'ConductOperationsWithThisCard', 2, condition={'IfYouDoNot',2},
 	},
@@ -1580,7 +1548,6 @@ John_Paul_II_Elected_Pope = {
 	'event_effects' : {
 		{ 'RemoveOpponentInfluenceInPoland', 2,
 		{ 'GainInfluenceInPoland', 1,
-		{ '', 0,
 		{ 'PutThisCardInPlay', 0,
 	},
 	'event_text' : 'Remove 2 USSR Influence in Poland and then add 1 US Influence in Poland.\nAllows play of \'Solidarity\'.',
@@ -1668,7 +1635,6 @@ Sadat_Expels_Soviets = {
 	'event_effects' : {
 		{ 'RemoveAllOpponentInfluenceInEgpyt', 0,
 		{ 'GainInfluenceInEgypt', 1,
-		{ '', 0,
 	},
 	'event_text' : 'Remove all USSR Influence in Egypt and add one US Influence.',
 	'remove_if_used_as_event' = True,
@@ -1721,7 +1687,6 @@ The_Voice_Of_America = {
 	'event_owner' : 'USA',
 	'event_effects' : {
 		{ 'RemoveOpponentInfluenceFromNonEuropeMax2', 4,
-		{ '', 0,
 	},
 	'event_text' : 'Remove 4 USSR Influence from non-European countries. No more than 2 may be removed from any one country.',
 }
@@ -1816,13 +1781,11 @@ Africa_Scoring = {
 }
 
 
-One_Small_St'card_name' : 'One Small Stard_type' : 'Event',
+One_Small_Step = {
+	'card_type' : 'Event',
 	'stage' : 'Mid War',
-
 	'card_number' : 80,
-
 	'operations_points' : 2,
-
 	'event_owner' : 'Neutral',
 	'event_effects' : {
 		usageconditions = {
@@ -1839,15 +1802,10 @@ South_America_Scoring = {
 	'card_name' : 'South America Scoring',
 	'card_type' : 'Scoring',
 	'stage' : 'Mid War',
-
 	'card_number' : 81,
-
 	'scoring_region' : 'South America',
-	'event_effects' : {
-		{ 'ScoreSouthAmerica', 0,
-	},
+	'event_effects' : [('ScoreSouthAmerica', 0)],
 	'event_text' : 'Both sides score:\nPresence: 2\nDomination: 5\nControl: 6\n+1 per controlled Battleground Country in Region',
-
 	'may_be_held' : False,
 }
 
@@ -1910,22 +1868,14 @@ Our_Man_In_Tehran = {
 
 
 
-Iranian_Ho'stage'_:risis = {
-	'card_name' : 'Iranian Ho'stage' :risis',
+Iranian_Hostage_Crisis = {
+	'card_name' : 'Iranian Hostage Crisis',
 	'card_type' : 'Event',
 	'stage' : 'Late War',
-
 	'card_number' : 82,
-
 	'operations_points' : 3,
-
 	'event_owner' : 'USSR',
-	'event_effects' : {
-		{ 'RemoveAllOpponentInfluenceInIran', 0,
-		{ 'GainInfluenceInIran', 2,
-		{ '', 0,
-		{ 'PutThisCardInPlay', 0,
-	},
+	'event_effects' : [('RemoveAllOpponentInfluenceInIran', 0), ('GainInfluenceInIran', 2), ('PutThisCardInPlay', 0)],
 	'event_text' : 'Remove all US Influence in Iran. Add 2 USSR Influence in Iran.\nDoubles the effect of Terrorism card against US.',
 	'remove_if_used_as_event' = True,
 }
@@ -1945,7 +1895,6 @@ The_Iron_Lady = {
 		{ 'GainVictoryPoints', 1,
 		{ 'OpponentGainsInfluenceInArgentina', 1,
 		{ 'RemoveAllOpponentInfluenceInUK', 0,
-		{ '', 0,
 		{ 'PutThisCardInPlay', 0,
 	},
 	'event_text' : 'US gains 1 VP.\nAdd 1 USSR Influence in Argentina. Remove all USSR Influence from UK.\nSocialist Governments event no longer playable.',
@@ -2048,9 +1997,7 @@ Marine_Barracks_Bombing = {
 	'event_owner' : 'USSR',
 	'event_effects' : {
 		{ 'RemoveAllOpponentInfluenceInLebanon', 0,
-		{ '', 0,
 		{ 'RemoveOpponentInfluenceInMiddleEast', 2,
-		{ '', 0,
 	},
 	'event_text' : 'Remove all US Influence in Lebanon plus remove 2 additional US Influence from anywhere in the Middle East.',
 	'remove_if_used_as_event' = True,
@@ -2067,87 +2014,52 @@ Soviets_Shoot_Down_KAL-007 = {
 	'operations_points' : 4,
 
 	'event_owner' : 'USA',
-	'event_effects' : {
-		{ '', 0,
-		{ 'DegradeDEFCONLevel', 1,
-		{ 'GainVictoryPoints', 2,
-		{ 'PlaceInfluenceOrAttemptRealignmentsWithThisCard', 4, condition={'IfYouControlSouthKorea',0},
-	},
+	'event_effects' : [('DegradeDEFCONLevel', 1), ('GainVictoryPoints', 2), ('PlaceInfluenceOrAttemptRealignmentsWithThisCardIfYouControlSouthKorea', 4)],
 	'event_text' : 'Degrade DEFCON one level. US gains 2 VP.\nIf South Korea is US Controlled, then the US may place Influence or attempt Realignment as if they played a 4 Ops card.',
 	'remove_if_used_as_event' = True,
 }
-
 
 Glasnost = {
 	'card_name' : 'Glasnost',
 	'card_type' : 'Event',
 	'stage' : 'Late War',
-
 	'card_number' : 90,
-
 	'operations_points' : 4,
-
 	'event_owner' : 'USSR',
-	'event_effects' : {
-		{ 'GainVictoryPoints', 2,
-		{ 'ImproveDEFCONLevel', 1,
-		{ 'PlaceInfluenceOrAttemptRealignmentsWithThisCard', 4, condition={'IfHasBeenPlayedTheReformer',0},
-		{ 'RemoveTheReformerFromPlay', 0,
-	},
+	'event_effects' : [('GainVictoryPoints', 2), ('ImproveDEFCONLevel', 1), ('PlaceInfluenceOrAttemptRealignmentsWithThisCardIfHasBeenPlayedTheReformer', 4), ('RemoveTheReformerFromPlay', 0)],
 	'event_text' : 'USSR gains 2 VP.\nImprove DEFCON one level.\nIf The Reformer is in effect, then the USSR may place Influence or attempt Realignments as if they played a 4 Ops card.',
 	'remove_if_used_as_event' = True,
 }
-
 
 Ortega_Elected_in_Nicaragua = {
 	'card_name' : 'Ortega Elected in Nicaragua',
 	'card_type' : 'Event',
 	'stage' : 'Late War',
-
 	'card_number' : 91,
-
 	'operations_points' : 2,
-
 	'event_owner' : 'USSR',
-	'event_effects' : {
-		{ 'RemoveAllOpponentInfluenceInNicaragua', 0,
-		{ '', 0,
-		{ 'MakeFreeCoupAttemptAdjacentToNicaragua', 0,
-		{ '', 0,
-	},
+	'event_effects' : [('RemoveAllOpponentInfluenceInNicaragua', 0), ('MakeFreeCoupAttemptAdjacentToNicaragua', 0)],
 	'event_text' : 'Remove all US Influence from Nicaragua. Then USSR may make one free Coup attempt (with this card's Operations value) in a country adjacent to Nicaragua.',
 	'remove_if_used_as_event' = True,
 }
-
 
 Terrorism = {
 	'card_name' : 'Terrorism',
 	'card_type' : 'Event',
 	'stage' : 'Late War',
-
 	'card_number' : 92,
-
 	'operations_points' : 2,
-
 	'event_owner' : 'Neutral',
-	'event_effects' : {
-		{ 'CommitPlayerDecision', 0,
-		{ 'OpponentDiscardsRandomCard', 0,
-		{ 'OpponentDiscardsRandomCard', 0, condition={'IfUSSRAndHasBeenPlayedIranianHo'stage'C:isis',0},
-	},
-	'event_text' : 'Opponent must randomly discard one card. If played by USSR and Iranian Ho'stage' :risis is in effect, the US player must randomly discard two cards.\n(Events on discards do not occur.)',
+	'event_effects' : [('CommitPlayerDecision', 0), ('OpponentDiscardsRandomCard', 0), ('OpponentDiscardsRandomCardIfUSSRAndHasBeenPlayedIranianHostageCrisis', 0)],
+	'event_text' : 'Opponent must randomly discard one card. If played by USSR and Iranian Hostage Crisis is in effect, the US player must randomly discard two cards.\n(Events on discards do not occur.)',
 }
-
 
 Iran-Contra_Scandal = {
 	'card_name' : 'Iran-Contra Scandal',
 	'card_type' : 'Event',
 	'stage' : 'Late War',
-
 	'card_number' : 93,
-
 	'operations_points' : 2,
-
 	'event_owner' : 'USSR',
 	'event_effects' : {
 		{ 'PutThisCardInPlay', 1,
@@ -2209,19 +2121,15 @@ Latin_American_Debt_Crisis = {
 	'card_name' : 'Latin American Debt Crisis',
 	'card_type' : 'Event',
 	'stage' : 'Late War',
-
 	'card_number' : 95,
-
 	'operations_points' : 2,
-
 	'event_owner' : 'USSR',
 	'event_effects' : {
 		{ 'OpponentMayDiscardCardWithOpsPoints', 3,
 		{ 'DoubleInfluenceInSouthAmericanCountries', 2, condition={'IfYouDoNot',0},,
 	},
 	'event_text' : 'Unless the US Player immediately discards a \'3\' or greater Operations card, double USSR Influence in two countries in South America.',
-	--'remove_if_used_as_event' = True,
-	remove_if_used_as_event_before_version = 6,
+	'remove_if_used_as_event' = True,
 }
 
 
@@ -2238,9 +2146,7 @@ Tear_Down_This_Wall = {
 	'event_effects' : {
 		{ 'RemoveWillyBrandtFromPlay', 0,
 		{ 'GainInfluenceInEastGermany', 3,
-		{ '', 0,
 		{ 'MakeFreeCoupOrRealignmentAttemptsInEurope', 0,
-		{ '', 0,
 		{ 'PutThisCardInPlay', 0, condition={'IfWillyBrandtIsNotInRemovedPile',0},
 	},
 	'event_text' : 'Cancels/prevent Willy Brandt.\nAdd 3 US Influence in East Germany.\nThen US may make a free Coup attempt or Realignment rolls in Europe using this card's Ops Value.',
@@ -2300,7 +2206,6 @@ Pershing_II_Deployed = {
 	'event_effects' : {
 		{ 'GainVictoryPoints', 1,
 		{ 'RemoveOpponentInfluenceInWesternEuropeMax1', 3,
-		{ '', 0,
 	},
 	'event_text' : 'USSR gains 1 VP.\nRemove 1 US Influence from up to three countries in Western Europe.',
 	'remove_if_used_as_event' = True,
@@ -2343,7 +2248,6 @@ Solidarity = {
 			{ 'IfHasBeenPlayedJohnPaulIIElectedPope', 0,
 		},
 		{ 'GainInfluenceInPoland', 3,
-		{ '', 0,
 		{ 'RemoveJohnPaulIIElectedPopeFromPlay', 0,
 	},
 	'event_text' : 'Playable as an event only if John Paul II Elected Pope is in effect.\nAdd 3 US Influence in Poland.',
@@ -2411,16 +2315,12 @@ AWACS_Sale_to_Saudis = {
 	'card_name' : 'AWACS Sale to Saudis',
 	'card_type' : 'Event',
 	'stage' : 'Late War',
-
 	'card_number' : 110,
 	'optional_card' : True,
-
 	'operations_points' : 3,
-
 	'event_owner' : 'USA',
 	'event_effects' : {
 		{ 'GainInfluenceInSaudiArabia', 2,
-		{ '', 0,
 		{ 'PutThisCardInPlay', 0,
 	},
 	'event_text' : 'US receives 2 Influence in Saudi Arabia. Muslim Revolution may no longer be played as an event.',
