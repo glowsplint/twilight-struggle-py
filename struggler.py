@@ -476,7 +476,7 @@ def space(side):
 
 
 # CA SCORING TEST
-def scoring_CA():
+def ScoreCentralAmerica():
     global vp_track
     
     CA = []
