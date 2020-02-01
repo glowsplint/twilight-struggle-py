@@ -9,7 +9,7 @@ Asia_Scoring = {
 	'card_number' : 1,
 	'scoring_region' : 'Asia',
 	'event_effects' : [('ScoreAsia', 0)],
-	'event_text' : 'Both sides score:\nPresence: 3\nDomination: 7\nControl: 9\n+1 per controlled Battleground Country in Region\n+1 per Country controlled that is adjacent to enemy superpower',
+	'event_text' : 'Both sides score: Presence: 3, Domination: 7, Control: 9. +1 per controlled Battleground Country in Region, +1 per Country controlled that is adjacent to enemy superpower',
 	'may_be_held' : False,
 }
 
@@ -20,7 +20,7 @@ Europe_Scoring = {
 	'card_number' : 2,
 	'scoring_region' : 'Europe',
 	'event_effects' : [('ScoreEurope', 0)],
-	'event_text' : 'Both sides score:\nPresence: 3\nDomination: 7\nControl: VICTORY\n+1 per controlled Battleground Country in Region\n+1 per Country controlled that is adjacent to enemy superpower',
+	'event_text' : 'Both sides score: Presence: 3, Domination: 7, Control: VICTORY. +1 per controlled Battleground Country in Region, +1 per Country controlled that is adjacent to enemy superpower',
 	'may_be_held' : False,
 }
 
@@ -31,7 +31,7 @@ Middle_East_Scoring = {
 	'card_number' : 3,
 	'scoring_region' : 'Middle East',
 	'event_effects' : [('ScoreMiddleEast', 0)],
-	'event_text' : 'Both sides score:\nPresence: 3\nDomination: 5\nControl: 7\n+1 per controlled Battleground Country in Region',
+	'event_text' : 'Both sides score: Presence: 3, Domination: 5, Control: 7. +1 per controlled Battleground Country in Region',
 	'may_be_held' : False,
 }
 
@@ -65,7 +65,7 @@ The_China_Card = {
 	'operations_points' : 4,
 	'event_owner' : 'Neutral',
 	'can_headline_card' : False,
-	'global_'continuous_effects'':: [('GainOperationsPointsWhenUsingThisCardInAsia', 1)],
+	'global_continuous_effects' : [('GainOperationsPointsWhenUsingThisCardInAsia', 1)],
 	'event_text' : 'Begins the game with the USSR player.\n+1 Operations value when all points are used in Asia. Pass to opponent after play.\n+1 VP for the player holding this card at the end of Turn 10.\nCancels effect of \'Formosan Resolution\' if this card is played by the US player.',
 }
 
@@ -187,23 +187,7 @@ Warsaw_Pact_Formed = {
 	'card_number' : 16,
 	'operations_points' : 3,
 	'event_owner' : 'USSR',
-	'event_effects' : {
-		{ 'ChooseFromEffectList',
-			{
-				prompt = 'Choose for Eastern Europe:',
-				{
-					{ 'RemoveAllOpponentInfluenceFromEasternEurope', 4,
-
-					description = 'Remove 4 US Countries in Eastern Europe',
-				},
-				{
-					{ 'AddInfluenceInEasternEuropeMax2', 5,
-					description = 'Add 5 USSR Influence in Eastern Europe',
-				},
-			}
-		},
-		{ 'PutThisCardInPlayOppOwner', 0, condition={'IfHasNotBeenPlayedNATO',0},
-	},
+	'event_effects' : [('WarsawEffect', 0), ('PutThisCardInPlayOppOwnerIfHasNotBeenPlayedNATO', 0)],
 	'event_text' : 'Remove all US Influence from four countries in Eastern Europe, or add 5 USSR Influence in Eastern Europe, adding no more than 2 per country. Allow play of NATO.',
 	'remove_if_used_as_event' : True,
 }
@@ -228,7 +212,7 @@ Captured_Nazi_Scientist = {
 	'operations_points' : 1,
 	'event_owner' : 'Neutral',
 	'event_effects' : [('AdvanceSpaceRaceTrack', 1)],
-	'event_text' : 'Advance player's Space Race marker one box.',
+	'event_text' : 'Advance player\'s Space Race marker one box.',
 	'remove_if_used_as_event' : True,
 }
 
@@ -252,7 +236,7 @@ Olympic_Games = {
 	'card_number' : 20,
 	'operations_points' : 2,
 	'event_owner' : 'Neutral',
-	'event_effects' : []'ResolveOlympicGames', 4)],
+	'event_effects' : [('ResolveOlympicGames', 4)],
 	'event_text' : 'Player sponsors Olympics. Opponent may participate or boycott. If Opponent participates, each player rolls one die, with the sponsor adding 2 to his roll. High roll gains 2 VP. Reroll ties If Opponent boycotts, degrade DEFCON one level and the Sponsor may Conduct Operations as if they played a 4 Ops card.',
 }
 
@@ -263,7 +247,7 @@ NATO = {
 	'card_number' : 21,
 	'operations_points' : 4,
 	'event_owner' : 'USA',
-	'usage_conditions': [('IfHasBeenPlayedMarshallPlanOrWarsawPact', 0)]
+	'usage_conditions': [('IfHasBeenPlayedMarshallPlanOrWarsawPact', 0)],
 	'event_effects' : [('PutThisCardInPlay', 0), ('RemoveMarshallPlanFromPlay', 0), ('RemoveWarsawPactFormedFromPlay', 0)],
 	'continuous_effects' : [('OpponentCannotCoupOrRealignInControlledEurope', 0)],
 	'event_text' : 'Play after \'Marshall Plan\' or \'Warsaw Pact\'.\nUSSR player may no longer make Coup or Realignment rolls in any US Controlled countries in Europe. US Controlled countries in Europe may not be attacked by play of the Brush War event.',
@@ -302,7 +286,7 @@ Indo_Pakistani_War = {
 	'operations_points' : 2,
 	'event_owner' : 'Neutral',
 	'event_effects' : [('WarInIndiaOrPakistan', 0)],
-	'event_text' : 'India or Pakistan invades the other (player's choice). Roll one die and subtract 1 for every opponent-controlled country adjacent to the target of the invasion. Player Victory on modified die roll of 4-6. Player adds 2 to Military Ops Track. Effects of Victory: Player gains 2 VP and replaces all opponent's Influence in target country with his Influence.',
+	'event_text' : 'India or Pakistan invades the other (player\'s choice). Roll one die and subtract 1 for every opponent-controlled country adjacent to the target of the invasion. Player Victory on modified die roll of 4-6. Player adds 2 to Military Ops Track. Effects of Victory: Player gains 2 VP and replaces all opponent\'s Influence in target country with his Influence.',
 }
 
 Containment = {
@@ -326,8 +310,8 @@ CIA_Created = {
 	'card_number' : 26,
 	'operations_points' : 1,
 	'event_owner' : 'USA',
-	'event_effects' : [('CommitPlayerDecision', 0), ('OpponentRevealsHand', 0), ('ConductOperationsWithThisCard', 1),
-	'event_text' : 'USSR reveals hand this turn.\nThen the US may Conduct Operations as if they played a 1 Op card.',
+	'event_effects' : [('CommitPlayerDecision', 0), ('OpponentRevealsHand', 0), ('ConductOperationsWithThisCard', 1)],
+	'event_text' : 'USSR reveals hand this turn. Then the US may Conduct Operations as if they played a 1 Op card.',
 	'remove_if_used_as_event' : True,
 }
 
@@ -363,8 +347,8 @@ East_European_Unrest = {
 	'card_number' : 29,
 	'operations_points' : 3,
 	'event_owner' : 'USA',
-	'event_effects' : [('Remove1OpponentInfluenceFromEasternEuropeCountriesIfTurnNumberLessThan7', 3), [('Remove2OpponentInfluenceFromEasternEuropeCountriesIfTurnNumberLessThan8', 3)],
-	'event_text' : 'In Early or Mid War: Remove 1 USSR Influence from three countries in Eastern Europe.\nIn Late War: Remove 2 USSR Influence from three countries in Eastern Europe.',
+	'event_effects' : [('Remove1OpponentInfluenceFromEasternEuropeCountriesIfTurnNumberLessThan7', 3), ('Remove2OpponentInfluenceFromEasternEuropeCountriesIfTurnNumberLessThan8', 3)],
+	'event_text' : 'In Early or Mid War: Remove 1 USSR Influence from three countries in Eastern Europe. In Late War: Remove 2 USSR Influence from three countries in Eastern Europe.',
 }
 
 Decolonization = {
@@ -532,7 +516,7 @@ Central_America_Scoring = {
 	'event_effects' : {
 		{ 'ScoreCentralAmerica', 0,
 	},
-	'event_text' : 'Both sides score:\nPresence: 1\nDomination: 3\nControl: 5\n+1 per controlled Battleground Country in Region\n+1 per Country controlled that is adjacent to enemy superpower',
+	'event_text' : 'Both sides score: Presence: 1, Domination: 3, Control: 5, +1 per controlled Battleground Country in Region, +1 per Country controlled that is adjacent to enemy superpower',
 	'may_be_held' : False,
 }
 
@@ -549,7 +533,7 @@ Southeast_Asia_Scoring = {
 	'event_effects' : {
 		{ 'ScoreSoutheastAsia', 0,
 	},
-	'event_text' : 'Both sides score:\n1 VP each for Control of: Burma, Cambodia/Laos,\n    Vietnam, Malaysia, Indonesia, the Phillipines\n2 VP for Control of Thailand',
+	'event_text' : 'Both sides score: 1 VP each for Control of: Burma, Cambodia/Laos, Vietnam, Malaysia, Indonesia, the Phillipines, 2 VP for Control of Thailand',
 
 	'remove_if_used_as_event' : True,
 }
@@ -1539,7 +1523,7 @@ Africa_Scoring = {
 	'event_effects' : {
 		{ 'ScoreAfrica', 0,
 	},
-	'event_text' : 'Both sides score:\nPresence: 1\nDomination: 4\nControl: 6\n+1 per controlled Battleground Country in Region',
+	'event_text' : 'Both sides score: Presence: 1, Domination: 4, Control: 6, +1 per controlled Battleground Country in Region',
 
 	'may_be_held' : False,
 }
@@ -1569,7 +1553,7 @@ South_America_Scoring = {
 	'card_number' : 81,
 	'scoring_region' : 'South America',
 	'event_effects' : [('ScoreSouthAmerica', 0)],
-	'event_text' : 'Both sides score:\nPresence: 2\nDomination: 5\nControl: 6\n+1 per controlled Battleground Country in Region',
+	'event_text' : 'Both sides score: Presence: 2, Domination: 5, Control: 6, +1 per controlled Battleground Country in Region',
 	'may_be_held' : False,
 }
 
