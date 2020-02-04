@@ -6,7 +6,7 @@ from game_mechanics import *
 # --
 
 Asia_Scoring = {
-	'card_name' : 'Asia Scoring',
+	'card_name' : 'Asia_Scoring',
 	'card_type' : 'Scoring',
 	'stage' : 'Early War',
 	'card_number' : 1,
@@ -17,7 +17,7 @@ Asia_Scoring = {
 }
 
 Europe_Scoring = {
-	'card_name' : 'Europe Scoring',
+	'card_name' : 'Europe_Scoring',
 	'card_type' : 'Scoring',
 	'stage' : 'Early War',
 	'card_number' : 2,
@@ -28,7 +28,7 @@ Europe_Scoring = {
 }
 
 Middle_East_Scoring = {
-	'card_name' : 'Middle East Scoring',
+	'card_name' : 'Middle_East_Scoring',
 	'card_type' : 'Scoring',
 	'stage' : 'Early War',
 	'card_number' : 3,
@@ -39,7 +39,7 @@ Middle_East_Scoring = {
 }
 
 Duck_and_Cover = {
-	'card_name' : 'Duck and Cover',
+	'card_name' : 'Duck_and_Cover',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
 	'card_number' : 4,
@@ -50,7 +50,7 @@ Duck_and_Cover = {
 }
 
 Five_Year_Plan = {
-	'card_name' : 'Five-Year Plan',
+	'card_name' : 'Five_Year_Plan',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
 	'card_number' : 5,
@@ -61,7 +61,7 @@ Five_Year_Plan = {
 }
 
 The_China_Card = {
-	'card_name' : 'The China Card',
+	'card_name' : 'The_China_Card',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
 	'card_number' : 6,
@@ -73,7 +73,7 @@ The_China_Card = {
 }
 
 Socialist_Governments = {
-	'card_name' : 'Socialist Governments',
+	'card_name' : 'Socialist_Governments',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
 	'card_number' : 7,
@@ -97,7 +97,7 @@ Fidel = {
 }
 
 Vietnam_Revolts = {
-	'card_name' : 'Vietnam Revolts',
+	'card_name' : 'Vietnam_Revolts',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
 	'card_number' : 9,
@@ -123,7 +123,7 @@ Blockade = {
 }
 
 Korean_War = {
-	'card_name' : 'Korean War',
+	'card_name' : 'Korean_War',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
 	'card_number' : 11,
@@ -135,7 +135,7 @@ Korean_War = {
 }
 
 Romanian_Abdication = {
-	'card_name' : 'Romanian Abdication',
+	'card_name' : 'Romanian_Abdication',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
 	'card_number' : 12,
@@ -148,7 +148,7 @@ Romanian_Abdication = {
 
 
 Arab_Israeli_War = {
-	'card_name' : 'Arab-Israeli War',
+	'card_name' : 'Arab_Israeli_War',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
 	'card_number' : 13,
@@ -184,7 +184,7 @@ Nasser = {
 }
 
 Warsaw_Pact_Formed = {
-	'card_name' : 'Warsaw Pact Formed',
+	'card_name' : 'Warsaw_Pact_Formed',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
 	'card_number' : 16,
@@ -196,7 +196,7 @@ Warsaw_Pact_Formed = {
 }
 
 De_Gaulle_Leads_France = {
-	'card_name' : 'De Gaulle Leads France',
+	'card_name' : 'De_Gaulle_Leads_France',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
 	'card_number' : 17,
@@ -208,7 +208,7 @@ De_Gaulle_Leads_France = {
 }
 
 Captured_Nazi_Scientist = {
-	'card_name' : 'Captured Nazi Scientist',
+	'card_name' : 'Captured_Nazi_Scientist',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
 	'card_number' : 18,
@@ -220,7 +220,7 @@ Captured_Nazi_Scientist = {
 }
 
 Truman_Doctrine = {
-	'card_name' : 'Truman Doctrine',
+	'card_name' : 'Truman_Doctrine',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
 	'card_number' : 19,
@@ -233,7 +233,7 @@ Truman_Doctrine = {
 
 
 Olympic_Games = {
-	'card_name' : 'Olympic Games',
+	'card_name' : 'Olympic_Games',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
 	'card_number' : 20,
@@ -258,7 +258,7 @@ NATO = {
 }
 
 Independent_Reds = {
-	'card_name' : 'Independent Reds',
+	'card_name' : 'Independent_Reds',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
 	'card_number' : 22,
@@ -270,7 +270,7 @@ Independent_Reds = {
 }
 
 Marshall_Plan = {
-	'card_name' : 'Marshall Plan',
+	'card_name' : 'Marshall_Plan',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
 	'card_number' : 23,
@@ -282,7 +282,7 @@ Marshall_Plan = {
 }
 
 Indo_Pakistani_War = {
-	'card_name' : 'Indo-Pakistani War',
+	'card_name' : 'Indo_Pakistani_War',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
 	'card_number' : 24,
@@ -307,7 +307,7 @@ Containment = {
 }
 
 CIA_Created = {
-	'card_name' : 'CIA Created',
+	'card_name' : 'CIA_Created',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
 	'card_number' : 26,
@@ -319,7 +319,7 @@ CIA_Created = {
 }
 
 US_Japan_Mutual_Defense_Pact = {
-	'card_name' : 'US/Japan Mutual Defense Pact',
+	'card_name' : 'US_Japan_Mutual_Defense_Pact',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
 	'card_number' : 27,
@@ -332,7 +332,7 @@ US_Japan_Mutual_Defense_Pact = {
 }
 
 Suez_Crisis = {
-	'card_name' : 'Suez Crisis',
+	'card_name' : 'Suez_Crisis',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
 	'card_number' : 28,
@@ -344,7 +344,7 @@ Suez_Crisis = {
 }
 
 East_European_Unrest = {
-	'card_name' : 'East European Unrest',
+	'card_name' : 'East_European_Unrest',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
 	'card_number' : 29,
@@ -366,7 +366,7 @@ Decolonization = {
 }
 
 Red_Scare_Purge = {
-	'card_name' : 'Red Scare/Purge',
+	'card_name' : 'Red_Scare_Purge',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
 	'card_number' : 31,
@@ -379,7 +379,7 @@ Red_Scare_Purge = {
 }
 
 UN_Intervention = {
-	'card_name' : 'UN Intervention',
+	'card_name' : 'UN_Intervention',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
 	'card_number' : 32,
@@ -393,7 +393,7 @@ UN_Intervention = {
 
 
 De_Stalinization = {
-	'card_name' : 'De-Stalinization',
+	'card_name' : 'De_Stalinization',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
 	'card_number' : 33,
@@ -405,7 +405,7 @@ De_Stalinization = {
 }
 
 Nuclear_Test_Ban = {
-	'card_name' : 'Nuclear Test Ban',
+	'card_name' : 'Nuclear_Test_Ban',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
 	'card_number' : 34,
@@ -416,7 +416,7 @@ Nuclear_Test_Ban = {
 }
 
 Formosan_Resolution = {
-	'card_name' : 'Formosan Resolution',
+	'card_name' : 'Formosan_Resolution',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
 	'card_number' : 35,
@@ -444,7 +444,7 @@ Defectors = {
 
 # -- OPTIONAL
 The_Cambridge_Five = {
-	'card_name' : 'The Cambridge Five',
+	'card_name' : 'The_Cambridge_Five',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
 	'card_number' : 104,
@@ -458,7 +458,7 @@ The_Cambridge_Five = {
 
 # -- OPTIONAL
 Special_Relationship = {
-	'card_name' : 'Special Relationship',
+	'card_name' : 'Special_Relationship',
 	'card_type' : 'Event',
 	'stage' : 'Early War',
 	'card_number' : 105,
@@ -495,7 +495,7 @@ NORAD = {
 
 
 Brush_War = {
-	'card_name' : 'Brush War',
+	'card_name' : 'Brush_War',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 	'card_number' : 36,
@@ -509,7 +509,7 @@ Brush_War = {
 
 
 Central_America_Scoring = {
-	'card_name' : 'Central America Scoring',
+	'card_name' : 'Central_America_Scoring',
 	'card_type' : 'Scoring',
 	'stage' : 'Mid War',
 
@@ -525,7 +525,7 @@ Central_America_Scoring = {
 
 
 Southeast_Asia_Scoring = {
-	'card_name' : 'Southeast Asia Scoring',
+	'card_name' : 'Southeast_Asia_Scoring',
 	'card_type' : 'Scoring',
 	'stage' : 'Mid War',
 
@@ -543,7 +543,7 @@ Southeast_Asia_Scoring = {
 
 
 Arms_Race = {
-	'card_name' : 'Arms Race',
+	'card_name' : 'Arms_Race',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -560,7 +560,7 @@ Arms_Race = {
 }
 
 Cuban_Missile_Crisis = {
-	'card_name' : 'Cuban Missile Crisis',
+	'card_name' : 'Cuban_Missile_Crisis',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -627,7 +627,7 @@ Cuban_Missile_Crisis = {
 
 
 Nuclear_Subs = {
-	'card_name' : 'Nuclear Subs',
+	'card_name' : 'Nuclear_Subs',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -674,7 +674,7 @@ Quagmire = {
 
 
 Salt_Negotiations = {
-	'card_name' : 'Salt Negotiations',
+	'card_name' : 'Salt_Negotiations',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -709,7 +709,7 @@ Salt_Negotiations = {
 
 
 Bear_Trap = {
-	'card_name' : 'Bear Trap',
+	'card_name' : 'Bear_Trap',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -745,7 +745,7 @@ Summit = {
 
 
 How_I_Learned_to_Stop_Worrying = {
-	'card_name' : 'How I Learned to Stop Worrying',
+	'card_name' : 'How_I_Learned_to_Stop_Worrying',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -783,7 +783,7 @@ Junta = {
 
 
 Kitchen_Debates = {
-	'card_name' : 'Kitchen Debates',
+	'card_name' : 'Kitchen_Debates',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -804,7 +804,7 @@ Kitchen_Debates = {
 
 
 Missile_Envy = {
-	'card_name' : 'Missile Envy',
+	'card_name' : 'Missile_Envy',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -823,7 +823,7 @@ Missile_Envy = {
 
 
 We_Will_Bury_You = {
-	'card_name' : 'We Will Bury You',
+	'card_name' : 'We_Will_Bury_You',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -895,7 +895,7 @@ We_Will_Bury_You = {
 
 
 Brezhnev_Doctrine = {
-	'card_name' : 'Brezhnev Doctrine',
+	'card_name' : 'Brezhnev_Doctrine',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -928,7 +928,7 @@ Brezhnev_Doctrine = {
 
 
 Portuguese_Empire_Crumbles = {
-	'card_name' : 'Portuguese Empire Crumbles',
+	'card_name' : 'Portuguese_Empire_Crumbles',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -947,7 +947,7 @@ Portuguese_Empire_Crumbles = {
 
 
 South_African_Unrest = {
-	'card_name' : 'South African Unrest',
+	'card_name' : 'South_African_Unrest',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -997,7 +997,7 @@ Allende = {
 
 
 Willy_Brandt = {
-	'card_name' : 'Willy Brandt',
+	'card_name' : 'Willy_Brandt',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -1020,7 +1020,7 @@ Willy_Brandt = {
 
 
 Muslim_Revolution = {
-	'card_name' : 'Muslim Revolution',
+	'card_name' : 'Muslim_Revolution',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -1040,7 +1040,7 @@ Muslim_Revolution = {
 
 
 ABM_Treaty = {
-	'card_name' : 'ABM Treaty',
+	'card_name' : 'ABM_Treaty',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -1058,7 +1058,7 @@ ABM_Treaty = {
 
 
 Cultural_Revolution = {
-	'card_name' : 'Cultural Revolution',
+	'card_name' : 'Cultural_Revolution',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -1080,7 +1080,7 @@ Cultural_Revolution = {
 
 
 Flower_Power = {
-	'card_name' : 'Flower Power',
+	'card_name' : 'Flower_Power',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -1112,7 +1112,7 @@ Flower_Power = {
 
 
 U2_Incident = {
-	'card_name' : 'U2 Incident',
+	'card_name' : 'U2_Incident',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -1171,7 +1171,7 @@ OPEC = {
 
 
 Lone_Gunman = {
-	'card_name' : 'Lone Gunman',
+	'card_name' : 'Lone_Gunman',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -1191,7 +1191,7 @@ Lone_Gunman = {
 
 
 Colonial_Rear_Guards = {
-	'card_name' : 'Colonial Rear Guards',
+	'card_name' : 'Colonial_Rear_Guards',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -1208,7 +1208,7 @@ Colonial_Rear_Guards = {
 
 
 Panama_Canal_Returned = {
-	'card_name' : 'Panama Canal Returned',
+	'card_name' : 'Panama_Canal_Returned',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -1228,7 +1228,7 @@ Panama_Canal_Returned = {
 
 
 Camp_David_Accords = {
-	'card_name' : 'Camp David Accords',
+	'card_name' : 'Camp_David_Accords',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -1250,7 +1250,7 @@ Camp_David_Accords = {
 
 
 Puppet_Governments = {
-	'card_name' : 'Puppet Governments',
+	'card_name' : 'Puppet_Governments',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -1268,7 +1268,7 @@ Puppet_Governments = {
 
 
 Grain_Sales_to_Soviets = {
-	'card_name' : 'Grain Sales to Soviets',
+	'card_name' : 'Grain_Sales_to_Soviets',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -1287,7 +1287,7 @@ Grain_Sales_to_Soviets = {
 
 
 John_Paul_II_Elected_Pope = {
-	'card_name' : 'John Paul II Elected Pope',
+	'card_name' : 'John_Paul_II_Elected_Pope',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -1306,7 +1306,7 @@ John_Paul_II_Elected_Pope = {
 }
 
 Latin_American_Death_Squads = {
-	'card_name' : 'Latin American Death Squads',
+	'card_name' : 'Latin_American_Death_Squads',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -1337,7 +1337,7 @@ Latin_American_Death_Squads = {
 }
 
 OAS_Founded = {
-	'card_name' : 'OAS Founded',
+	'card_name' : 'OAS_Founded',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -1355,7 +1355,7 @@ OAS_Founded = {
 
 
 Nixon_Plays_The_China_Card = {
-	'card_name' : 'Nixon Plays The China Card',
+	'card_name' : 'Nixon_Plays_The_China_Card',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -1374,7 +1374,7 @@ Nixon_Plays_The_China_Card = {
 
 
 Sadat_Expels_Soviets = {
-	'card_name' : 'Sadat Expels Soviets',
+	'card_name' : 'Sadat_Expels_Soviets',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -1393,7 +1393,7 @@ Sadat_Expels_Soviets = {
 
 
 Shuttle_Diplomacy = {
-	'card_name' : 'Shuttle Diplomacy',
+	'card_name' : 'Shuttle_Diplomacy',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -1427,7 +1427,7 @@ Shuttle_Diplomacy = {
 
 
 The_Voice_Of_America = {
-	'card_name' : 'The Voice Of America',
+	'card_name' : 'The_Voice_Of_America',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -1444,7 +1444,7 @@ The_Voice_Of_America = {
 
 
 Liberation_Theology = {
-	'card_name' : 'Liberation Theology',
+	'card_name' : 'Liberation_Theology',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -1461,7 +1461,7 @@ Liberation_Theology = {
 
 
 Ussuri_River_Skirmish = {
-	'card_name' : 'Ussuri River Skirmish',
+	'card_name' : 'Ussuri_River_Skirmish',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -1479,7 +1479,7 @@ Ussuri_River_Skirmish = {
 }
 
 
-Ask_Not_What_Your_Country_Can_Do_For_Y'card_name' : 'Ask Not What Your Country Can Do For Yard_type' : 'Event',
+Ask_Not_What_Your_Country_Can_Do_For_Y'card_name' : 'Ask_Not_What_Your_Country_Can_Do_For_Yard_type'_:_'Event',
 	'stage' : 'Mid War',
 
 	'card_number' : 77,
@@ -1498,7 +1498,7 @@ Ask_Not_What_Your_Country_Can_Do_For_Y'card_name' : 'Ask Not What Your Country C
 
 
 Alliance_for_Progress = {
-	'card_name' : 'Alliance for Progress',
+	'card_name' : 'Alliance_for_Progress',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -1516,7 +1516,7 @@ Alliance_for_Progress = {
 
 
 Africa_Scoring = {
-	'card_name' : 'Africa Scoring',
+	'card_name' : 'Africa_Scoring',
 	'card_type' : 'Scoring',
 	'stage' : 'Mid War',
 
@@ -1550,7 +1550,7 @@ One_Small_Step = {
 
 
 South_America_Scoring = {
-	'card_name' : 'South America Scoring',
+	'card_name' : 'South_America_Scoring',
 	'card_type' : 'Scoring',
 	'stage' : 'Mid War',
 	'card_number' : 81,
@@ -1583,7 +1583,7 @@ Che = {
 
 # -- OPTIONAL
 Our_Man_In_Tehran = {
-	'card_name' : 'Our Man In Tehran',
+	'card_name' : 'Our_Man_In_Tehran',
 	'card_type' : 'Event',
 	'stage' : 'Mid War',
 
@@ -1620,7 +1620,7 @@ Our_Man_In_Tehran = {
 
 
 Iranian_Hostage_Crisis = {
-	'card_name' : 'Iranian Hostage Crisis',
+	'card_name' : 'Iranian_Hostage_Crisis',
 	'card_type' : 'Event',
 	'stage' : 'Late War',
 	'card_number' : 82,
@@ -1633,7 +1633,7 @@ Iranian_Hostage_Crisis = {
 
 
 The_Iron_Lady = {
-	'card_name' : 'The Iron Lady',
+	'card_name' : 'The_Iron_Lady',
 	'card_type' : 'Event',
 	'stage' : 'Late War',
 
@@ -1654,7 +1654,7 @@ The_Iron_Lady = {
 
 
 Reagan_Bombs_Libya = {
-	'card_name' : 'Reagan Bombs Libya',
+	'card_name' : 'Reagan_Bombs_Libya',
 	'card_type' : 'Event',
 	'stage' : 'Late War',
 
@@ -1672,7 +1672,7 @@ Reagan_Bombs_Libya = {
 
 
 Star_Wars = {
-	'card_name' : 'Star Wars',
+	'card_name' : 'Star_Wars',
 	'card_type' : 'Event',
 	'stage' : 'Late War',
 
@@ -1693,7 +1693,7 @@ Star_Wars = {
 
 
 North_Sea_Oil = {
-	'card_name' : 'North Sea Oil',
+	'card_name' : 'North_Sea_Oil',
 	'card_type' : 'Event',
 	'stage' : 'Late War',
 
@@ -1712,7 +1712,7 @@ North_Sea_Oil = {
 
 
 The_Reformer = {
-	'card_name' : 'The Reformer',
+	'card_name' : 'The_Reformer',
 	'card_type' : 'Event',
 	'stage' : 'Late War',
 
@@ -1737,7 +1737,7 @@ The_Reformer = {
 
 
 Marine_Barracks_Bombing = {
-	'card_name' : 'Marine Barracks Bombing',
+	'card_name' : 'Marine_Barracks_Bombing',
 	'card_type' : 'Event',
 	'stage' : 'Late War',
 
@@ -1756,7 +1756,7 @@ Marine_Barracks_Bombing = {
 
 
 Soviets_Shoot_Down_KAL-007 = {
-	'card_name' : 'Soviets Shoot Down KAL-007',
+	'card_name' : 'Soviets_Shoot_Down_KAL_007',
 	'card_type' : 'Event',
 	'stage' : 'Late War',
 
@@ -1783,7 +1783,7 @@ Glasnost = {
 }
 
 Ortega_Elected_in_Nicaragua = {
-	'card_name' : 'Ortega Elected in Nicaragua',
+	'card_name' : 'Ortega_Elected_in_Nicaragua',
 	'card_type' : 'Event',
 	'stage' : 'Late War',
 	'card_number' : 91,
@@ -1806,7 +1806,7 @@ Terrorism = {
 }
 
 Iran-Contra_Scandal = {
-	'card_name' : 'Iran-Contra Scandal',
+	'card_name' : 'Iran_Contra_Scandal',
 	'card_type' : 'Event',
 	'stage' : 'Late War',
 	'card_number' : 93,
@@ -1869,7 +1869,7 @@ Chernobyl = {
 }
 
 Latin_American_Debt_Crisis = {
-	'card_name' : 'Latin American Debt Crisis',
+	'card_name' : 'Latin_American_Debt_Crisis',
 	'card_type' : 'Event',
 	'stage' : 'Late War',
 	'card_number' : 95,
@@ -1885,7 +1885,7 @@ Latin_American_Debt_Crisis = {
 
 
 Tear_Down_This_Wall = {
-	'card_name' : 'Tear Down This Wall',
+	'card_name' : 'Tear_Down_This_Wall',
 	'card_type' : 'Event',
 	'stage' : 'Late War',
 
@@ -1906,7 +1906,7 @@ Tear_Down_This_Wall = {
 
 
 An_Evil_Empire = {
-	'card_name' : 'An Evil Empire',
+	'card_name' : 'An_Evil_Empire',
 	'card_type' : 'Event',
 	'stage' : 'Late War',
 
@@ -1926,7 +1926,7 @@ An_Evil_Empire = {
 
 
 Aldrich_Ames_Remix = {
-	'card_name' : 'Aldrich Ames Remix',
+	'card_name' : 'Aldrich_Ames_Remix',
 	'card_type' : 'Event',
 	'stage' : 'Late War',
 
@@ -1945,7 +1945,7 @@ Aldrich_Ames_Remix = {
 }
 
 Pershing_II_Deployed = {
-	'card_name' : 'Pershing II Deployed',
+	'card_name' : 'Pershing_II_Deployed',
 	'card_type' : 'Event',
 	'stage' : 'Late War',
 
@@ -1967,11 +1967,8 @@ Wargames = {
 	'card_name' : 'Wargames',
 	'card_type' : 'Event',
 	'stage' : 'Late War',
-
 	'card_number' : 100,
-
 	'operations_points' : 4,
-
 	'event_owner' : 'Neutral',
 	'event_effects' : {
 		usageconditions = {
@@ -1988,11 +1985,8 @@ Solidarity = {
 	'card_name' : 'Solidarity',
 	'card_type' : 'Event',
 	'stage' : 'Late War',
-
 	'card_number' : 101,
-
 	'operations_points' : 2,
-
 	'event_owner' : 'USA',
 	'event_effects' : {
 		usageconditions = {
@@ -2007,14 +2001,11 @@ Solidarity = {
 
 
 Iran-Iraq_War = {
-	'card_name' : 'Iran-Iraq War',
+	'card_name' : 'Iran_Iraq_War',
 	'card_type' : 'Event',
 	'stage' : 'Late War',
-
 	'card_number' : 102,
-
 	'operations_points' : 2,
-
 	'event_owner' : 'Neutral',
 	'event_effects' : {
 		{ 'WarInIranOrIraq', 2 + (2 * 256),
@@ -2026,13 +2017,12 @@ Iran-Iraq_War = {
 
 # -- OPTIONAL
 Yuri_and_Samantha = {
-	'card_name' : 'Yuri and Samantha',
+	'card_name' : 'Yuri_and_Samantha',
 	'card_type' : 'Event',
 	'stage' : 'Late War',
 	'card_number' : 109,
 	'optional_card' : True,
 	'operations_points' : 2,
-
 	'event_owner' : 'USSR',
 	'event_effects' : {
 		{ 'PutThisCardInPlay', 1,
@@ -2063,7 +2053,7 @@ Yuri_and_Samantha = {
 
 # -- OPTIONAL
 AWACS_Sale_to_Saudis = {
-	'card_name' : 'AWACS Sale to Saudis',
+	'card_name' : 'AWACS_Sale_to_Saudis',
 	'card_type' : 'Event',
 	'stage' : 'Late War',
 	'card_number' : 110,
