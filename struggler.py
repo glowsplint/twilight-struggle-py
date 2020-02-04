@@ -15,6 +15,13 @@ from twilight_cards import *
 # In[2]:
 
 
+all_cards = dict()
+early_war_cards = dict()
+
+
+# In[3]:
+
+
 class card:
     '''
     Cards should be able to be used for:
@@ -25,16 +32,21 @@ class card:
     5. Space race
     6. Trigger event first >> realignment/coup/influence
     '''
-    def __init__(self, card_number, **kwargs):
+    def __init__(self, card_name, card_number, **kwargs):
+        self.card_name = card_name
         self.card_number = card_number
         for key, value in kwargs.items():
             setattr(self, key, value)
+        all_cards[card_name] = self
+        if self.stage == 'Early War':
+            early_war_cards[card_name] = self
     
     def __repr__(self):
-        sb = []
-        for key in self.__dict__:
-            sb.append("{key}='{value}'".format(key=key, value=self.__dict__[key]))
-        return ', '.join(sb)
+#         sb = []
+#         for key in self.__dict__:
+#             sb.append("{key}='{value}'".format(key=key, value=self.__dict__[key]))
+#         return ', '.join(sb)
+        return self.card_name
     
     def trigger_event_first(self):
         # only possible if opponent event
@@ -59,33 +71,16 @@ class card:
     
     def use_for_realignment(self):
         pass
+    
+    def possible_actions(self):
+        pass
 
 
 # Let's create cards by index 1-110. Early war: 1-35, 103-106. Mid war: 36-81, 107-108. Late war: 82-102, 109-110. China card is card(6).
 
-# In[3]:
-
-
-all_cards = [card(i+1) for i in range(110)]
-early_war_indices = [i+1 for i in range(35)]
-early_war_indices.extend([i+1 for i in range(103-1,106)])
-mid_war_indices = [i+1 for i in range(36-1,81)]
-mid_war_indices.extend([i+1 for i in range(107-1,108)])
-late_war_indices = [i+1 for i in range(82-1,102)]
-late_war_indices.extend([i+1 for i in range(109-1,110)])
-
-
-# In[4]:
-
-
-early_war_cards = [card(i) for i in early_war_indices]
-mid_war_cards = [card(i) for i in mid_war_indices]
-late_war_cards = [card(i) for i in late_war_indices]
-
-
 # ### Setup
 
-# In[5]:
+# In[4]:
 
 
 Arab_Israeli_War = card(**Arab_Israeli_War)
@@ -129,7 +124,7 @@ Vietnam_Revolts = card(**Vietnam_Revolts)
 Warsaw_Pact_Formed = card(**Warsaw_Pact_Formed)
 
 
-# In[6]:
+# In[5]:
 
 
 us_hand = []
@@ -139,6 +134,12 @@ discard_pile = []
 draw_pile = []
 
 
+# In[6]:
+
+
+len(early_war_cards)
+
+
 # In[7]:
 
 
@@ -146,8 +147,8 @@ draw_pile = []
 Remove the China card from the early war pile. Put early war cards into the draw pile. Shuffle and deal the draw pile.
 Distribute the cards to players. Each player receives 8 cards each.
 '''
-ussr_hand.append(early_war_cards.pop(5))
-draw_pile.extend(early_war_cards)
+ussr_hand.append(early_war_cards.pop('The China Card'))
+draw_pile.extend(early_war_cards.values())
 random.shuffle(draw_pile)
 ussr_hand.extend([draw_pile.pop() for i in range(8)])
 us_hand.extend([draw_pile.pop() for i in range(8)])
@@ -156,7 +157,7 @@ us_hand.extend([draw_pile.pop() for i in range(8)])
 # In[8]:
 
 
-ussr_hand
+draw_pile
 
 
 # ### Create the turn order
@@ -170,10 +171,10 @@ ussr_hand
 # 8. Advance turn marker
 # 9. Final scoring (end T10)
 
-# In[ ]:
+# In[9]:
 
 
-
+early_war_cards
 
 
 # ### Create space race track
@@ -182,16 +183,13 @@ ussr_hand
 
 # ### Scoring Cards
 
-# In[9]:
-
-
-Asia_Scoring
-
+# Hi Box. Below Asia_Scoring prints the right message but doesn't change the VP track. Problem with globals variables?
 
 # In[10]:
 
 
 Asia_Scoring.use_for_event()
+vp_track
 
 
 # In[11]:
@@ -204,10 +202,11 @@ Egypt
 
 
 Nasser.use_for_event()
-
-
-# In[13]:
-
-
 Egypt
+
+
+# In[ ]:
+
+
+
 
