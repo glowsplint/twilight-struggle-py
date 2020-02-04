@@ -12,6 +12,8 @@ import random
 from twilight_cards import *
 
 
+# Moved all country information into the twilight_cards.py file.
+
 # In[2]:
 
 
@@ -32,24 +34,31 @@ class card:
     5. Space race
     6. Trigger event first >> realignment/coup/influence
     '''
-    def __init__(self, card_name, card_number, **kwargs):
-        self.card_name = card_name
-        self.card_number = card_number
+    def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
-        all_cards[card_name] = self
+        all_cards[self.card_name] = self
         if self.stage == 'Early War':
-            early_war_cards[card_name] = self
+            early_war_cards[self.card_name] = self
+#         if self.stage == 'Mid War':
+#             mid_war_cards[card_name] = self
+#         if self.stage == 'Late War':
+#             late_war_cards[card_name] = self
     
     def __repr__(self):
 #         sb = []
 #         for key in self.__dict__:
 #             sb.append("{key}='{value}'".format(key=key, value=self.__dict__[key]))
 #         return ', '.join(sb)
-        return self.card_name
+        if hasattr(self, 'operations_points'):
+            return f'{self.card_name} - {self.operations_points}'
+        else:
+            return self.card_name
     
     def trigger_event_first(self):
         # only possible if opponent event
+        # self.use_for_event()
+        # do something else
         pass
     
     def use_for_influence(self):
@@ -137,24 +146,15 @@ draw_pile = []
 # In[6]:
 
 
-len(early_war_cards)
-
-
-# In[7]:
-
-
-'''
-Remove the China card from the early war pile. Put early war cards into the draw pile. Shuffle and deal the draw pile.
-Distribute the cards to players. Each player receives 8 cards each.
-'''
-ussr_hand.append(early_war_cards.pop('The China Card'))
-draw_pile.extend(early_war_cards.values())
-random.shuffle(draw_pile)
+'''Pre-headline setup'''
+ussr_hand.append(early_war_cards.pop('The_China_Card')) # Move the China card from the early war pile to USSR hand
+draw_pile.extend(early_war_cards.values()) # Put early war cards into the draw pile
+random.shuffle(draw_pile) # Shuffle the draw pile
 ussr_hand.extend([draw_pile.pop() for i in range(8)])
 us_hand.extend([draw_pile.pop() for i in range(8)])
 
 
-# In[8]:
+# In[7]:
 
 
 draw_pile
@@ -171,7 +171,7 @@ draw_pile
 # 8. Advance turn marker
 # 9. Final scoring (end T10)
 
-# In[9]:
+# In[8]:
 
 
 early_war_cards
@@ -183,30 +183,11 @@ early_war_cards
 
 # ### Scoring Cards
 
-# Hi Box. Below Asia_Scoring prints the right message but doesn't change the VP track. Problem with globals variables?
+# Hi Box. Below Asia_Scoring prints the right message but doesn't change the VP track. Problem with global variables?
 
-# In[10]:
+# In[9]:
 
 
 Asia_Scoring.use_for_event()
 vp_track
-
-
-# In[11]:
-
-
-Egypt
-
-
-# In[12]:
-
-
-Nasser.use_for_event()
-Egypt
-
-
-# In[ ]:
-
-
-
 
