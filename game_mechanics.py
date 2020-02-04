@@ -1,30 +1,29 @@
 import math
 from twilight_map import *
 
-'''VP, AR, Milops, Space tracks'''
-vp_track = 0 # positive for ussr
-turn_track = 1
-ar_track = 1 # increment by 0.5 for each side's action round
-defcon_track = 5
-milops_track = [0, 0] # ussr first
-space_track = [0, 0] # 0 is start, 1 is earth satellite etc
+class Game:
+    '''VP, AR, Milops, Space tracks'''
+    vp_track = 0 # positive for ussr
+    turn_track = 1
+    ar_track = 1 # increment by 0.5 for each side's action round
+    defcon_track = 5
+    milops_track = [0, 0] # ussr first
+    space_track = [0, 0] # 0 is start, 1 is earth satellite etc
 
 # to add game terminate functionality EndGame()
 
 def change_vp(n): # positive for ussr
-    global vp_track
-    vp_track += n
-    if vp_track >= 20:
+    Game.vp_track += n
+    if Game.vp_track >= 20:
         print('USSR victory')
         # EndGame()
-    if vp_track <= -20:
+    if Game.vp_track <= -20:
         print('US victory')
         # EndGame()
 
 def change_defcon(n):
-    global defcon_track
-    defcon_track += min(n, 5 - defcon_track)
-    if defcon_track < 2:
+    Game.defcon_track += min(n, 5 - Game.defcon_track)
+    if Game.defcon_track < 2:
         print('Game ended by thermonuclear war')
         # EndGame()
 
@@ -103,7 +102,6 @@ def GainInfluenceForControlInJapan(_):
 '''Scoring Mechanics'''
 # TO ADD SHUTTLE DIPLOMACY AND FORMOSAN RESOLUTION
 def ScoreAsia(_):
-    global vp_track
 
     areas = []
     for x in list(all_countries.values()):
@@ -153,7 +151,6 @@ def ScoreAsia(_):
     print(f'Asia scores for {swing} VPs')
 
 def ScoreEurope(_):
-    global vp_track
 
     areas = []
     for x in list(all_countries.values()):
@@ -208,7 +205,6 @@ def ScoreEurope(_):
 
 # TO ADD SHUTTLE DIPLOMACY
 def ScoreMiddleEast(_):
-    global vp_track
 
     areas = []
     for x in list(all_countries.values()):
@@ -252,7 +248,6 @@ def ScoreMiddleEast(_):
     print(f'Middle East scores for {swing} VPs')
 
 def ScoreCentralAmerica(_):
-    global vp_track
 
     areas = []
     for x in list(all_countries.values()):
@@ -324,7 +319,6 @@ def ScoreSoutheastAsia(_):
     print(f'Southeast Asia scores for {swing} VPs')
 
 def ScoreAfrica(_):
-    global vp_track
 
     areas = []
     for x in list(all_countries.values()):
@@ -368,7 +362,6 @@ def ScoreAfrica(_):
     print(f'Africa scores for {swing} VPs')
 
 def ScoreSouthAmerica(_):
-    global vp_track
 
     areas = []
     for x in list(all_countries.values()):
