@@ -172,7 +172,6 @@ draw_pile
 # 9. Final scoring (end T10)
 
 class UI:
-    
 
     help = """
 The following commands are available:
@@ -219,7 +218,7 @@ quit        Exit the game.
             else:
                 print("Invalid command. Enter ? for help.")
 
-
+    @staticmethod
     def parse_move(comd):
         
         if comd == "":
@@ -249,7 +248,7 @@ c dis       Display a list of cards in the discard pile
 c rem       Display a list of removed cards.
 c dec       Returns the number of cards in the draw deck.
 """
-
+    @staticmethod
     def parse_card(comd):
     
         if comd == "":
@@ -277,7 +276,7 @@ c dec       Returns the number of cards in the draw deck.
     help_state = """
 s <eu|as|me|af|na|sa>   Displays the scoring state and country data for the given region.
 """
-    
+    @staticmethod
     def parse_state(comd):
         if comd == "":
             print("=== Game state ===")
@@ -307,7 +306,9 @@ early_war_cards
 
 # In[9]:
 
+#this is a temporary measure. It should go into UI.new()
+g = Game()
 
 Asia_Scoring.use_for_event()
-Game.vp_track
+Game.main.vp_track
 UI.run()

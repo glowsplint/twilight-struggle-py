@@ -2,36 +2,64 @@ import math
 from twilight_map import *
 
 class Game:
+
+    # you can now refer to USSR and USA as Game.Side.USSR / Game.Side.USA
+    # without concern about which is 0 and which is 1; also robust to
+    # change any time.
+    class Side:
+        USSR = 0
+        USA = 1
+        
+        @staticmethod
+        def fromStr(s):
+            if s.lower() == "usa": return Game.Side.USA
+            elif s.lower() == "ussr": return Game.Side.USSR
+            else: raise NameError("Invalid string for Game.Side.fromStr")
+
+    # this is the currently active game. One may refer to this as
+    # Game.main. The point is to have a globally accessible game
+    # object for the active game, but still allow for other game
+    # objects to deal with hypothetical future/past game states
+    # which would be useful for non-committed actions and possibly
+    # the AI depending on how you do it.
+    main = None
+
     '''VP, AR, Milops, Space tracks'''
-    vp_track = 0 # positive for ussr
-    turn_track = 1
-    ar_track = 1 # increment by 0.5 for each side's action round
-    defcon_track = 5
-    milops_track = [0, 0] # ussr first
-    space_track = [0, 0] # 0 is start, 1 is earth satellite etc
+    def __init__(self):
+        self.vp_track = 0 # positive for ussr
+        self.turn_track = 1
+        self.ar_track = 1 # increment by 0.5 for each side's action round
+        self.defcon_track = 5
+        self.milops_track = [0, 0] # ussr first
+        self.space_track = [0, 0] # 0 is start, 1 is earth satellite etc
+        
+        # For new set the first created game to be the actual ongoing game.
+        if Game.main is None: Game.main = self
 
 # to add game terminate functionality EndGame()
 
-def change_vp(n): # positive for ussr
-    Game.vp_track += n
-    if Game.vp_track >= 20:
-        print('USSR victory')
-        # EndGame()
-    if Game.vp_track <= -20:
-        print('US victory')
-        # EndGame()
+    def change_vp(self, n): # positive for ussr
+        self.vp_track += n
+        if self.vp_track >= 20:
+            print('USSR victory')
+            # EndGame()
+        if self.vp_track <= -20:
+            print('US victory')
+            # EndGame()
 
-def change_defcon(n):
-    Game.defcon_track += min(n, 5 - Game.defcon_track)
-    if Game.defcon_track < 2:
-        print('Game ended by thermonuclear war')
-        # EndGame()
+    def change_defcon(n):
+        self.defcon_track += min(n, 5 - self.defcon_track)
+        if self.defcon_track < 2:
+            print('Game ended by thermonuclear war')
+            # EndGame()
 
 # SPACE (function)
 def space(side):
-    x = 0
-    if side == 'us':
-        x = 1
+
+    x = Game.Side.fromStr(side)
+    
+    # this one could be something game specific later
+    space_track = Game.main.space_track
 
     if space_track[x] in [0,2,4,6]:
         modifier = 0
@@ -75,11 +103,13 @@ def space(side):
     else:
         print(f'Failure with roll of {roll}.')
 
+# definitely want to make all the country states be stored in the specific Game object
+
 def DegradeDEFCONLevel(n):
-    change_defcon(-n)
+    Game.main.change_defcon(-n)
 
 def GainVictoryPointsForDEFCONBelow(n):
-    change_vp(defcon_track - n)
+    Game.main.change_vp(defcon_track - n)
 
 def RemoveAllOpponentInfluenceInCuba(_):
     Cuba.set_influence(0, max(3, Cuba.ussr_influence))
@@ -95,8 +125,6 @@ def RemoveOpponentInfluenceInFrance(_):
 
 def GainInfluenceForControlInJapan(_):
     Japan.set_influence(Japan.ussr_influence + 4, Japan.ussr_influence)
-
-
 
 
 '''Scoring Mechanics'''
@@ -147,7 +175,7 @@ def ScoreAsia(_):
     if North_Korea.control == 'us':
         swing -= 1
 
-    change_vp(swing)
+    Game.main.change_vp(swing)
     print(f'Asia scores for {swing} VPs')
 
 def ScoreEurope(_):
@@ -200,7 +228,7 @@ def ScoreEurope(_):
     if Romania.control == 'us':
         swing -= 1
 
-    change_vp(swing)
+    Game.main.change_vp(swing)
     print(f'Europe scores for {swing} VPs')
 
 # TO ADD SHUTTLE DIPLOMACY
@@ -244,7 +272,7 @@ def ScoreMiddleEast(_):
     if bg_count[1] < bgs and bg_count[1] > bg_count[0] and country_count[1] > country_count[0] and country_count[1] - bg_count[1] > 0:
         swing -= domination - presence
 
-    change_vp(swing)
+    Game.main.change_vp(swing)
     print(f'Middle East scores for {swing} VPs')
 
 def ScoreCentralAmerica(_):
@@ -293,7 +321,7 @@ def ScoreCentralAmerica(_):
     if Mexico.control == 'ussr':
         swing += 1
 
-    change_vp(swing)
+    Game.main.change_vp(swing)
     print(f'Central America scores for {swing} VPs')
 
 def ScoreSoutheastAsia(_):
@@ -315,7 +343,7 @@ def ScoreSoutheastAsia(_):
     if Thailand.control == 'us':
         swing -= 1
 
-    change_vp(swing)
+    Game.main.change_vp(swing)
     print(f'Southeast Asia scores for {swing} VPs')
 
 def ScoreAfrica(_):
@@ -358,7 +386,7 @@ def ScoreAfrica(_):
     if bg_count[1] < bgs and bg_count[1] > bg_count[0] and country_count[1] > country_count[0] and country_count[1] - bg_count[1] > 0:
         swing -= domination - presence
 
-    change_vp(swing)
+    Game.main.change_vp(swing)
     print(f'Africa scores for {swing} VPs')
 
 def ScoreSouthAmerica(_):
@@ -401,5 +429,5 @@ def ScoreSouthAmerica(_):
     if bg_count[1] < bgs and bg_count[1] > bg_count[0] and country_count[1] > country_count[0] and country_count[1] - bg_count[1] > 0:
         swing -= domination - presence
 
-    change_vp(swing)
+    Game.main.change_vp(swing)
     print(f'South America scores for {swing} VPs')
