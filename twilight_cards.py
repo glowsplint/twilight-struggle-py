@@ -1,3 +1,6 @@
+from twilight_map import *
+from game_mechanics import *
+
 # --
 # -- EARLY WAR
 # --
@@ -8,7 +11,7 @@ Asia_Scoring = {
 	'stage' : 'Early War',
 	'card_number' : 1,
 	'scoring_region' : 'Asia',
-	'event_effects' : [('ScoreAsia', 0)],
+	'event_effects' : [(ScoreAsia, 0)],
 	'event_text' : 'Both sides score: Presence: 3, Domination: 7, Control: 9. +1 per controlled Battleground Country in Region, +1 per Country controlled that is adjacent to enemy superpower',
 	'may_be_held' : False,
 }
@@ -19,7 +22,7 @@ Europe_Scoring = {
 	'stage' : 'Early War',
 	'card_number' : 2,
 	'scoring_region' : 'Europe',
-	'event_effects' : [('ScoreEurope', 0)],
+	'event_effects' : [(ScoreEurope, 0)],
 	'event_text' : 'Both sides score: Presence: 3, Domination: 7, Control: VICTORY. +1 per controlled Battleground Country in Region, +1 per Country controlled that is adjacent to enemy superpower',
 	'may_be_held' : False,
 }
@@ -30,7 +33,7 @@ Middle_East_Scoring = {
 	'stage' : 'Early War',
 	'card_number' : 3,
 	'scoring_region' : 'Middle East',
-	'event_effects' : [('ScoreMiddleEast', 0)],
+	'event_effects' : [(ScoreMiddleEast, 0)],
 	'event_text' : 'Both sides score: Presence: 3, Domination: 5, Control: 7. +1 per controlled Battleground Country in Region',
 	'may_be_held' : False,
 }
@@ -42,7 +45,7 @@ Duck_and_Cover = {
 	'card_number' : 4,
 	'operations_points' : 3,
 	'event_owner' : 'USA',
-	'event_effects' : [('DegradeDEFCONLevel', 1), ('GainVictoryPointsForDEFCONBelow', 5)],
+	'event_effects' : [(DegradeDEFCONLevel, 1), (GainVictoryPointsForDEFCONBelow, 5)],
 	'event_text' : 'Degrade DEFCON one level.\nThen US player earns VPs equal to 5 minus current DEFCON level.',
 }
 
@@ -88,7 +91,7 @@ Fidel = {
 	'card_number' : 8,
 	'operations_points' : 2,
 	'event_owner' : 'USSR',
-	'event_effects' : [('RemoveAllOpponentInfluenceInCuba', 0), ('GainInfluenceForControlInCuba', 0)],
+	'event_effects' : [(RemoveAllOpponentInfluenceInCuba, 0)],
 	'event_text' : 'Remove all US Influence in Cuba. USSR gains sufficient Influence in Cuba for Control.',
 	'remove_if_used_as_event' : True,
 }
@@ -138,7 +141,7 @@ Romanian_Abdication = {
 	'card_number' : 12,
 	'operations_points' : 1,
 	'event_owner' : 'USSR',
-	'event_effects' : [('RemoveAllOpponentInfluenceInRomania', 0), ('GainInfluenceForControlInRomania', 0)],
+	'event_effects' : [(RemoveAllOpponentInfluenceInRomania, 0)],
 	'event_text' : 'Remove all US Influence in Romania. USSR gains sufficient Influence in Romania for Control.',
 	'remove_if_used_as_event' : True,
 }
@@ -175,7 +178,7 @@ Nasser = {
 	'card_number' : 15,
 	'operations_points' : 1,
 	'event_owner' : 'USSR',
-	'event_effects' : [('GainInfluenceInEgypt', 2), ('RemoveHalfOpponentInfluenceInEgpyt', 0)],
+	'event_effects' : [(GainInfluenceInEgypt, 2)],
 	'event_text' : 'Add 2 USSR Influence in Egypt. Remove half (rounded up) of the US Influence in Egypt.',
 	'remove_if_used_as_event' : True,
 }
@@ -199,7 +202,7 @@ De_Gaulle_Leads_France = {
 	'card_number' : 17,
 	'operations_points' : 3,
 	'event_owner' : 'USSR',
-	'event_effects' : [('RemoveOpponentInfluenceInFrance', 2), ('GainInfluenceInFrance', 1), ('PutThisCardInPlay', 0)],
+	'event_effects' : [(RemoveOpponentInfluenceInFrance, 2), ('PutThisCardInPlay', 0)],
 	'event_text' : 'Remove 2 US Influence in France, add 1 USSR Influence. Cancels effects of NATO for France.',
 	'remove_if_used_as_event' : True,
 }
@@ -322,7 +325,7 @@ US_Japan_Mutual_Defense_Pact = {
 	'card_number' : 27,
 	'operations_points' : 4,
 	'event_owner' : 'USA',
-	'event_effects' : [('GainInfluenceForControlInJapan', 0), ('PutThisCardInPlay', 0)],
+	'event_effects' : [(GainInfluenceForControlInJapan, 0), ('PutThisCardInPlay', 0)],
 	'continuous_effects' : [('OpponentCannotCoupOrRealignInJapan', 0)],
 	'event_text' : 'US gains sufficient Influence in Japan for Control. USSR may no longer make Coup or Realignment rolls in Japan.',
 	'remove_if_used_as_event' : True,
@@ -737,7 +740,7 @@ Summit = {
 		{ 'CommitPlayerDecision', 0,
 		{ 'ResolveSummit', 2,
 	},
-	'event_text' : 'Both players roll a die.  Each adds 1 for each Region they Dominate or Control. igh roller gains 2 VP and may move DEFCON marker one level in either direction. o not reroll ties.',
+	'event_text' : 'Both players roll a die.  Each adds 1 for each Region they Dominate or Control. High roller gains 2 VP and may move DEFCON marker one level in either direction. o not reroll ties.',
 }
 
 
