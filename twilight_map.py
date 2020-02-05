@@ -1,68 +1,185 @@
+import random
+
+from twilight_enums import *
 
 
-class Country:
+class CountryInfo:
 
     ALL = dict()
+    REGION_ALL = [set() for r in MapRegion]
 
-    class Region:
+    def __init__(self, country_name="", country_index="", adjacent_countries=None,
+                 region="", stability=0, battleground=False, superpower=False,
+                 chinese_civil_war=False, **kwargs):
 
-        EUROPE = 0
-        WESTERN_EUROPE = 1
-        EASTERN_EUROPE = 2
-        ASIA = 3
-        SOUTHEAST_ASIA = 4
-        MIDDLE_EAST = 5
-        AFRICA = 6
-        NORTH_AMERICA = 7
-        SOUTH_AMERICA = 8
-
-    def __init__(self, country_name, country_index, adjacent_countries, us_influence, ussr_influence, region=0, stability=0, battleground=False, superpower=False, chinese_civil_war=False):
         self.country_name = country_name
         self.country_index = country_index
-        self.region = region
         self.stability = stability
         self.battleground = battleground
         self.adjacent_countries = adjacent_countries
         self.superpower = superpower
         self.chinese_civil_war = chinese_civil_war
 
-        Country.ALL[country_name] = self
-
-        # these will change throughout the game
-        self.us_influence = us_influence
-        self.ussr_influence = ussr_influence
-
-        self.evaluate_control()
-
-    def evaluate_control(self):
-        if self.us_influence - self.ussr_influence >= self.stability:
-            self.control = 'us'
-        elif self.ussr_influence - self.us_influence >= self.stability:
-            self.control = 'ussr'
+        CountryInfo.ALL[country_name] = self
+        if region == "Europe":
+            self.regions = [MapRegion.EUROPE, MapRegion.EASTERN_EUROPE, MapRegion.WESTERN_EUROPE]
+        elif region == "Western Europe":
+            self.regions = [MapRegion.EUROPE, MapRegion.WESTERN_EUROPE]
+        elif region == "Eastern Europe":
+            self.regions = [MapRegion.EUROPE, MapRegion.EASTERN_EUROPE]
+        elif region == "Asia":
+            self.regions = [MapRegion.ASIA]
+        elif region == "Southeast Asia":
+            self.regions = [MapRegion.ASIA, MapRegion.SOUTHEAST_ASIA]
+        elif region == "Middle East":
+            self.regions = [MapRegion.MIDDLE_EAST]
+        elif region == "Africa":
+            self.regions = [MapRegion.AFRICA]
+        elif region == "Central America":
+            self.regions = [MapRegion.CENTRAL_AMERICA]
+        elif region == "South America":
+            self.regions = [MapRegion.SOUTH_AMERICA]
+        elif region == "":
+            self.regions = []
         else:
-            self.control = 'none'
+            print(f"Unrecognized region string: {region}")
+            self.regions = []
+
+        for r in self.regions:
+            CountryInfo.REGION_ALL[r].add(country_name)
+
+
+class GameMap:
+
+    def __init__(self):
+        self.ALL = dict()
+        for country_name in CountryInfo.ALL.keys():
+            self.ALL[country_name] = Country(country_name)
+
+    def __getitem__(self, item):
+        return self.ALL[item]
+
+    def build_standard(self):
+        self["Panama"].set_influence(1, 0)
+        self["Canada"].set_influence(2, 0)
+        self["UK"].set_influence(2, 0)
+        self["North_Korea"].set_influence(0, 1)
+        self["East_Germany"].set_influence(0, 3)
+        self["Finland"].set_influence(0, 1)
+        self["Syria"].set_influence(0, 1)
+        self["Israel"].set_influence(1, 0)
+        self["Iraq"].set_influence(0, 1)
+        self["Iran"].set_influence(1, 0)
+        self["North_Korea"].set_influence(0, 3)
+        self["South_Korea"].set_influence(1, 0)
+        self["Japan"].set_influence(1, 0)
+        self["Philippines"].set_influence(1, 0)
+        self["Australia"].set_influence(4, 0)
+        self["South_Africa"].set_influence(1, 0)
+
+    def can_coup(self, country_name, side):
+        country = self[country_name]
+        return not (side == Side.USA and country.ussr_influence == 0 or
+                side == Side.USSR and country.us_influence == 0)
+
+    def coup(self, country_name, side, effective_operations_points):
+        '''
+        TODO:
+        1. Prevent coup if no opposing influence in the country. I would prefer to write this in a way that prevents this from happening altogether, as opposed to throwing up an error if this is tried.
+        2. Prevent coup under DEFCON restrictions. Will write it in a style same as 1.
+        3. Prevent coup if there is no influence at all in the country.
+        4. Add military operations points.
+        5. Reduce DEFCON status level if self.battleground = True
+        '''
+        assert(self.can_coup(country_name, side))
+        country = self[country_name]
+
+        die_roll = random.randint(6) + 1
+        difference = die_roll + effective_operations_points - country.info.stability * 2
+
+        if difference > 0:
+            if side == 'us':
+                # subtract from opposing first.. and then add to yours
+                if difference > country.ussr_influence:
+                    country.adjust_influence(difference - country.ussr_influence, 0)
+                    country.adjust_influence(0, -min(difference, country.us_influence))
+
+            if side == 'ussr':
+                if difference > country.us_influence:
+                    country.adjust_influence(0, difference - country.us_influence)
+                    country.adjust_influence(-min(difference, country.us_influence), 0)
+            print(f'Coup successful with roll of {die_roll}. Difference: {difference}')
+        else:
+            print(f'Coup failed with roll of {die_roll}')
+        country.evaluate_control()
+
+    def can_realignment(self, country_name):
+        country = self[country_name]
+        return not (country.ussr_influence == 0 and country.us_influence == 0)
+
+
+    def realignment(self, country_name):
+        '''
+        TODO:
+        1. Prevent realignment under DEFCON restrictions.
+        2. Prevent realignment if there is no influence at all in the country.
+        '''
+        assert(self.can_realignment(country_name))
+        country = self[country_name]
+
+        modifier = 0
+        for adjacent_country in country.info.adjacent_countries:
+            modifier += ((self[adjacent_country.country_name]).control == 'us')
+            modifier -= ((self[adjacent_country.country_name]).control == 'ussr')
+        if country.us_influence - country.ussr_influence > 0:
+            modifier += 1
+        elif country.us_influence - country.ussr_influence < 0:
+            modifier -= 1
+        us_roll, ussr_roll = random.randint(6) + 1, random.randint(6) + 1
+        difference = us_roll - ussr_roll + modifier
+        if difference > 0:
+            country.adjust_influence(0, -min(difference, country.ussr_influence))
+        elif difference < 0:
+            country.adjust_influence(-min(-difference, country.us_influence), 0)
+        print(f'US rolled: {us_roll}, USSR rolled: {ussr_roll}, Modifer = {modifier}, Difference = {difference}')
+
+
+class Country:
+
+    def __init__(self, country_name):
+
+        self.info = CountryInfo.ALL[country_name]
+
+        self.us_influence = 0
+        self.ussr_influence = 0
+
+    @property
+    def control(self):
+        if self.us_influence - self.ussr_influence >= self.info.stability:
+            return Side.USA
+        elif self.ussr_influence - self.us_influence >= self.info.stability:
+            return Side.USSR
+        else:
+            return Side.NEUTRAL
 
     def __repr__(self):
-        if self.stability == 0:
-            return f'country({self.country_name}, adjacent = {self.adjacent_countries})'
+        if self.info.stability == 0:
+            return f'country({self.info.country_name}, adjacent = {self.info.adjacent_countries})'
         else:
-            return f'country({self.country_name}, region = {self.region}, stability = {self.stability}, battleground = {self.battleground}, adjacent = {self.adjacent_countries}, us_inf = {self.us_influence}, ussr_inf = {self.ussr_influence}), control = {self.control}'
+            return f'country({self.info.country_name}, region = {self.info.region}, stability = {self.info.stability}, battleground = {self.info.battleground}, adjacent = {self.info.adjacent_countries}, us_inf = {self.us_influence}, ussr_inf = {self.ussr_influence}), control = {self.control}'
 
     def set_influence(self, us_influence, ussr_influence):
-        if self.superpower == True:
+        if self.info.superpower == True:
             raise ValueError('Cannot set influence on superpower!')
         self.us_influence = us_influence
         self.ussr_influence = ussr_influence
-        self.evaluate_control()
 
     def reset_influence(self):
         self.us_influence, self.ussr_influence = 0, 0
-        self.evaluate_control()
 
     def adjust_influence(self, us_influence, ussr_influence):
         self.us_influence += us_influence
         self.ussr_influence += ussr_influence
-        self.evaluate_control()
 
     def place_influence(self, side, effective_operations_points):
         if side == 'ussr' and self.control == 'us':
@@ -88,56 +205,6 @@ class Country:
             else:
                 raise ValueError("side must be 'us' or 'ussr'!")
 
-    def coup(self, side, effective_operations_points):
-        '''
-        TODO:
-        1. Prevent coup if no opposing influence in the country. I would prefer to write this in a way that prevents this from happening altogether, as opposed to throwing up an error if this is tried.
-        2. Prevent coup under DEFCON restrictions. Will write it in a style same as 1.
-        3. Prevent coup if there is no influence at all in the country.
-        4. Add military operations points.
-        5. Reduce DEFCON status level if self.battleground = True
-        '''
-
-        die_roll = np.random.randint(6) + 1
-        difference = die_roll + effective_operations_points - self.stability*2
-        if difference > 0:
-            if side == 'us':
-                # subtract from opposing first.. and then add to yours
-                if difference > self.ussr_influence:
-                    self.adjust_influence(difference - self.ussr_influence, 0)
-                self.adjust_influence(0, -min(difference, self.us_influence))
-
-            if side == 'ussr':
-                if difference > self.us_influence:
-                    self.adjust_influence(0, difference - self.us_influence)
-                self.adjust_influence(-min(difference, self.us_influence), 0)
-            print(f'Coup successful with roll of {die_roll}. Difference: {difference}')
-        else:
-            print(f'Coup failed with roll of {die_roll}')
-        self.evaluate_control()
-
-    def realignment(self):
-        '''
-        TODO:
-        1. Prevent realignment under DEFCON restrictions.
-        2. Prevent realignment if there is no influence at all in the country.
-        '''
-
-        modifier = 0
-        for adjacent_country in self.adjacent_countries:
-            modifier += ((Country.ALL[adjacent_country.country_name]).control == 'us')
-            modifier -= ((Country.ALL[adjacent_country.country_name]).control == 'ussr')
-        if self.us_influence - self.ussr_influence > 0:
-            modifier += 1
-        elif self.us_influence - self.ussr_influence < 0:
-            modifier -= 1
-        us_roll, ussr_roll = np.random.randint(6) + 1, np.random.randint(6) + 1
-        difference = us_roll - ussr_roll + modifier
-        if difference > 0:
-            self.adjust_influence(0, -min(difference, self.ussr_influence))
-        elif difference < 0:
-            self.adjust_influence(-min(-difference, self.us_influence), 0)
-        print(f'US rolled: {us_roll}, USSR rolled: {ussr_roll}, Modifer = {modifier}, Difference = {difference}')
 
 
 
@@ -1111,110 +1178,90 @@ Chinese_Civil_War = {
 }
 
 ''' Creates entire map. '''
-USSR = Country(**USSR)
-USA = Country(**USA)
-Canada = Country(**Canada)
-UK = Country(**UK)
-Norway = Country(**Norway)
-Sweden = Country(**Sweden)
-Finland = Country(**Finland)
-Denmark = Country(**Denmark)
-Benelux = Country(**Benelux)
-France = Country(**France)
-Spain_Portugal = Country(**Spain_Portugal)
-Italy = Country(**Italy)
-Greece = Country(**Greece)
-Austria = Country(**Austria)
-West_Germany = Country(**West_Germany)
-East_Germany = Country(**East_Germany)
-Poland = Country(**Poland)
-Czechoslovakia = Country(**Czechoslovakia)
-Hungary = Country(**Hungary)
-Yugoslavia = Country(**Yugoslavia)
-Romania = Country(**Romania)
-Bulgaria = Country(**Bulgaria)
-Turkey = Country(**Turkey)
-Libya = Country(**Libya)
-Egypt = Country(**Egypt)
-Israel = Country(**Israel)
-Lebanon = Country(**Lebanon)
-Syria = Country(**Syria)
-Iraq = Country(**Iraq)
-Iran = Country(**Iran)
-Jordan = Country(**Jordan)
-Gulf_States = Country(**Gulf_States)
-Saudi_Arabia = Country(**Saudi_Arabia)
-Afghanistan = Country(**Afghanistan)
-Pakistan = Country(**Pakistan)
-India = Country(**India)
-Burma = Country(**Burma)
-Laos_Cambodia = Country(**Laos_Cambodia)
-Thailand = Country(**Thailand)
-Vietnam = Country(**Vietnam)
-Malaysia = Country(**Malaysia)
-Australia = Country(**Australia)
-Indonesia = Country(**Indonesia)
-Philippines = Country(**Philippines)
-Japan = Country(**Japan)
-Taiwan = Country(**Taiwan)
-South_Korea = Country(**South_Korea)
-North_Korea = Country(**North_Korea)
-Algeria = Country(**Algeria)
-Morocco = Country(**Morocco)
-Tunisia = Country(**Tunisia)
-West_African_States = Country(**West_African_States)
-Ivory_Coast = Country(**Ivory_Coast)
-Saharan_States = Country(**Saharan_States)
-Nigeria = Country(**Nigeria)
-Cameroon = Country(**Cameroon)
-Zaire = Country(**Zaire)
-Angola = Country(**Angola)
-South_Africa = Country(**South_Africa)
-Botswana = Country(**Botswana)
-Zimbabwe = Country(**Zimbabwe)
-SE_African_States = Country(**SE_African_States)
-Kenya = Country(**Kenya)
-Somalia = Country(**Somalia)
-Ethiopia = Country(**Ethiopia)
-Sudan = Country(**Sudan)
-Mexico = Country(**Mexico)
-Guatemala = Country(**Guatemala)
-El_Salvador = Country(**El_Salvador)
-Honduras = Country(**Honduras)
-Costa_Rica = Country(**Costa_Rica)
-Panama = Country(**Panama)
-Nicaragua = Country(**Nicaragua)
-Cuba = Country(**Cuba)
-Haiti = Country(**Haiti)
-Dominican_Republic = Country(**Dominican_Republic)
-Colombia = Country(**Colombia)
-Ecuador = Country(**Ecuador)
-Peru = Country(**Peru)
-Chile = Country(**Chile)
-Argentina = Country(**Argentina)
-Uruguay = Country(**Uruguay)
-Paraguay = Country(**Paraguay)
-Bolivia = Country(**Bolivia)
-Brazil = Country(**Brazil)
-Venezuela = Country(**Venezuela)
-Chinese_Civil_War = Country(**Chinese_Civil_War)
-
-def build_standard_map():
-    Panama.set_influence(1, 0)
-    Canada.set_influence(2, 0)
-    UK.set_influence(2, 0)
-    North_Korea.set_influence(0, 1)
-    East_Germany.set_influence(0, 3)
-    Finland.set_influence(0, 1)
-    Syria.set_influence(0, 1)
-    Israel.set_influence(1, 0)
-    Iraq.set_influence(0, 1)
-    Iran.set_influence(1, 0)
-    North_Korea.set_influence(0, 3)
-    South_Korea.set_influence(1, 0)
-    Japan.set_influence(1, 0)
-    Philippines.set_influence(1, 0)
-    Australia.set_influence(4, 0)
-    South_Africa.set_influence(1, 0)
-
-build_standard_map()
+USSR = CountryInfo(**USSR)
+USA = CountryInfo(**USA)
+Canada = CountryInfo(**Canada)
+UK = CountryInfo(**UK)
+Norway = CountryInfo(**Norway)
+Sweden = CountryInfo(**Sweden)
+Finland = CountryInfo(**Finland)
+Denmark = CountryInfo(**Denmark)
+Benelux = CountryInfo(**Benelux)
+France = CountryInfo(**France)
+Spain_Portugal = CountryInfo(**Spain_Portugal)
+Italy = CountryInfo(**Italy)
+Greece = CountryInfo(**Greece)
+Austria = CountryInfo(**Austria)
+West_Germany = CountryInfo(**West_Germany)
+East_Germany = CountryInfo(**East_Germany)
+Poland = CountryInfo(**Poland)
+Czechoslovakia = CountryInfo(**Czechoslovakia)
+Hungary = CountryInfo(**Hungary)
+Yugoslavia = CountryInfo(**Yugoslavia)
+Romania = CountryInfo(**Romania)
+Bulgaria = CountryInfo(**Bulgaria)
+Turkey = CountryInfo(**Turkey)
+Libya = CountryInfo(**Libya)
+Egypt = CountryInfo(**Egypt)
+Israel = CountryInfo(**Israel)
+Lebanon = CountryInfo(**Lebanon)
+Syria = CountryInfo(**Syria)
+Iraq = CountryInfo(**Iraq)
+Iran = CountryInfo(**Iran)
+Jordan = CountryInfo(**Jordan)
+Gulf_States = CountryInfo(**Gulf_States)
+Saudi_Arabia = CountryInfo(**Saudi_Arabia)
+Afghanistan = CountryInfo(**Afghanistan)
+Pakistan = CountryInfo(**Pakistan)
+India = CountryInfo(**India)
+Burma = CountryInfo(**Burma)
+Laos_Cambodia = CountryInfo(**Laos_Cambodia)
+Thailand = CountryInfo(**Thailand)
+Vietnam = CountryInfo(**Vietnam)
+Malaysia = CountryInfo(**Malaysia)
+Australia = CountryInfo(**Australia)
+Indonesia = CountryInfo(**Indonesia)
+Philippines = CountryInfo(**Philippines)
+Japan = CountryInfo(**Japan)
+Taiwan = CountryInfo(**Taiwan)
+South_Korea = CountryInfo(**South_Korea)
+North_Korea = CountryInfo(**North_Korea)
+Algeria = CountryInfo(**Algeria)
+Morocco = CountryInfo(**Morocco)
+Tunisia = CountryInfo(**Tunisia)
+West_African_States = CountryInfo(**West_African_States)
+Ivory_Coast = CountryInfo(**Ivory_Coast)
+Saharan_States = CountryInfo(**Saharan_States)
+Nigeria = CountryInfo(**Nigeria)
+Cameroon = CountryInfo(**Cameroon)
+Zaire = CountryInfo(**Zaire)
+Angola = CountryInfo(**Angola)
+South_Africa = CountryInfo(**South_Africa)
+Botswana = CountryInfo(**Botswana)
+Zimbabwe = CountryInfo(**Zimbabwe)
+SE_African_States = CountryInfo(**SE_African_States)
+Kenya = CountryInfo(**Kenya)
+Somalia = CountryInfo(**Somalia)
+Ethiopia = CountryInfo(**Ethiopia)
+Sudan = CountryInfo(**Sudan)
+Mexico = CountryInfo(**Mexico)
+Guatemala = CountryInfo(**Guatemala)
+El_Salvador = CountryInfo(**El_Salvador)
+Honduras = CountryInfo(**Honduras)
+Costa_Rica = CountryInfo(**Costa_Rica)
+Panama = CountryInfo(**Panama)
+Nicaragua = CountryInfo(**Nicaragua)
+Cuba = CountryInfo(**Cuba)
+Haiti = CountryInfo(**Haiti)
+Dominican_Republic = CountryInfo(**Dominican_Republic)
+Colombia = CountryInfo(**Colombia)
+Ecuador = CountryInfo(**Ecuador)
+Peru = CountryInfo(**Peru)
+Chile = CountryInfo(**Chile)
+Argentina = CountryInfo(**Argentina)
+Uruguay = CountryInfo(**Uruguay)
+Paraguay = CountryInfo(**Paraguay)
+Bolivia = CountryInfo(**Bolivia)
+Brazil = CountryInfo(**Brazil)
+Venezuela = CountryInfo(**Venezuela)
+Chinese_Civil_War = CountryInfo(**Chinese_Civil_War)
