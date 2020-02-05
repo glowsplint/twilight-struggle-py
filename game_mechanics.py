@@ -1,4 +1,5 @@
 import math
+import random
 from twilight_map import *
 
 class Game:
@@ -47,61 +48,61 @@ class Game:
             print('US victory')
             # EndGame()
 
-    def change_defcon(n):
+    def change_defcon(self, n):
         self.defcon_track += min(n, 5 - self.defcon_track)
         if self.defcon_track < 2:
             print('Game ended by thermonuclear war')
             # EndGame()
 
 # SPACE (function)
-def space(side):
+    def space(self, side):
 
-    x = Game.Side.fromStr(side)
-    
-    # this one could be something game specific later
-    space_track = Game.main.space_track
+        x = Game.Side.fromStr(side)
 
-    if space_track[x] in [0,2,4,6]:
-        modifier = 0
-    elif space_track[x] in [1,3,5]:
-        modifier = -1
-    else:
-        modifier = 1
+        # this one could be something game specific later
+        space_track = self.space_track
 
-    y = 1 - 2*x # multiplier for VPs - gives 1 for USSR and -1 for US
-    roll = np.random.randint(6) + 1
-    if roll + modifier <= 3:
-        space_track[x] += 1
-        print(f'Success with roll of {roll}.')
+        if space_track[x] in [0,2,4,6]:
+            modifier = 0
+        elif space_track[x] in [1,3,5]:
+            modifier = -1
+        else:
+            modifier = 1
 
-        if space_track[x] == 1:
-            if space_track[1-x] < 1:
-                change_vp(2*y)
-            else:
-                change_vp(y)
+        y = 1 - 2*x # multiplier for VPs - gives 1 for USSR and -1 for US
+        roll = random.randint(6) + 1
+        if roll + modifier <= 3:
+            space_track[x] += 1
+            print(f'Success with roll of {roll}.')
 
-        elif space_track[x] == 3:
-            if space_track[1-x] < 3:
-                change_vp(2*y)
+            if space_track[x] == 1:
+                if space_track[1-x] < 1:
+                    self.change_vp(2*y)
+                else:
+                    self.change_vp(y)
 
-        elif space_track[x] == 5:
-            if space_track[1-x] < 5:
-                change_vp(3*y)
-            else:
-                change_vp(y)
+            elif space_track[x] == 3:
+                if space_track[1-x] < 3:
+                    self.change_vp(2*y)
 
-        elif space_track[x] == 7:
-            if space_track[1-x] < 7:
-                change_vp(4*y)
-            else:
-                change_vp(2*y)
+            elif space_track[x] == 5:
+                if space_track[1-x] < 5:
+                    self.change_vp(3*y)
+                else:
+                    self.change_vp(y)
 
-        elif space_track[x] == 8:
-            if space_track[1-x] < 8:
-                change_vp(2*y)
+            elif space_track[x] == 7:
+                if space_track[1-x] < 7:
+                    self.change_vp(4*y)
+                else:
+                    self.change_vp(2*y)
 
-    else:
-        print(f'Failure with roll of {roll}.')
+            elif space_track[x] == 8:
+                if space_track[1-x] < 8:
+                    self.change_vp(2*y)
+
+        else:
+            print(f'Failure with roll of {roll}.')
 
 # definitely want to make all the country states be stored in the specific Game object
 
@@ -109,13 +110,13 @@ def DegradeDEFCONLevel(n):
     Game.main.change_defcon(-n)
 
 def GainVictoryPointsForDEFCONBelow(n):
-    Game.main.change_vp(defcon_track - n)
+    Game.main.change_vp(Game.main.defcon_track - n)
 
 def RemoveAllOpponentInfluenceInCuba(_):
     Cuba.set_influence(0, max(3, Cuba.ussr_influence))
 
 def RemoveAllOpponentInfluenceInRomania(_):
-    Romania.set_influence(0, max(3, Cuba.ussr_influence))
+    Romania.set_influence(0, max(3, Romania.ussr_influence))
 
 def GainInfluenceInEgypt(_):
     Egypt.adjust_influence(-math.ceil(Egypt.us_influence/2), 2)
@@ -132,7 +133,7 @@ def GainInfluenceForControlInJapan(_):
 def ScoreAsia(_):
 
     areas = []
-    for x in list(all_countries.values()):
+    for x in Country.ALL.values():
         if x.region in ["Asia", "Southeast Asia"]:
             areas.append(x)
 
@@ -181,7 +182,7 @@ def ScoreAsia(_):
 def ScoreEurope(_):
 
     areas = []
-    for x in list(all_countries.values()):
+    for x in Country.ALL.values():
         if x.region in ["Europe", "Western Europe", "Eastern Europe"]:
             areas.append(x)
 
@@ -235,7 +236,7 @@ def ScoreEurope(_):
 def ScoreMiddleEast(_):
 
     areas = []
-    for x in list(all_countries.values()):
+    for x in Country.ALL.values():
         if x.region == "Middle East":
             areas.append(x)
 
@@ -278,7 +279,7 @@ def ScoreMiddleEast(_):
 def ScoreCentralAmerica(_):
 
     areas = []
-    for x in list(all_countries.values()):
+    for x in Country.ALL.values():
         if x.region == "Central America":
             areas.append(x)
 
@@ -326,7 +327,7 @@ def ScoreCentralAmerica(_):
 
 def ScoreSoutheastAsia(_):
     areas = []
-    for x in list(all_countries.values()):
+    for x in Country.ALL.values():
         if x.region == "Southeast Asia":
             areas.append(x)
     print(areas)
@@ -349,7 +350,7 @@ def ScoreSoutheastAsia(_):
 def ScoreAfrica(_):
 
     areas = []
-    for x in list(all_countries.values()):
+    for x in Country.ALL.values():
         if x.region == "Africa":
             areas.append(x)
 
@@ -392,7 +393,7 @@ def ScoreAfrica(_):
 def ScoreSouthAmerica(_):
 
     areas = []
-    for x in list(all_countries.values()):
+    for x in Country.ALL.values():
         if x.region == "South America":
             areas.append(x)
 

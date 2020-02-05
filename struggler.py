@@ -16,16 +16,14 @@ from twilight_cards import *
 
 # In[2]:
 
-
-all_cards = dict()
 early_war_cards = dict()
 
 
 # In[3]:
 
 
-class card:
-    '''
+class Card:
+    """
     Cards should be able to be used for:
     1. Event
     2. Realignment
@@ -33,13 +31,51 @@ class card:
     4. Placing influence
     5. Space race
     6. Trigger event first >> realignment/coup/influence
-    '''
-    def __init__(self, **kwargs):
+    """
+
+    ALL = dict()
+
+    def __init__(self, card_name="", card_type="", stage="", card_number=0,
+                 optional_card=False,
+                 operations_points=0,
+                 event_text="", event_effects=None,
+                 scoring_region="", may_be_held=True,
+                 event_owner="",
+                 triggered_effects="",
+                 continuous_effects="",
+                 global_continuous_effects="",
+                 usage_conditions="",
+                 remove_if_used_as_event=False,
+                 resolve_headline_first=False,
+                 can_headline_card=True,
+                 **kwargs):
+        self.name = card_name
+        self.type = card_type
+        self.stage = stage
+        self.index = card_number
+        self.ops = operations_points
+        self.text = event_text
+        self.owner = event_owner
+        self.optional = optional_card
+
+
+        self.event_effects = event_effects
+        self.triggered_effects = triggered_effects
+        self.continuous_effects = continuous_effects
+        self.global_continuous_effects = global_continuous_effects
+        self.event_unique = remove_if_used_as_event
+        self.scoring_region = scoring_region
+        self.may_be_held = may_be_held
+        self.usage_conditions = usage_conditions
+        self.resolve_headline_first = resolve_headline_first
+        self.can_headline_card = can_headline_card
+
         for key, value in kwargs.items():
+            print(key, value)
             setattr(self, key, value)
-        all_cards[self.card_name] = self
+        Card.ALL[self.name] = self
         if self.stage == 'Early War':
-            early_war_cards[self.card_name] = self
+            early_war_cards[self.name] = self
 #         if self.stage == 'Mid War':
 #             mid_war_cards[card_name] = self
 #         if self.stage == 'Late War':
@@ -51,9 +87,9 @@ class card:
 #             sb.append("{key}='{value}'".format(key=key, value=self.__dict__[key]))
 #         return ', '.join(sb)
         if hasattr(self, 'operations_points'):
-            return f'{self.card_name} - {self.operations_points}'
+            return f'{self.name} - {self.ops}'
         else:
-            return self.card_name
+            return self.name
     
     def trigger_event_first(self):
         # only possible if opponent event
@@ -92,45 +128,45 @@ class card:
 # In[4]:
 
 
-Arab_Israeli_War = card(**Arab_Israeli_War)
-Asia_Scoring = card(**Asia_Scoring)
-Blockade = card(**Blockade)
-CIA_Created = card(**CIA_Created)
-COMECON = card(**COMECON)
-Captured_Nazi_Scientist = card(**Captured_Nazi_Scientist)
-Containment = card(**Containment)
-De_Gaulle_Leads_France = card(**De_Gaulle_Leads_France)
-De_Stalinization = card(**De_Stalinization)
-Decolonization = card(**Decolonization)
-Defectors = card(**Defectors)
-Duck_and_Cover = card(**Duck_and_Cover)
-East_European_Unrest = card(**East_European_Unrest)
-Europe_Scoring = card(**Europe_Scoring)
-Fidel = card(**Fidel)
-Five_Year_Plan = card(**Five_Year_Plan)
-Formosan_Resolution = card(**Formosan_Resolution)
-Independent_Reds = card(**Independent_Reds)
-Indo_Pakistani_War = card(**Indo_Pakistani_War)
-Korean_War = card(**Korean_War)
-Marshall_Plan = card(**Marshall_Plan)
-Middle_East_Scoring = card(**Middle_East_Scoring)
-NATO = card(**NATO)
-NORAD = card(**NORAD)
-Nasser = card(**Nasser)
-Nuclear_Test_Ban = card(**Nuclear_Test_Ban)
-Olympic_Games = card(**Olympic_Games)
-Red_Scare_Purge = card(**Red_Scare_Purge)
-Romanian_Abdication = card(**Romanian_Abdication)
-Socialist_Governments = card(**Socialist_Governments)
-Special_Relationship = card(**Special_Relationship)
-Suez_Crisis = card(**Suez_Crisis)
-The_Cambridge_Five = card(**The_Cambridge_Five)
-The_China_Card = card(**The_China_Card)
-Truman_Doctrine = card(**Truman_Doctrine)
-UN_Intervention = card(**UN_Intervention)
-US_Japan_Mutual_Defense_Pact = card(**US_Japan_Mutual_Defense_Pact)
-Vietnam_Revolts = card(**Vietnam_Revolts)
-Warsaw_Pact_Formed = card(**Warsaw_Pact_Formed)
+Arab_Israeli_War = Card(**Arab_Israeli_War)
+Asia_Scoring = Card(**Asia_Scoring)
+Blockade = Card(**Blockade)
+CIA_Created = Card(**CIA_Created)
+COMECON = Card(**COMECON)
+Captured_Nazi_Scientist = Card(**Captured_Nazi_Scientist)
+Containment = Card(**Containment)
+De_Gaulle_Leads_France = Card(**De_Gaulle_Leads_France)
+De_Stalinization = Card(**De_Stalinization)
+Decolonization = Card(**Decolonization)
+Defectors = Card(**Defectors)
+Duck_and_Cover = Card(**Duck_and_Cover)
+East_European_Unrest = Card(**East_European_Unrest)
+Europe_Scoring = Card(**Europe_Scoring)
+Fidel = Card(**Fidel)
+Five_Year_Plan = Card(**Five_Year_Plan)
+Formosan_Resolution = Card(**Formosan_Resolution)
+Independent_Reds = Card(**Independent_Reds)
+Indo_Pakistani_War = Card(**Indo_Pakistani_War)
+Korean_War = Card(**Korean_War)
+Marshall_Plan = Card(**Marshall_Plan)
+Middle_East_Scoring = Card(**Middle_East_Scoring)
+NATO = Card(**NATO)
+NORAD = Card(**NORAD)
+Nasser = Card(**Nasser)
+Nuclear_Test_Ban = Card(**Nuclear_Test_Ban)
+Olympic_Games = Card(**Olympic_Games)
+Red_Scare_Purge = Card(**Red_Scare_Purge)
+Romanian_Abdication = Card(**Romanian_Abdication)
+Socialist_Governments = Card(**Socialist_Governments)
+Special_Relationship = Card(**Special_Relationship)
+Suez_Crisis = Card(**Suez_Crisis)
+The_Cambridge_Five = Card(**The_Cambridge_Five)
+The_China_Card = Card(**The_China_Card)
+Truman_Doctrine = Card(**Truman_Doctrine)
+UN_Intervention = Card(**UN_Intervention)
+US_Japan_Mutual_Defense_Pact = Card(**US_Japan_Mutual_Defense_Pact)
+Vietnam_Revolts = Card(**Vietnam_Revolts)
+Warsaw_Pact_Formed = Card(**Warsaw_Pact_Formed)
 
 
 # In[5]:
@@ -280,7 +316,7 @@ s <eu|as|me|af|na|sa>   Displays the scoring state and country data for the give
     def parse_state(comd):
         if comd == "":
             print("=== Game state ===")
-            print("VP status: %d" % Game.vp_track)
+            print("VP status: %d" % Game.main.vp_track)
             print("Unimplemented")
         elif comd == "?":
             print(UI.help_state)

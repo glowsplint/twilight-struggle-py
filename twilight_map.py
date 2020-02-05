@@ -1,6 +1,21 @@
-all_countries = dict()
 
-class country:
+
+class Country:
+
+    ALL = dict()
+
+    class Region:
+
+        EUROPE = 0
+        WESTERN_EUROPE = 1
+        EASTERN_EUROPE = 2
+        ASIA = 3
+        SOUTHEAST_ASIA = 4
+        MIDDLE_EAST = 5
+        AFRICA = 6
+        NORTH_AMERICA = 7
+        SOUTH_AMERICA = 8
+
     def __init__(self, country_name, country_index, adjacent_countries, us_influence, ussr_influence, region=0, stability=0, battleground=False, superpower=False, chinese_civil_war=False):
         self.country_name = country_name
         self.country_index = country_index
@@ -8,12 +23,16 @@ class country:
         self.stability = stability
         self.battleground = battleground
         self.adjacent_countries = adjacent_countries
-        self.us_influence = us_influence
-        self.ussr_influence = ussr_influence
         self.superpower = superpower
         self.chinese_civil_war = chinese_civil_war
+
+        Country.ALL[country_name] = self
+
+        # these will change throughout the game
+        self.us_influence = us_influence
+        self.ussr_influence = ussr_influence
+
         self.evaluate_control()
-        all_countries[country_name] = self
 
     def evaluate_control(self):
         if self.us_influence - self.ussr_influence >= self.stability:
@@ -106,8 +125,8 @@ class country:
 
         modifier = 0
         for adjacent_country in self.adjacent_countries:
-            modifier += ((all_countries[adjacent_country.country_name]).control == 'us')
-            modifier -= ((all_countries[adjacent_country.country_name]).control == 'ussr')
+            modifier += ((Country.ALL[adjacent_country.country_name]).control == 'us')
+            modifier -= ((Country.ALL[adjacent_country.country_name]).control == 'ussr')
         if self.us_influence - self.ussr_influence > 0:
             modifier += 1
         elif self.us_influence - self.ussr_influence < 0:
@@ -1092,93 +1111,93 @@ Chinese_Civil_War = {
 }
 
 ''' Creates entire map. '''
-USSR = country(**USSR)
-USA = country(**USA)
-Canada = country(**Canada)
-UK = country(**UK)
-Norway = country(**Norway)
-Sweden = country(**Sweden)
-Finland = country(**Finland)
-Denmark = country(**Denmark)
-Benelux = country(**Benelux)
-France = country(**France)
-Spain_Portugal = country(**Spain_Portugal)
-Italy = country(**Italy)
-Greece = country(**Greece)
-Austria = country(**Austria)
-West_Germany = country(**West_Germany)
-East_Germany = country(**East_Germany)
-Poland = country(**Poland)
-Czechoslovakia = country(**Czechoslovakia)
-Hungary = country(**Hungary)
-Yugoslavia = country(**Yugoslavia)
-Romania = country(**Romania)
-Bulgaria = country(**Bulgaria)
-Turkey = country(**Turkey)
-Libya = country(**Libya)
-Egypt = country(**Egypt)
-Israel = country(**Israel)
-Lebanon = country(**Lebanon)
-Syria = country(**Syria)
-Iraq = country(**Iraq)
-Iran = country(**Iran)
-Jordan = country(**Jordan)
-Gulf_States = country(**Gulf_States)
-Saudi_Arabia = country(**Saudi_Arabia)
-Afghanistan = country(**Afghanistan)
-Pakistan = country(**Pakistan)
-India = country(**India)
-Burma = country(**Burma)
-Laos_Cambodia = country(**Laos_Cambodia)
-Thailand = country(**Thailand)
-Vietnam = country(**Vietnam)
-Malaysia = country(**Malaysia)
-Australia = country(**Australia)
-Indonesia = country(**Indonesia)
-Philippines = country(**Philippines)
-Japan = country(**Japan)
-Taiwan = country(**Taiwan)
-South_Korea = country(**South_Korea)
-North_Korea = country(**North_Korea)
-Algeria = country(**Algeria)
-Morocco = country(**Morocco)
-Tunisia = country(**Tunisia)
-West_African_States = country(**West_African_States)
-Ivory_Coast = country(**Ivory_Coast)
-Saharan_States = country(**Saharan_States)
-Nigeria = country(**Nigeria)
-Cameroon = country(**Cameroon)
-Zaire = country(**Zaire)
-Angola = country(**Angola)
-South_Africa = country(**South_Africa)
-Botswana = country(**Botswana)
-Zimbabwe = country(**Zimbabwe)
-SE_African_States = country(**SE_African_States)
-Kenya = country(**Kenya)
-Somalia = country(**Somalia)
-Ethiopia = country(**Ethiopia)
-Sudan = country(**Sudan)
-Mexico = country(**Mexico)
-Guatemala = country(**Guatemala)
-El_Salvador = country(**El_Salvador)
-Honduras = country(**Honduras)
-Costa_Rica = country(**Costa_Rica)
-Panama = country(**Panama)
-Nicaragua = country(**Nicaragua)
-Cuba = country(**Cuba)
-Haiti = country(**Haiti)
-Dominican_Republic = country(**Dominican_Republic)
-Colombia = country(**Colombia)
-Ecuador = country(**Ecuador)
-Peru = country(**Peru)
-Chile = country(**Chile)
-Argentina = country(**Argentina)
-Uruguay = country(**Uruguay)
-Paraguay = country(**Paraguay)
-Bolivia = country(**Bolivia)
-Brazil = country(**Brazil)
-Venezuela = country(**Venezuela)
-Chinese_Civil_War = country(**Chinese_Civil_War)
+USSR = Country(**USSR)
+USA = Country(**USA)
+Canada = Country(**Canada)
+UK = Country(**UK)
+Norway = Country(**Norway)
+Sweden = Country(**Sweden)
+Finland = Country(**Finland)
+Denmark = Country(**Denmark)
+Benelux = Country(**Benelux)
+France = Country(**France)
+Spain_Portugal = Country(**Spain_Portugal)
+Italy = Country(**Italy)
+Greece = Country(**Greece)
+Austria = Country(**Austria)
+West_Germany = Country(**West_Germany)
+East_Germany = Country(**East_Germany)
+Poland = Country(**Poland)
+Czechoslovakia = Country(**Czechoslovakia)
+Hungary = Country(**Hungary)
+Yugoslavia = Country(**Yugoslavia)
+Romania = Country(**Romania)
+Bulgaria = Country(**Bulgaria)
+Turkey = Country(**Turkey)
+Libya = Country(**Libya)
+Egypt = Country(**Egypt)
+Israel = Country(**Israel)
+Lebanon = Country(**Lebanon)
+Syria = Country(**Syria)
+Iraq = Country(**Iraq)
+Iran = Country(**Iran)
+Jordan = Country(**Jordan)
+Gulf_States = Country(**Gulf_States)
+Saudi_Arabia = Country(**Saudi_Arabia)
+Afghanistan = Country(**Afghanistan)
+Pakistan = Country(**Pakistan)
+India = Country(**India)
+Burma = Country(**Burma)
+Laos_Cambodia = Country(**Laos_Cambodia)
+Thailand = Country(**Thailand)
+Vietnam = Country(**Vietnam)
+Malaysia = Country(**Malaysia)
+Australia = Country(**Australia)
+Indonesia = Country(**Indonesia)
+Philippines = Country(**Philippines)
+Japan = Country(**Japan)
+Taiwan = Country(**Taiwan)
+South_Korea = Country(**South_Korea)
+North_Korea = Country(**North_Korea)
+Algeria = Country(**Algeria)
+Morocco = Country(**Morocco)
+Tunisia = Country(**Tunisia)
+West_African_States = Country(**West_African_States)
+Ivory_Coast = Country(**Ivory_Coast)
+Saharan_States = Country(**Saharan_States)
+Nigeria = Country(**Nigeria)
+Cameroon = Country(**Cameroon)
+Zaire = Country(**Zaire)
+Angola = Country(**Angola)
+South_Africa = Country(**South_Africa)
+Botswana = Country(**Botswana)
+Zimbabwe = Country(**Zimbabwe)
+SE_African_States = Country(**SE_African_States)
+Kenya = Country(**Kenya)
+Somalia = Country(**Somalia)
+Ethiopia = Country(**Ethiopia)
+Sudan = Country(**Sudan)
+Mexico = Country(**Mexico)
+Guatemala = Country(**Guatemala)
+El_Salvador = Country(**El_Salvador)
+Honduras = Country(**Honduras)
+Costa_Rica = Country(**Costa_Rica)
+Panama = Country(**Panama)
+Nicaragua = Country(**Nicaragua)
+Cuba = Country(**Cuba)
+Haiti = Country(**Haiti)
+Dominican_Republic = Country(**Dominican_Republic)
+Colombia = Country(**Colombia)
+Ecuador = Country(**Ecuador)
+Peru = Country(**Peru)
+Chile = Country(**Chile)
+Argentina = Country(**Argentina)
+Uruguay = Country(**Uruguay)
+Paraguay = Country(**Paraguay)
+Bolivia = Country(**Bolivia)
+Brazil = Country(**Brazil)
+Venezuela = Country(**Venezuela)
+Chinese_Civil_War = Country(**Chinese_Civil_War)
 
 def build_standard_map():
     Panama.set_influence(1, 0)
