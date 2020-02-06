@@ -115,18 +115,43 @@ class Game:
                 ussr_held = len(self.USSR_hand) - 1
             else:
                 us_held = len(self.US_hand) - 1
-            self.USSR_hand.extend([self.draw_pile.pop() for i in range(n - ussr_held)])
-            self.US_hand.extend([self.draw_pile.pop() for i in range(n - us_held)])
+
+            # if turn 4, add mid war cards into draw pile and shuffle, same for turn 8 for late war cards
+            if self.turn_track == 4:
+                self.draw_pile.extend(self.cards.Mid_War)
+                self.cards.Mid_War = []
+                random.shuffle(self.draw_pile)
+            if self.turn_track == 8:
+                self.draw_pile.extend(self.cards.Late_War)
+                self.cards.Late_War = []
+                random.shuffle(self.draw_pile)
+
+            # exhaust the draw pile
+            while ussr_held < n or us_held < n:
+                # if draw pile exhausted, shuffle the discard pile and put it as the new draw pile
+                def recreate_draw_pile():
+                    if self.draw_pile == []:
+                        self.draw_pile = self.discard_pile
+                        self.discard_pile = []
+                        random.shuffle(self.draw_pile)
+                if ussr_held < n:
+                    self.USSR_hand.extend([self.draw_pile.pop()])
+                    ussr_held += 1
+                    recreate_draw_pile()
+                if us_held < n:
+                    self.US_hand.extend([self.draw_pile.pop()])
+                    us_held += 1
+                    recreate_draw_pile()
 
         '''Pre-headline setup'''
         if self.turn_track == 1 and self.ar_track == 1:
             # Move the China card from the early war pile to USSR hand, China card 6th from last
             self.USSR_hand.append(self.cards.Early_War.pop(-6))
             self.draw_pile.extend(self.cards.Early_War) # Put early war cards into the draw pile
+            self.cards.Early_War = []
             random.shuffle(self.draw_pile) # Shuffle the draw pile
             top_up_cards(self, 8)
         else:
-
             if self.turn_track in [1,2,3]:
                 top_up_cards(self, 8)
             else:
@@ -167,7 +192,7 @@ class Game:
 
         # 5. Final scoring (end T10)
         def final_scoring(self):
-            if self.turn_track == 10 and (self.ar_track in [14,15,16]):
+            if self.turn_track == 10 and (self.ar_track in [15,16,17]):
                 ScoreAsia(0)
                 ScoreEurope(0)
                 ScoreMiddleEast(0)
@@ -191,7 +216,7 @@ class Game:
         check_milops(self)
         check_for_scoring_cards(self)
         flip_china_card(self)
-        advance_turn_marker(self)
+        advance_turn_marker(self) #turn marker advanced before final scoring
         final_scoring(self)
         improve_defcon_status()
         self.deal() # turn marker advanced before dealing

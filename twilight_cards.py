@@ -12,7 +12,6 @@ class CardInfo:
     """
 
     ALL = dict()
-    Early_War, Mid_War, Late_War = dict(), dict(), dict()
 
     def __init__(self, card_name="", card_type="", stage="", card_number=0,
                  optional_card=False,
@@ -86,16 +85,19 @@ class CardInfo:
 class GameCards:
     def __init__(self):
         self.ALL = dict()
-        self.Early_War = list()
+        self.Early_War = []
+        self.Mid_War = []
+        self.Late_War = []
 
         for card_name in CardInfo.ALL.keys():
             self.ALL[card_name] = Card(card_name)
             if self.ALL[card_name].info.stage == 'Early War':
                 self.Early_War.append(self.ALL[card_name])
-            # if self.stage == 'Mid War':
-            #     CardInfo.Mid_War[self.name] = self
-            # if self.stage == 'Late War':
-            #     CardInfo.Late_War[self.name] = self
+            if self.ALL[card_name].info.stage == 'Mid War':
+                self.Mid_War.append(self.ALL[card_name])
+            if self.ALL[card_name].info.stage == 'Late War':
+                self.Late_War.append(self.ALL[card_name])
+
     def __getitem__(self, item):
         return self.ALL[item]
 
