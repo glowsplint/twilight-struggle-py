@@ -9,6 +9,8 @@
 import pandas as pd
 import numpy as np
 import random
+from twilight_map import *
+from game_mechanics import *
 from twilight_cards import *
 
 
@@ -344,7 +346,8 @@ early_war_cards
 
 #this is a temporary measure. It should go into UI.new()
 g = Game()
-
+g.start()
 Asia_Scoring.use_for_event()
+Europe_Scoring.use_for_event()
 Game.main.vp_track
 UI.run()

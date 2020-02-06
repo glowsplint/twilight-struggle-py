@@ -1,21 +1,9 @@
 import math
 import random
+from twilight_enums import *
 from twilight_map import *
 
 class Game:
-
-    # you can now refer to USSR and USA as Game.Side.USSR / Game.Side.USA
-    # without concern about which is 0 and which is 1; also robust to
-    # change any time.
-    class Side:
-        USSR = 0
-        USA = 1
-        
-        @staticmethod
-        def fromStr(s):
-            if s.lower() == "usa": return Game.Side.USA
-            elif s.lower() == "ussr": return Game.Side.USSR
-            else: raise NameError("Invalid string for Game.Side.fromStr")
 
     # this is the currently active game. One may refer to this as
     # Game.main. The point is to have a globally accessible game
@@ -33,11 +21,15 @@ class Game:
         self.defcon_track = 5
         self.milops_track = [0, 0] # ussr first
         self.space_track = [0, 0] # 0 is start, 1 is earth satellite etc
+        self.map = GameMap()
         
         # For new set the first created game to be the actual ongoing game.
         if Game.main is None: Game.main = self
 
 # to add game terminate functionality EndGame()
+
+    def start(self):
+        self.map.build_standard()
 
     def change_vp(self, n): # positive for ussr
         self.vp_track += n
@@ -57,7 +49,7 @@ class Game:
 # SPACE (function)
     def space(self, side):
 
-        x = Game.Side.fromStr(side)
+        x = Side.fromStr(side)
 
         # this one could be something game specific later
         space_track = self.space_track
@@ -104,6 +96,33 @@ class Game:
         else:
             print(f'Failure with roll of {roll}.')
 
+    def score(self, region, presence_vps, domination_vps, control_vps):
+
+        bg_count = [0, 0, 0]  # USSR, USA, NEUTRAL
+        country_count = [0, 0, 0]
+        vps = [0, 0]
+
+        for n in CountryInfo.REGION_ALL[region]:
+            x = self.map[n]
+            if x.info.battleground:
+                bg_count[x.control] += 1
+            country_count[x.control] += 1
+            if x.control.opp.name in x.info.adjacent_countries:
+                vps[x.control] += 1
+
+        for s in [Side.USSR, Side.USA]:
+            vps[s] += bg_count[s]
+            if country_count[s] > country_count[s.opp]:
+                if bg_count[s] == sum(bg_count):
+                    vps[s] += control_vps
+                elif bg_count[s] > bg_count[s.opp]:
+                    vps[s] += domination_vps
+            elif country_count[s] > 0:
+                vps[s] += presence_vps
+
+        swing = vps[Side.USSR] - vps[Side.USA]
+        self.change_vp(swing)
+        print(f'{region.name} scores for {swing} VPs')
 # definitely want to make all the country states be stored in the specific Game object
 
 def DegradeDEFCONLevel(n):
@@ -131,304 +150,38 @@ def GainInfluenceForControlInJapan(_):
 '''Scoring Mechanics'''
 # TO ADD SHUTTLE DIPLOMACY AND FORMOSAN RESOLUTION
 def ScoreAsia(_):
-
-    areas = []
-    for x in Country.ALL.values():
-        if x.region in ["Asia", "Southeast Asia"]:
-            areas.append(x)
-
-    presence, domination, control = [3,7,9]
-
-    bg_count = [0,0] # USSR, US
-    country_count = [0,0]
-    bgs = 0
-
-    for x in areas:
-        bg_count[0] += (x.battleground and x.control == 'ussr')
-        bg_count[1] += (x.battleground and x.control == 'us')
-        country_count[0] += (x.control == 'ussr')
-        country_count[1] += (x.control == 'us')
-        bgs += x.battleground
-
-    swing = bg_count[0] - bg_count[1]
-
-    # presence
-    if country_count[0] > 0:
-        swing += presence
-    if country_count[1] > 0:
-        swing -= presence
-
-    # control
-    if bg_count[0] == bgs:
-        swing += control - presence
-    if bg_count[1] == bgs:
-        swing -= control - presence
-
-    # domination
-    if bg_count[0] < bgs and bg_count[0] > bg_count[1] and country_count[0] > country_count[1] and country_count[0] - bg_count[0] > 0:
-        swing += domination - presence
-    if bg_count[1] < bgs and bg_count[1] > bg_count[0] and country_count[1] > country_count[0] and country_count[1] - bg_count[1] > 0:
-        swing -= domination - presence
-
-    # adjacent
-    if Afghanistan.control == 'us':
-        swing -= 1
-    if North_Korea.control == 'us':
-        swing -= 1
-
-    Game.main.change_vp(swing)
-    print(f'Asia scores for {swing} VPs')
+    Game.main.score(MapRegion.ASIA, 3, 7, 9)
 
 def ScoreEurope(_):
-
-    areas = []
-    for x in Country.ALL.values():
-        if x.region in ["Europe", "Western Europe", "Eastern Europe"]:
-            areas.append(x)
-
-    presence, domination, control = [3,7,120]
-
-    bg_count = [0,0] # USSR, US
-    country_count = [0,0]
-    bgs = 0
-
-    for x in areas:
-        bg_count[0] += (x.battleground and x.control == 'ussr')
-        bg_count[1] += (x.battleground and x.control == 'us')
-        country_count[0] += (x.control == 'ussr')
-        country_count[1] += (x.control == 'us')
-        bgs += x.battleground
-
-    swing = bg_count[0] - bg_count[1]
-
-    # presence
-    if country_count[0] > 0:
-        swing += presence
-    if country_count[1] > 0:
-        swing -= presence
-
-    # control
-    if bg_count[0] == bgs:
-        swing += control - presence
-    if bg_count[1] == bgs:
-        swing -= control - presence
-
-    # domination
-    if bg_count[0] < bgs and bg_count[0] > bg_count[1] and country_count[0] > country_count[1] and country_count[0] - bg_count[0] > 0:
-        swing += domination - presence
-    if bg_count[1] < bgs and bg_count[1] > bg_count[0] and country_count[1] > country_count[0] and country_count[1] - bg_count[1] > 0:
-        swing -= domination - presence
-
-    # adjacent
-    if Canada.control == 'ussr':
-        swing += 1
-    if Finland.control == 'us':
-        swing -= 1
-    if Poland.control == 'us':
-        swing -= 1
-    if Romania.control == 'us':
-        swing -= 1
-
-    Game.main.change_vp(swing)
-    print(f'Europe scores for {swing} VPs')
+    Game.main.score(MapRegion.EUROPE, 3, 7, 120)
 
 # TO ADD SHUTTLE DIPLOMACY
 def ScoreMiddleEast(_):
-
-    areas = []
-    for x in Country.ALL.values():
-        if x.region == "Middle East":
-            areas.append(x)
-
-    presence, domination, control = [3,5,7]
-
-    bg_count = [0,0] # USSR, US
-    country_count = [0,0]
-    bgs = 0
-
-    for x in areas:
-        bg_count[0] += (x.battleground and x.control == 'ussr')
-        bg_count[1] += (x.battleground and x.control == 'us')
-        country_count[0] += (x.control == 'ussr')
-        country_count[1] += (x.control == 'us')
-        bgs += x.battleground
-
-    swing = bg_count[0] - bg_count[1]
-
-    # presence
-    if country_count[0] > 0:
-        swing += presence
-    if country_count[1] > 0:
-        swing -= presence
-
-    # control
-    if bg_count[0] == bgs:
-        swing += control - presence
-    if bg_count[1] == bgs:
-        swing -= control - presence
-
-    # domination
-    if bg_count[0] < bgs and bg_count[0] > bg_count[1] and country_count[0] > country_count[1] and country_count[0] - bg_count[0] > 0:
-        swing += domination - presence
-    if bg_count[1] < bgs and bg_count[1] > bg_count[0] and country_count[1] > country_count[0] and country_count[1] - bg_count[1] > 0:
-        swing -= domination - presence
-
-    Game.main.change_vp(swing)
-    print(f'Middle East scores for {swing} VPs')
+    Game.main.score(MapRegion.MIDDLE_EAST, 3, 5, 7)
 
 def ScoreCentralAmerica(_):
+    Game.main.score(MapRegion.CENTRAL_AMERICA, 1, 3, 5)
 
-    areas = []
-    for x in Country.ALL.values():
-        if x.region == "Central America":
-            areas.append(x)
+def ScoreAfrica(_):
+    Game.main.score(MapRegion.AFRICA, 1, 4, 6)
 
-    presence, domination, control = [1,3,5]
-
-    bg_count = [0,0] # USSR, US
-    country_count = [0,0]
-    bgs = 0
-
-    for x in areas:
-        bg_count[0] += (x.battleground and x.control == 'ussr')
-        bg_count[1] += (x.battleground and x.control == 'us')
-        country_count[0] += (x.control == 'ussr')
-        country_count[1] += (x.control == 'us')
-        bgs += x.battleground
-
-    swing = bg_count[0] - bg_count[1]
-
-    # presence
-    if country_count[0] > 0:
-        swing += presence
-    if country_count[1] > 0:
-        swing -= presence
-
-    # control
-    if bg_count[0] == bgs:
-        swing += control - presence
-    if bg_count[1] == bgs:
-        swing -= control - presence
-
-    # domination
-    if bg_count[0] < bgs and bg_count[0] > bg_count[1] and country_count[0] > country_count[1] and country_count[0] - bg_count[0] > 0:
-        swing += domination - presence
-    if bg_count[1] < bgs and bg_count[1] > bg_count[0] and country_count[1] > country_count[0] and country_count[1] - bg_count[1] > 0:
-        swing -= domination - presence
-
-    # adjacent
-    if Cuba.control == 'ussr':
-        swing += 1
-    if Mexico.control == 'ussr':
-        swing += 1
-
-    Game.main.change_vp(swing)
-    print(f'Central America scores for {swing} VPs')
+def ScoreSouthAmerica(_):
+    Game.main.score(MapRegion.AFRICA, 2, 5, 6)
 
 def ScoreSoutheastAsia(_):
-    areas = []
-    for x in Country.ALL.values():
-        if x.region == "Southeast Asia":
-            areas.append(x)
-    print(areas)
 
     country_count = [0,0]
-    for x in areas:
-        country_count[0] += (x.control == 'ussr')
-        country_count[1] += (x.control == 'us')
-    swing = country_count[0] - country_count[1]
+    for n in CountryInfo.REGION_ALL[MapRegion.SOUTHEAST_ASIA]:
+        x = Game.main.map[n]
+        country_count[Side.USSR] += (x.control == Side.USSR)
+        country_count[Side.USA] += (x.control == Side.USA)
+    swing = country_count[Side.USSR] - country_count[Side.USA]
 
     # thailand double VP
-    if Thailand.control == 'ussr':
+    if Game.main.map['Thailand'].control == Side.USSR:
         swing += 1
-    if Thailand.control == 'us':
+    if Game.main.map['Thailand'].control == Side.USA:
         swing -= 1
 
     Game.main.change_vp(swing)
     print(f'Southeast Asia scores for {swing} VPs')
-
-def ScoreAfrica(_):
-
-    areas = []
-    for x in Country.ALL.values():
-        if x.region == "Africa":
-            areas.append(x)
-
-    presence, domination, control = [1,4,6]
-
-    bg_count = [0,0] # USSR, US
-    country_count = [0,0]
-    bgs = 0
-
-    for x in areas:
-        bg_count[0] += (x.battleground and x.control == 'ussr')
-        bg_count[1] += (x.battleground and x.control == 'us')
-        country_count[0] += (x.control == 'ussr')
-        country_count[1] += (x.control == 'us')
-        bgs += x.battleground
-
-    swing = bg_count[0] - bg_count[1]
-
-    # presence
-    if country_count[0] > 0:
-        swing += presence
-    if country_count[1] > 0:
-        swing -= presence
-
-    # control
-    if bg_count[0] == bgs:
-        swing += control - presence
-    if bg_count[1] == bgs:
-        swing -= control - presence
-
-    # domination
-    if bg_count[0] < bgs and bg_count[0] > bg_count[1] and country_count[0] > country_count[1] and country_count[0] - bg_count[0] > 0:
-        swing += domination - presence
-    if bg_count[1] < bgs and bg_count[1] > bg_count[0] and country_count[1] > country_count[0] and country_count[1] - bg_count[1] > 0:
-        swing -= domination - presence
-
-    Game.main.change_vp(swing)
-    print(f'Africa scores for {swing} VPs')
-
-def ScoreSouthAmerica(_):
-
-    areas = []
-    for x in Country.ALL.values():
-        if x.region == "South America":
-            areas.append(x)
-
-    presence, domination, control = [2,5,6]
-
-    bg_count = [0,0] # USSR, US
-    country_count = [0,0]
-    bgs = 0
-
-    for x in areas:
-        bg_count[0] += (x.battleground and x.control == 'ussr')
-        bg_count[1] += (x.battleground and x.control == 'us')
-        country_count[0] += (x.control == 'ussr')
-        country_count[1] += (x.control == 'us')
-        bgs += x.battleground
-
-    swing = bg_count[0] - bg_count[1]
-
-    # presence
-    if country_count[0] > 0:
-        swing += presence
-    if country_count[1] > 0:
-        swing -= presence
-
-    # control
-    if bg_count[0] == bgs:
-        swing += control - presence
-    if bg_count[1] == bgs:
-        swing -= control - presence
-
-    # domination
-    if bg_count[0] < bgs and bg_count[0] > bg_count[1] and country_count[0] > country_count[1] and country_count[0] - bg_count[0] > 0:
-        swing += domination - presence
-    if bg_count[1] < bgs and bg_count[1] > bg_count[0] and country_count[1] > country_count[0] and country_count[1] - bg_count[1] > 0:
-        swing -= domination - presence
-
-    Game.main.change_vp(swing)
-    print(f'South America scores for {swing} VPs')

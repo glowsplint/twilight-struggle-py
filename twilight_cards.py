@@ -66,7 +66,7 @@ The_China_Card = {
 	'stage' : 'Early War',
 	'card_number' : 6,
 	'operations_points' : 4,
-	'event_owner' : 'Neutral',
+	'event_owner' : 'NEUTRAL',
 	'can_headline_card' : False,
 	'global_continuous_effects' : [('GainOperationsPointsWhenUsingThisCardInAsia', 1)],
 	'event_text' : 'Begins the game with the USSR player.\n+1 Operations value when all points are used in Asia. Pass to opponent after play.\n+1 VP for the player holding this card at the end of Turn 10.\nCancels effect of \'Formosan Resolution\' if this card is played by the US player.',
@@ -213,7 +213,7 @@ Captured_Nazi_Scientist = {
 	'stage' : 'Early War',
 	'card_number' : 18,
 	'operations_points' : 1,
-	'event_owner' : 'Neutral',
+	'event_owner' : 'NEUTRAL',
 	'event_effects' : [('AdvanceSpaceRaceTrack', 1)],
 	'event_text' : 'Advance player\'s Space Race marker one box.',
 	'remove_if_used_as_event' : True,
@@ -238,7 +238,7 @@ Olympic_Games = {
 	'stage' : 'Early War',
 	'card_number' : 20,
 	'operations_points' : 2,
-	'event_owner' : 'Neutral',
+	'event_owner' : 'NEUTRAL',
 	'event_effects' : [('ResolveOlympicGames', 4)],
 	'event_text' : 'Player sponsors Olympics. Opponent may participate or boycott. If Opponent participates, each player rolls one die, with the sponsor adding 2 to his roll. High roll gains 2 VP. Reroll ties If Opponent boycotts, degrade DEFCON one level and the Sponsor may Conduct Operations as if they played a 4 Ops card.',
 }
@@ -287,7 +287,7 @@ Indo_Pakistani_War = {
 	'stage' : 'Early War',
 	'card_number' : 24,
 	'operations_points' : 2,
-	'event_owner' : 'Neutral',
+	'event_owner' : 'NEUTRAL',
 	'event_effects' : [('WarInIndiaOrPakistan', 0)],
 	'event_text' : 'India or Pakistan invades the other (player\'s choice). Roll one die and subtract 1 for every opponent-controlled country adjacent to the target of the invasion. Player Victory on modified die roll of 4-6. Player adds 2 to Military Ops Track. Effects of Victory: Player gains 2 VP and replaces all opponent\'s Influence in target country with his Influence.',
 }
@@ -371,7 +371,7 @@ Red_Scare_Purge = {
 	'stage' : 'Early War',
 	'card_number' : 31,
 	'operations_points' : 4,
-	'event_owner' : 'Neutral',
+	'event_owner' : 'NEUTRAL',
 	'event_effects' : [('PutThisCardInPlay', 1)],
 	'continuous_effects' : [('DecreaseOperationsPointsForOpponentsCards', 1)],
 	'triggered_effects' : [('AtEndOfTurnTriggerRemoveThisCardFromPlay', 0)],
@@ -384,7 +384,7 @@ UN_Intervention = {
 	'stage' : 'Early War',
 	'card_number' : 32,
 	'operations_points' : 1,
-	'event_owner' : 'Neutral',
+	'event_owner' : 'NEUTRAL',
 	'can_headline_card' : False,
 	'usage_conditions' : [('IfHaveOpponentEventInHand', 0)],
 	'event_effects' : [('ConductOperationsWithOpponentEventCard', 0)],
@@ -410,7 +410,7 @@ Nuclear_Test_Ban = {
 	'stage' : 'Early War',
 	'card_number' : 34,
 	'operations_points' : 4,
-	'event_owner' : 'Neutral',
+	'event_owner' : 'NEUTRAL',
 	'event_effects' : [('GainVictoryPointsForDEFCONMinus', 2), ('ImproveDEFCONLevel', 2)],
 	'event_text' : 'Player earns VPs equal to the current DEFCON level minus 2, then improve DEFCON two levels.',
 }
@@ -500,7 +500,7 @@ Brush_War = {
 	'stage' : 'Mid War',
 	'card_number' : 36,
 	'operations_points' : 3,
-	'event_owner' : 'Neutral',
+	'event_owner' : 'NEUTRAL',
 	'event_effects' : {
 		{ 'BrushWarInStabilityLowerThan2', 1 + (3 * 256),
 	},
@@ -551,7 +551,7 @@ Arms_Race = {
 
 	'operations_points' : 3,
 
-	'event_owner' : 'Neutral',
+	'event_owner' : 'NEUTRAL',
 	'event_effects' : {
 		{ 'GainVictoryPoints', 1, condition={'IfHasMoreMilOpsAndNotRequired',0},
 		{ 'GainVictoryPoints', 3, condition={'IfHasMoreMilOpsAndRequired',0},
@@ -568,7 +568,7 @@ Cuban_Missile_Crisis = {
 
 	'operations_points' : 3,
 
-	'event_owner' : 'Neutral',
+	'event_owner' : 'NEUTRAL',
 	'event_effects' : {
 		{ 'SetDEFCONLevel', 2,
 		{ 'PutThisCardInPlay', 1,
@@ -682,7 +682,7 @@ Salt_Negotiations = {
 
 	'operations_points' : 3,
 
-	'event_owner' : 'Neutral',
+	'event_owner' : 'NEUTRAL',
 	'event_effects' : {
 		{ 'ImproveDEFCONLevel', 2,
 		{ 'RecoverEventCardFromDiscardPile', 1,
@@ -735,7 +735,7 @@ Summit = {
 
 	'operations_points' : 1,
 
-	'event_owner' : 'Neutral',
+	'event_owner' : 'NEUTRAL',
 	'event_effects' : {
 		{ 'CommitPlayerDecision', 0,
 		{ 'ResolveSummit', 2,
@@ -753,7 +753,7 @@ How_I_Learned_to_Stop_Worrying = {
 
 	'operations_points' : 2,
 
-	'event_owner' : 'Neutral',
+	'event_owner' : 'NEUTRAL',
 	'event_effects' : {
 		{ 'ChooseDEFCONLevel', 0,
 		{ 'GainMilitaryOperationsTrack', 5,
@@ -773,7 +773,7 @@ Junta = {
 	'operations_points' : 2,
 
 
-	'event_owner' : 'Neutral',
+	'event_owner' : 'NEUTRAL',
 	'event_effects' : {
 		{ 'AddInfluenceToOneCentralOrSouthAmericaCountry', 2,
 		{ 'MakeFreeCoupOrRealignmentsInCentralOrSouthAmerica', 2,
@@ -812,7 +812,7 @@ Missile_Envy = {
 
 	'operations_points' : 2,
 
-	'event_owner' : 'Neutral',
+	'event_owner' : 'NEUTRAL',
 	'event_effects' : {
 		{ 'RemoveThisCardFromDiscardPile', 0,
 		{ 'ResolveMissileEnvy', 0,		-- will
@@ -1048,7 +1048,7 @@ ABM_Treaty = {
 
 	'operations_points' : 4,
 
-	'event_owner' : 'Neutral',
+	'event_owner' : 'NEUTRAL',
 	'event_effects' : {
 		{ 'ImproveDEFCONLevel', 1,
 		{ 'ConductOperationsWithThisCard', 4,
@@ -1314,7 +1314,7 @@ Latin_American_Death_Squads = {
 
 	'operations_points' : 2,
 
-	'event_owner' : 'Neutral',
+	'event_owner' : 'NEUTRAL',
 	'event_effects' : {
 		{ 'PutThisCardInPlay', 1,
 	},
@@ -1537,7 +1537,7 @@ One_Small_Step = {
 	'stage' : 'Mid War',
 	'card_number' : 80,
 	'operations_points' : 2,
-	'event_owner' : 'Neutral',
+	'event_owner' : 'NEUTRAL',
 	'event_effects' : {
 		usageconditions = {
 			{ 'IfYouAreBehindOnSpaceRaceTrack', 0,
@@ -1800,7 +1800,7 @@ Terrorism = {
 	'stage' : 'Late War',
 	'card_number' : 92,
 	'operations_points' : 2,
-	'event_owner' : 'Neutral',
+	'event_owner' : 'NEUTRAL',
 	'event_effects' : [('CommitPlayerDecision', 0), ('OpponentDiscardsRandomCard', 0), ('OpponentDiscardsRandomCardIfUSSRAndHasBeenPlayedIranianHostageCrisis', 0)],
 	'event_text' : 'Opponent must randomly discard one card. If played by USSR and Iranian Hostage Crisis is in effect, the US player must randomly discard two cards.\n(Events on discards do not occur.)',
 }
@@ -1969,7 +1969,7 @@ Wargames = {
 	'stage' : 'Late War',
 	'card_number' : 100,
 	'operations_points' : 4,
-	'event_owner' : 'Neutral',
+	'event_owner' : 'NEUTRAL',
 	'event_effects' : {
 		usageconditions = {
 			{ 'IfDefconLevelIs', 2,
@@ -2006,7 +2006,7 @@ Iran-Iraq_War = {
 	'stage' : 'Late War',
 	'card_number' : 102,
 	'operations_points' : 2,
-	'event_owner' : 'Neutral',
+	'event_owner' : 'NEUTRAL',
 	'event_effects' : {
 		{ 'WarInIranOrIraq', 2 + (2 * 256),
 	},
