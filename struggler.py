@@ -6,9 +6,9 @@
 # In[1]:
 
 
-import pandas as pd
 import numpy as np
 import random
+
 from twilight_map import *
 from game_mechanics import *
 from twilight_cards import *
@@ -17,11 +17,6 @@ from twilight_cards import *
 # Moved all country information into the twilight_cards.py file.
 
 # In[2]:
-
-early_war_cards = dict()
-
-
-# In[3]:
 
 
 class Card:
@@ -36,13 +31,14 @@ class Card:
     """
 
     ALL = dict()
+    Early_War, Mid_War, Late_War = dict(), dict, dict()
 
     def __init__(self, card_name="", card_type="", stage="", card_number=0,
                  optional_card=False,
                  operations_points=0,
                  event_text="", event_effects=None,
                  scoring_region="", may_be_held=True,
-                 event_owner="",
+                 event_owner="NEUTRAL",
                  triggered_effects="",
                  continuous_effects="",
                  global_continuous_effects="",
@@ -57,9 +53,8 @@ class Card:
         self.index = card_number
         self.ops = operations_points
         self.text = event_text
-        self.owner = event_owner
+        self.owner = Side[event_owner]
         self.optional = optional_card
-
 
         self.event_effects = event_effects
         self.triggered_effects = triggered_effects
@@ -77,18 +72,18 @@ class Card:
             setattr(self, key, value)
         Card.ALL[self.name] = self
         if self.stage == 'Early War':
-            early_war_cards[self.name] = self
+            Card.Early_War[self.name] = self
 #         if self.stage == 'Mid War':
-#             mid_war_cards[card_name] = self
+#             Card.Mid_War[card_name] = self
 #         if self.stage == 'Late War':
-#             late_war_cards[card_name] = self
+#             Card.Late_War[card_name] = self
     
     def __repr__(self):
 #         sb = []
 #         for key in self.__dict__:
 #             sb.append("{key}='{value}'".format(key=key, value=self.__dict__[key]))
 #         return ', '.join(sb)
-        if hasattr(self, 'operations_points'):
+        if hasattr(self, 'ops'):
             return f'{self.name} - {self.ops}'
         else:
             return self.name
@@ -127,7 +122,7 @@ class Card:
 
 # ### Setup
 
-# In[4]:
+# In[3]:
 
 
 Arab_Israeli_War = Card(**Arab_Israeli_War)
@@ -171,7 +166,7 @@ Vietnam_Revolts = Card(**Vietnam_Revolts)
 Warsaw_Pact_Formed = Card(**Warsaw_Pact_Formed)
 
 
-# In[5]:
+# In[4]:
 
 
 us_hand = []
@@ -181,33 +176,25 @@ discard_pile = []
 draw_pile = []
 
 
-# In[6]:
+# In[5]:
 
 
 '''Pre-headline setup'''
-ussr_hand.append(early_war_cards.pop('The_China_Card')) # Move the China card from the early war pile to USSR hand
-draw_pile.extend(early_war_cards.values()) # Put early war cards into the draw pile
+ussr_hand.append(Card.Early_War.pop('The_China_Card')) # Move the China card from the early war pile to USSR hand
+draw_pile.extend(Card.Early_War.values()) # Put early war cards into the draw pile
 random.shuffle(draw_pile) # Shuffle the draw pile
 ussr_hand.extend([draw_pile.pop() for i in range(8)])
 us_hand.extend([draw_pile.pop() for i in range(8)])
 
 
-# In[7]:
+# In[6]:
 
 
 draw_pile
 
 
-# ### Create the turn order
-# 1. Increase DEFCON status
-# 2. Deal Cards
-# 3. Headline Phase
-# 4. Action Rounds (advance round marker)
-# 5. Check milops
-# 6. Check for held scoring card
-# 7. Flip China Card
-# 8. Advance turn marker
-# 9. Final scoring (end T10)
+# In[7]:
+
 
 class UI:
 
@@ -238,7 +225,7 @@ quit        Exit the game.
             if len(user_choice) == 0 or user_choice[0] == "?":
                 print(UI.help)
                 
-            elif user_choice[0] == "quit":
+            elif user_choice[0] == "quit" or user_choice[0] == "exit":
                 break;
                 
             elif user_choice[0] == "new":
@@ -328,11 +315,16 @@ s <eu|as|me|af|na|sa>   Displays the scoring state and country data for the give
             print("Unimplemented")
 
 
-# In[8]:
-
-
-early_war_cards
-
+# ### Create the turn order
+# 1. Increase DEFCON status
+# 2. Deal Cards
+# 3. Headline Phase
+# 4. Action Rounds (advance round marker)
+# 5. Check milops
+# 6. Check for held scoring card
+# 7. Flip China Card
+# 8. Advance turn marker
+# 9. Final scoring (end T10)
 
 # ### Create space race track
 # 1. Create the buffs
@@ -340,14 +332,14 @@ early_war_cards
 
 # ### Scoring Cards
 
-# Hi Box. Below Asia_Scoring prints the right message but doesn't change the VP track. Problem with global variables?
+# In[8]:
 
-# In[9]:
 
-#this is a temporary measure. It should go into UI.new()
+# this is a temporary measure. It should go into UI.new()
 g = Game()
 g.start()
 Asia_Scoring.use_for_event()
 Europe_Scoring.use_for_event()
 Game.main.vp_track
 UI.run()
+
