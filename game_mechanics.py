@@ -115,7 +115,7 @@ class Game:
             if country_count[s] > country_count[s.opp]:
                 if bg_count[s] == sum(bg_count):
                     vps[s] += control_vps
-                elif bg_count[s] > bg_count[s.opp]:
+                elif bg_count[s] > bg_count[s.opp] and country_count[s] > bg_count[s]:
                     vps[s] += domination_vps
             elif country_count[s] > 0:
                 vps[s] += presence_vps
