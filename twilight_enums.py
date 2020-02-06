@@ -27,6 +27,13 @@ class Side(enum.IntEnum):
         elif self == Side.USA: return Side.USSR
         else: return Side.NEUTRAL
 
+    @property
+    def vp_mult(self):
+        if self == Side.USSR: return 1
+        elif self == Side.USA: return -1
+        else: return 0
+
+
 class MapRegion(enum.IntEnum):
 
     EUROPE = 0

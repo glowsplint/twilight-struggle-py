@@ -61,36 +61,36 @@ class Game:
         else:
             modifier = 1
 
-        y = 1 - 2*x # multiplier for VPs - gives 1 for USSR and -1 for US
+        y = x.vp_mult # multiplier for VPs - gives 1 for USSR and -1 for US
         roll = random.randint(6) + 1
         if roll + modifier <= 3:
             space_track[x] += 1
             print(f'Success with roll of {roll}.')
 
             if space_track[x] == 1:
-                if space_track[1-x] < 1:
+                if space_track[x.opp] < 1:
                     self.change_vp(2*y)
                 else:
                     self.change_vp(y)
 
             elif space_track[x] == 3:
-                if space_track[1-x] < 3:
+                if space_track[x.opp] < 3:
                     self.change_vp(2*y)
 
             elif space_track[x] == 5:
-                if space_track[1-x] < 5:
+                if space_track[x.opp] < 5:
                     self.change_vp(3*y)
                 else:
                     self.change_vp(y)
 
             elif space_track[x] == 7:
-                if space_track[1-x] < 7:
+                if space_track[x.opp] < 7:
                     self.change_vp(4*y)
                 else:
                     self.change_vp(2*y)
 
             elif space_track[x] == 8:
-                if space_track[1-x] < 8:
+                if space_track[x.opp] < 8:
                     self.change_vp(2*y)
 
         else:
