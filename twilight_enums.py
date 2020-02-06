@@ -1,9 +1,11 @@
 import enum
 
-# you can now refer to USSR and USA as Side.USSR / Side.USA
+# you can now refer to USSR and USA as Side.USSR / Side.USA / Side.NEUTRAL
 # without concern about which is 0 and which is 1; also robust to
 # change any time.
+
 class Side(enum.IntEnum):
+
     USSR = 0
     USA = 1
     NEUTRAL = 2

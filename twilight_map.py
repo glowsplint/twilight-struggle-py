@@ -111,12 +111,10 @@ class GameMap:
             print(f'Coup successful with roll of {die_roll}. Difference: {difference}')
         else:
             print(f'Coup failed with roll of {die_roll}')
-        country.evaluate_control()
 
     def can_realignment(self, country_name):
         country = self[country_name]
         return not (country.ussr_influence == 0 and country.us_influence == 0)
-
 
     def realignment(self, country_name):
         '''
