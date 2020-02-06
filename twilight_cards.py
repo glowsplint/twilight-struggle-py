@@ -1,5 +1,117 @@
 from twilight_map import *
-from game_mechanics import *
+
+class CardInfo:
+    """
+    Cards should be able to be used for:
+    1. Event
+    2. Realignment
+    3. Coup
+    4. Placing influence
+    5. Space race
+    6. Trigger event first >> realignment/coup/influence
+    """
+
+    ALL = dict()
+    Early_War, Mid_War, Late_War = dict(), dict(), dict()
+
+    def __init__(self, card_name="", card_type="", stage="", card_number=0,
+                 optional_card=False,
+                 operations_points=0,
+                 event_text="", event_effects=None,
+                 scoring_region="", may_be_held=True,
+                 event_owner="NEUTRAL",
+                 triggered_effects="",
+                 continuous_effects="",
+                 global_continuous_effects="",
+                 usage_conditions="",
+                 remove_if_used_as_event=False,
+                 resolve_headline_first=False,
+                 can_headline_card=True,
+                 **kwargs):
+        self.name = card_name
+        self.type = card_type
+        self.stage = stage
+        self.index = card_number
+        self.ops = operations_points
+        self.text = event_text
+        self.owner = Side[event_owner]
+        self.optional = optional_card
+
+        self.event_effects = event_effects
+        self.triggered_effects = triggered_effects
+        self.continuous_effects = continuous_effects
+        self.global_continuous_effects = global_continuous_effects
+        self.event_unique = remove_if_used_as_event
+        self.scoring_region = scoring_region
+        self.may_be_held = may_be_held
+        self.usage_conditions = usage_conditions
+        self.resolve_headline_first = resolve_headline_first
+        self.can_headline_card = can_headline_card
+
+        for key, value in kwargs.items():
+            print(key, value)
+            setattr(self, key, value)
+        CardInfo.ALL[self.name] = self
+
+    def trigger_event_first(self):
+        # only possible if opponent event
+        # self.use_for_event()
+        # do something else
+        pass
+
+    def use_for_influence(self):
+        pass
+
+    def use_for_space_race(self):
+        pass
+
+    def use_for_event(self):
+        # for event in self.event_effects:
+        #     event[0](event[1])
+        # if hasattr(self, 'remove_if_used_as_event'):
+        #     if self.remove_if_used_as_event:
+        #     # to add functionality for remove cards from hand and into removed pile
+        pass
+
+    def use_for_coup(self):
+        pass
+
+    def use_for_realignment(self):
+        pass
+
+    def possible_actions(self):
+        pass
+
+
+class GameCards:
+    def __init__(self):
+        self.ALL = dict()
+        self.Early_War = list()
+
+        for card_name in CardInfo.ALL.keys():
+            self.ALL[card_name] = Card(card_name)
+            if self.ALL[card_name].info.stage == 'Early War':
+                self.Early_War.append(self.ALL[card_name])
+            # if self.stage == 'Mid War':
+            #     CardInfo.Mid_War[self.name] = self
+            # if self.stage == 'Late War':
+            #     CardInfo.Late_War[self.name] = self
+    def __getitem__(self, item):
+        return self.ALL[item]
+
+class Card:
+    def __init__(self, card_name):
+        self.info = CardInfo.ALL[card_name]
+        self.flipped = False # flipped means unavailable for use
+
+    def __repr__(self):
+        if self.info.ops == 0:
+            return self.info.name
+        else:
+            return f'{self.info.name} - {self.info.ops}'
+
+    def __eq__(self, other):
+        return self.info.name == other
 
 # --
 # -- EARLY WAR
@@ -11,7 +123,7 @@ Asia_Scoring = {
 	'stage' : 'Early War',
 	'card_number' : 1,
 	'scoring_region' : 'Asia',
-	'event_effects' : [(ScoreAsia, 0)],
+	'event_effects' : [('ScoreAsia', 0)],
 	'event_text' : 'Both sides score: Presence: 3, Domination: 7, Control: 9. +1 per controlled Battleground Country in Region, +1 per Country controlled that is adjacent to enemy superpower',
 	'may_be_held' : False,
 }
@@ -22,7 +134,7 @@ Europe_Scoring = {
 	'stage' : 'Early War',
 	'card_number' : 2,
 	'scoring_region' : 'Europe',
-	'event_effects' : [(ScoreEurope, 0)],
+	'event_effects' : [('ScoreEurope', 0)],
 	'event_text' : 'Both sides score: Presence: 3, Domination: 7, Control: VICTORY. +1 per controlled Battleground Country in Region, +1 per Country controlled that is adjacent to enemy superpower',
 	'may_be_held' : False,
 }
@@ -33,7 +145,7 @@ Middle_East_Scoring = {
 	'stage' : 'Early War',
 	'card_number' : 3,
 	'scoring_region' : 'Middle East',
-	'event_effects' : [(ScoreMiddleEast, 0)],
+	'event_effects' : [('ScoreMiddleEast', 0)],
 	'event_text' : 'Both sides score: Presence: 3, Domination: 5, Control: 7. +1 per controlled Battleground Country in Region',
 	'may_be_held' : False,
 }
@@ -45,7 +157,7 @@ Duck_and_Cover = {
 	'card_number' : 4,
 	'operations_points' : 3,
 	'event_owner' : 'USA',
-	'event_effects' : [(DegradeDEFCONLevel, 1), (GainVictoryPointsForDEFCONBelow, 5)],
+	'event_effects' : [('DegradeDEFCONLevel', 1), ('GainVictoryPointsForDEFCONBelow', 5)],
 	'event_text' : 'Degrade DEFCON one level.\nThen US player earns VPs equal to 5 minus current DEFCON level.',
 }
 
@@ -91,7 +203,7 @@ Fidel = {
 	'card_number' : 8,
 	'operations_points' : 2,
 	'event_owner' : 'USSR',
-	'event_effects' : [(RemoveAllOpponentInfluenceInCuba, 0)],
+	'event_effects' : [('RemoveAllOpponentInfluenceInCuba', 0)],
 	'event_text' : 'Remove all US Influence in Cuba. USSR gains sufficient Influence in Cuba for Control.',
 	'remove_if_used_as_event' : True,
 }
@@ -141,7 +253,7 @@ Romanian_Abdication = {
 	'card_number' : 12,
 	'operations_points' : 1,
 	'event_owner' : 'USSR',
-	'event_effects' : [(RemoveAllOpponentInfluenceInRomania, 0)],
+	'event_effects' : [('RemoveAllOpponentInfluenceInRomania', 0)],
 	'event_text' : 'Remove all US Influence in Romania. USSR gains sufficient Influence in Romania for Control.',
 	'remove_if_used_as_event' : True,
 }
@@ -178,7 +290,7 @@ Nasser = {
 	'card_number' : 15,
 	'operations_points' : 1,
 	'event_owner' : 'USSR',
-	'event_effects' : [(GainInfluenceInEgypt, 2)],
+	'event_effects' : [('GainInfluenceInEgypt', 2)],
 	'event_text' : 'Add 2 USSR Influence in Egypt. Remove half (rounded up) of the US Influence in Egypt.',
 	'remove_if_used_as_event' : True,
 }
@@ -202,7 +314,7 @@ De_Gaulle_Leads_France = {
 	'card_number' : 17,
 	'operations_points' : 3,
 	'event_owner' : 'USSR',
-	'event_effects' : [(RemoveOpponentInfluenceInFrance, 2), ('PutThisCardInPlay', 0)],
+	'event_effects' : [('RemoveOpponentInfluenceInFrance', 2), ('PutThisCardInPlay', 0)],
 	'event_text' : 'Remove 2 US Influence in France, add 1 USSR Influence. Cancels effects of NATO for France.',
 	'remove_if_used_as_event' : True,
 }
@@ -325,7 +437,7 @@ US_Japan_Mutual_Defense_Pact = {
 	'card_number' : 27,
 	'operations_points' : 4,
 	'event_owner' : 'USA',
-	'event_effects' : [(GainInfluenceForControlInJapan, 0), ('PutThisCardInPlay', 0)],
+	'event_effects' : [('GainInfluenceForControlInJapan', 0), ('PutThisCardInPlay', 0)],
 	'continuous_effects' : [('OpponentCannotCoupOrRealignInJapan', 0)],
 	'event_text' : 'US gains sufficient Influence in Japan for Control. USSR may no longer make Coup or Realignment rolls in Japan.',
 	'remove_if_used_as_event' : True,
@@ -487,38 +599,35 @@ NORAD = {
 
 
 
-'''
-
---
--- MID WAR
---
 
 
-Brush_War = {
-	'card_name' : 'Brush_War',
-	'card_type' : 'Event',
-	'stage' : 'Mid War',
-	'card_number' : 36,
-	'operations_points' : 3,
-	'event_owner' : 'NEUTRAL',
-	'event_effects' : {
-		{ 'BrushWarInStabilityLowerThan2', 1 + (3 * 256),
-	},
-	'event_text' : 'Attack any country with a stability of 1 or 2. Roll a die and subtract 1 for every adjacent enemy controlled country. Success on 3-6. Player adds 3 to his Military Ops Track.\nEffects of Victory: Player gains 1 VP and replaces all opponent's Influence with his Influence.',
-}
+# --
+# -- MID WAR
+# --
+#
+#
+# Brush_War = {
+# 	'card_name' : 'Brush_War',
+# 	'card_type' : 'Event',
+# 	'stage' : 'Mid War',
+# 	'card_number' : 36,
+# 	'operations_points' : 3,
+# 	'event_owner' : 'NEUTRAL',
+# 	'event_effects' : {
+# 		{ 'BrushWarInStabilityLowerThan2', 1 + (3 * 256),
+# 	},
+# 	'event_text' : 'Attack any country with a stability of 1 or 2. Roll a die and subtract 1 for every adjacent enemy controlled country. Success on 3-6. Player adds 3 to his Military Ops Track.\nEffects of Victory: Player gains 1 VP and replaces all opponent's Influence with his Influence.',
+# }
+
 
 
 Central_America_Scoring = {
 	'card_name' : 'Central_America_Scoring',
 	'card_type' : 'Scoring',
 	'stage' : 'Mid War',
-
 	'card_number' : 37,
-
 	'scoring_region' : 'Central America',
-	'event_effects' : {
-		{ 'ScoreCentralAmerica', 0,
-	},
+	'event_effects' : [('ScoreCentralAmerica', 0)],
 	'event_text' : 'Both sides score: Presence: 1, Domination: 3, Control: 5, +1 per controlled Battleground Country in Region, +1 per Country controlled that is adjacent to enemy superpower',
 	'may_be_held' : False,
 }
@@ -528,20 +637,15 @@ Southeast_Asia_Scoring = {
 	'card_name' : 'Southeast_Asia_Scoring',
 	'card_type' : 'Scoring',
 	'stage' : 'Mid War',
-
 	'card_number' : 38,
-
 	'may_be_held' : False,
 	'scoring_region' : 'Southeast Asia',
-	'event_effects' : {
-		{ 'ScoreSoutheastAsia', 0,
-	},
+	'event_effects' : [('ScoreSoutheastAsia', 0)],
 	'event_text' : 'Both sides score: 1 VP each for Control of: Burma, Cambodia/Laos, Vietnam, Malaysia, Indonesia, the Phillipines, 2 VP for Control of Thailand',
-
 	'remove_if_used_as_event' : True,
 }
 
-
+''''
 Arms_Race = {
 	'card_name' : 'Arms_Race',
 	'card_type' : 'Event',
@@ -1514,23 +1618,19 @@ Alliance_for_Progress = {
 	'remove_if_used_as_event' : True,
 }
 
-
+'''
 Africa_Scoring = {
 	'card_name' : 'Africa_Scoring',
 	'card_type' : 'Scoring',
 	'stage' : 'Mid War',
-
 	'card_number' : 79,
-
 	'scoring_region' : 'Africa',
-	'event_effects' : {
-		{ 'ScoreAfrica', 0,
-	},
+	'event_effects' : [('ScoreAfrica', 0)],
 	'event_text' : 'Both sides score: Presence: 1, Domination: 4, Control: 6, +1 per controlled Battleground Country in Region',
 
 	'may_be_held' : False,
 }
-
+''''
 
 One_Small_Step = {
 	'card_type' : 'Event',
@@ -1547,7 +1647,7 @@ One_Small_Step = {
 
 	'event_text' : 'If you are behind on the Space Race Track, play this card to move your marker two boxes forward on the Space Rack Track, gaining the VP value of the second box only.',
 }
-
+'''
 
 South_America_Scoring = {
 	'card_name' : 'South_America_Scoring',
@@ -1560,7 +1660,7 @@ South_America_Scoring = {
 	'may_be_held' : False,
 }
 
-
+''''
 # -- OPTIONAL
 Che = {
 	'card_name' : 'Che',
@@ -2069,3 +2169,50 @@ AWACS_Sale_to_Saudis = {
 }
 
 '''
+
+'''Processes only early war cards'''
+Arab_Israeli_War = CardInfo(**Arab_Israeli_War)
+Asia_Scoring = CardInfo(**Asia_Scoring)
+Blockade = CardInfo(**Blockade)
+CIA_Created = CardInfo(**CIA_Created)
+COMECON = CardInfo(**COMECON)
+Captured_Nazi_Scientist = CardInfo(**Captured_Nazi_Scientist)
+Containment = CardInfo(**Containment)
+De_Gaulle_Leads_France = CardInfo(**De_Gaulle_Leads_France)
+De_Stalinization = CardInfo(**De_Stalinization)
+Decolonization = CardInfo(**Decolonization)
+Defectors = CardInfo(**Defectors)
+Duck_and_Cover = CardInfo(**Duck_and_Cover)
+East_European_Unrest = CardInfo(**East_European_Unrest)
+Europe_Scoring = CardInfo(**Europe_Scoring)
+Fidel = CardInfo(**Fidel)
+Five_Year_Plan = CardInfo(**Five_Year_Plan)
+Formosan_Resolution = CardInfo(**Formosan_Resolution)
+Independent_Reds = CardInfo(**Independent_Reds)
+Indo_Pakistani_War = CardInfo(**Indo_Pakistani_War)
+Korean_War = CardInfo(**Korean_War)
+Marshall_Plan = CardInfo(**Marshall_Plan)
+Middle_East_Scoring = CardInfo(**Middle_East_Scoring)
+NATO = CardInfo(**NATO)
+NORAD = CardInfo(**NORAD)
+Nasser = CardInfo(**Nasser)
+Nuclear_Test_Ban = CardInfo(**Nuclear_Test_Ban)
+Olympic_Games = CardInfo(**Olympic_Games)
+Red_Scare_Purge = CardInfo(**Red_Scare_Purge)
+Romanian_Abdication = CardInfo(**Romanian_Abdication)
+Socialist_Governments = CardInfo(**Socialist_Governments)
+Special_Relationship = CardInfo(**Special_Relationship)
+Suez_Crisis = CardInfo(**Suez_Crisis)
+The_Cambridge_Five = CardInfo(**The_Cambridge_Five)
+The_China_Card = CardInfo(**The_China_Card)
+Truman_Doctrine = CardInfo(**Truman_Doctrine)
+UN_Intervention = CardInfo(**UN_Intervention)
+US_Japan_Mutual_Defense_Pact = CardInfo(**US_Japan_Mutual_Defense_Pact)
+Vietnam_Revolts = CardInfo(**Vietnam_Revolts)
+Warsaw_Pact_Formed = CardInfo(**Warsaw_Pact_Formed)
+
+'''Mid war scoring cards'''
+Central_America_Scoring = CardInfo(**Central_America_Scoring)
+Southeast_Asia_Scoring = CardInfo(**Southeast_Asia_Scoring)
+Africa_Scoring = CardInfo(**Africa_Scoring)
+South_America_Scoring = CardInfo(**South_America_Scoring)

@@ -1,0 +1,47 @@
+diff a/.ipynb_checkpoints/struggler-checkpoint.ipynb b/.ipynb_checkpoints/struggler-checkpoint.ipynb	(rejected hunks)
+@@ -260,28 +260,28 @@
+     {
+      "data": {
+       "text/plain": [
+-       "[Nuclear_Test_Ban - 4,\n",
+-       " Truman_Doctrine - 1,\n",
+-       " Blockade - 1,\n",
++       "[Warsaw_Pact_Formed - 3,\n",
++       " US_Japan_Mutual_Defense_Pact - 4,\n",
++       " Indo_Pakistani_War - 2,\n",
+        " Olympic_Games - 2,\n",
+-       " Formosan_Resolution - 2,\n",
+        " The_Cambridge_Five - 2,\n",
+-       " Vietnam_Revolts - 2,\n",
+-       " Independent_Reds - 2,\n",
+-       " Duck_and_Cover - 3,\n",
+-       " Europe_Scoring - 0,\n",
+-       " De_Stalinization - 3,\n",
+-       " Socialist_Governments - 3,\n",
+-       " Marshall_Plan - 4,\n",
+        " Decolonization - 2,\n",
++       " Red_Scare_Purge - 4,\n",
++       " Special_Relationship - 2,\n",
++       " Arab_Israeli_War - 2,\n",
++       " Europe_Scoring - 0,\n",
++       " Vietnam_Revolts - 2,\n",
++       " Containment - 3,\n",
++       " COMECON - 3,\n",
+        " Korean_War - 2,\n",
+-       " Middle_East_Scoring - 0,\n",
+-       " Warsaw_Pact_Formed - 3,\n",
+-       " Indo_Pakistani_War - 2,\n",
+        " Defectors - 2,\n",
+-       " US_Japan_Mutual_Defense_Pact - 4,\n",
+-       " Containment - 3,\n",
+-       " Suez_Crisis - 3]"
++       " Truman_Doctrine - 1,\n",
++       " Independent_Reds - 2,\n",
++       " Middle_East_Scoring - 0,\n",
++       " Asia_Scoring - 0,\n",
++       " NORAD - 3,\n",
++       " UN_Intervention - 1,\n",
++       " East_European_Unrest - 3]"
+       ]
+      },
+      "execution_count": 6,

@@ -1,7 +1,10 @@
 import math
 import random
+import numpy as np
+
 from twilight_enums import *
 from twilight_map import *
+from twilight_cards import *
 
 class Game:
 
@@ -17,19 +20,27 @@ class Game:
     def __init__(self):
         self.vp_track = 0 # positive for ussr
         self.turn_track = 1
-        self.ar_track = 1 # increment by 0.5 for each side's action round
+        self.ar_track = 1 # increment by 1 for each side's action round
         self.defcon_track = 5
-        self.milops_track = [0, 0] # ussr first
-        self.space_track = [0, 0] # 0 is start, 1 is earth satellite etc
+        self.milops_track = np.array([0, 0]) # ussr first
+        self.space_track = np.array([0, 0]) # 0 is start, 1 is earth satellite etc
+        self.has_spaced = [False, False]
         self.map = GameMap()
-        
+        self.cards = GameCards()
+        self.US_hand = []
+        self.USSR_hand = []
+        self.removed_pile = []
+        self.discard_pile = []
+        self.draw_pile = []
+
         # For new set the first created game to be the actual ongoing game.
         if Game.main is None: Game.main = self
 
-# to add game terminate functionality EndGame()
+    # to add game terminate functionality EndGame()
 
     def start(self):
         self.map.build_standard()
+        self.deal()
 
     def change_vp(self, n): # positive for ussr
         self.vp_track += n
@@ -46,9 +57,8 @@ class Game:
             print('Game ended by thermonuclear war')
             # EndGame()
 
-# SPACE (function)
+    # SPACE (function)
     def space(self, side):
-
         x = Side.fromStr(side)
 
         # this one could be something game specific later
@@ -96,8 +106,98 @@ class Game:
         else:
             print(f'Failure with roll of {roll}.')
 
-    def score(self, region, presence_vps, domination_vps, control_vps):
+    def deal(self):
+        def top_up_cards(self, n):
+            ussr_held = len(self.USSR_hand)
+            us_held = len(self.US_hand)
 
+            if 'The_China_Card' in self.USSR_hand: # Ignore China Card if it is in either hand
+                ussr_held = len(self.USSR_hand) - 1
+            else:
+                us_held = len(self.US_hand) - 1
+            self.USSR_hand.extend([self.draw_pile.pop() for i in range(n - ussr_held)])
+            self.US_hand.extend([self.draw_pile.pop() for i in range(n - us_held)])
+
+        '''Pre-headline setup'''
+        if self.turn_track == 1 and self.ar_track == 1:
+            # Move the China card from the early war pile to USSR hand, China card 6th from last
+            self.USSR_hand.append(self.cards.Early_War.pop(-6))
+            self.draw_pile.extend(self.cards.Early_War) # Put early war cards into the draw pile
+            random.shuffle(self.draw_pile) # Shuffle the draw pile
+            top_up_cards(self, 8)
+        else:
+
+            if self.turn_track in [1,2,3]:
+                top_up_cards(self, 8)
+            else:
+                top_up_cards(self, 9)
+
+    # need to make sure next_turn is only called after all extra rounds
+    def next_turn(self):
+        # played at the end of last US action round within turn
+        # 1. Check milops
+        def check_milops(self):
+            milops_diff = self.milops_track - self.defcon_track
+            milops_vp_change = np.where(milops_diff < 0, milops_diff, 0)
+            swing = milops_vp_change[0] - milops_vp_change[1]
+            self.change_vp(swing)
+
+        # 2. Check for held scoring card
+        def check_for_scoring_cards(self):
+            scoring_list = ['Asia_Scoring', 'Europe_Scoring', 'Middle_East_Scoring', 'Central_America_Scoring', 'Southeast_Asia_Scoring', 'Africa_Scoring', 'South_America_Scoring']
+            scoring_cards = [self.cards[y] for y in scoring_list]
+            if any(True for x in scoring_cards if x in self.US_hand):
+                print('USSR Victory!')
+                # EndGame()
+            elif any(True for x in scoring_cards if x in self.USSR_hand):
+                print('US Victory!')
+                # EndGame()
+
+        # 3. Flip China Card
+        def flip_china_card(self):
+            if 'The_China_Card' in self.USSR_hand:
+                self.USSR_hand[self.USSR_hand.index('The_China_Card')].flipped = False
+            else:
+                self.US_hand[self.US_hand.index('The_China_Card')].flipped = False
+
+        # 4. Advance turn marker
+        def advance_turn_marker(self):
+            self.turn_track += 1
+            self.ar_track = 1
+
+        # 5. Final scoring (end T10)
+        def final_scoring(self):
+            if self.turn_track == 10 and (self.ar_track in [14,15,16]):
+                ScoreAsia(0)
+                ScoreEurope(0)
+                ScoreMiddleEast(0)
+                ScoreCentralAmerica(0)
+                ScoreAfrica(0)
+                ScoreSouthAmerica(0)
+            print(f'Final scoring complete.')
+            # EndGame()
+
+        # 6. Increase DEFCON status
+        def improve_defcon_status():
+            self.change_defcon(1)
+
+        # 7. Deal Cards -- written outside the next_turn function
+        # 8. Headline Phase
+        def headline(self):
+            pass
+
+        # 9. Action Rounds (advance round marker) -- action rounds are not considered between turns
+
+        check_milops(self)
+        check_for_scoring_cards(self)
+        flip_china_card(self)
+        advance_turn_marker(self)
+        final_scoring(self)
+        improve_defcon_status()
+        self.deal() # turn marker advanced before dealing
+        headline(self)
+
+    def score(self, region, presence_vps, domination_vps, control_vps):
         bg_count = [0, 0, 0]  # USSR, USA, NEUTRAL
         country_count = [0, 0, 0]
         vps = [0, 0]
@@ -123,6 +223,7 @@ class Game:
         swing = vps[Side.USSR] - vps[Side.USA]
         self.change_vp(swing)
         print(f'{region.name} scores for {swing} VPs')
+
 # definitely want to make all the country states be stored in the specific Game object
 
 def DegradeDEFCONLevel(n):
@@ -169,7 +270,6 @@ def ScoreSouthAmerica(_):
     Game.main.score(MapRegion.AFRICA, 2, 5, 6)
 
 def ScoreSoutheastAsia(_):
-
     country_count = [0,0]
     for n in CountryInfo.REGION_ALL[MapRegion.SOUTHEAST_ASIA]:
         x = Game.main.map[n]

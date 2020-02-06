@@ -12,14 +12,14 @@ class Side(enum.IntEnum):
 
     @staticmethod
     def fromStr(s):
-        if s.lower() == "usa":
+        if s.lower() == 'usa':
             return Side.USA
-        elif s.lower() == "ussr":
+        elif s.lower() == 'ussr':
             return Side.USSR
-        elif s.lower() == "neutral":
+        elif s.lower() == 'neutral':
             return Side.NEUTRAL
         else:
-            raise NameError("Invalid string for Side.fromStr")
+            raise NameError('Invalid string for Side.fromStr')
 
     @property
     def opp(self):
@@ -50,23 +50,23 @@ class MapRegion(enum.IntEnum):
     @staticmethod
     def fromStr(inStr):
         s = inStr.lower()
-        if s == "europe" or s == "eu":
+        if s == 'europe' or s == 'eu':
             return MapRegion.EUROPE
-        elif s == "asia" or s == "as":
+        elif s == 'asia' or s == 'as':
             return MapRegion.ASIA
-        elif s == "middle east" or s == "me":
+        elif s == 'middle east' or s == 'me':
             return MapRegion.MIDDLE_EAST
-        elif s == "africa" or s == "af":
+        elif s == 'africa' or s == 'af':
             return MapRegion.AFRICA
-        elif s == "central america" or s == "ca":
+        elif s == 'central america' or s == 'ca':
             return MapRegion.CENTRAL_AMERICA
-        elif s == "south america" or s == "sa":
+        elif s == 'south america' or s == 'sa':
             return MapRegion.SOUTH_AMERICA
-        elif s == "western europe" or s == "we":
+        elif s == 'western europe' or s == 'we':
             return MapRegion.WESTERN_EUROPE
-        elif s == "eastern europe" or s == "ee":
+        elif s == 'eastern europe' or s == 'ee':
             return MapRegion.EASTERN_EUROPE
-        elif s == "southeast asia" or s == "se":
+        elif s == 'southeast asia' or s == 'se':
             return MapRegion.SOUTHEAST_ASIA
         else:
-            raise NameError("Invalid string for MapRegion.fromStr")
+            raise NameError('Invalid string for MapRegion.fromStr')
