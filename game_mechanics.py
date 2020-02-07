@@ -147,6 +147,7 @@ class Game:
         if self.turn_track == 1 and self.ar_track == 1:
             # Move the China card from the early war pile to USSR hand, China card 6th from last
             self.USSR_hand.append(self.cards.Early_War.pop(5))
+            self.USSR_hand.append(self.cards.Early_War.pop(self.cards.Early_War.index('Asia_Scoring'))) # for testing of specific cards
             self.draw_pile.extend(self.cards.Early_War) # Put early war cards into the draw pile
             self.cards.Early_War = []
             random.shuffle(self.draw_pile) # Shuffle the draw pile

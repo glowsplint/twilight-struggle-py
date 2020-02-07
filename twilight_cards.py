@@ -1,6 +1,23 @@
 from twilight_map import *
 
 
+class CardBase:
+    def __init__(self):
+        self.ops = 0
+        self.may_be_held = True
+        self.optional_card = False
+        self.remove_if_used_as_event = False
+        self.resolve_headline_first = False
+        self.can_headline_card = True
+
+class CardInstant(CardBase):
+    def next_state():
+        pass
+
+class CardMultistep(CardBase):
+    pass
+
+
 class CardInfo:
     """
     Cards should be able to be used for:
@@ -63,10 +80,10 @@ class GameCards:
         return self.ALL[item]
 
 
-class Card:
+class Card(CardInfo):
     def __init__(self, name):
         self.info = CardInfo.ALL[name]
-        self.flipped = False # flipped means unavailable for use
+        self.can_play = True # flipped means unavailable for use
 
     def __repr__(self):
         if self.info.ops == 0:
@@ -94,6 +111,8 @@ class Asia_Scoring(CardInfo):
         self.event_text = 'Both sides score: Presence: 3, Domination: 7, Control: 9. +1 per controlled Battleground Country in Region, +1 per Country controlled that is adjacent to enemy superpower'
         self.may_be_held = False
 
+    def event(self):
+        ScoreAsia()
 
 class Europe_Scoring(CardInfo):
     def __init__(self):
