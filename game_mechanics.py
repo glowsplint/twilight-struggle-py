@@ -113,7 +113,7 @@ class Game:
 
             if 'The_China_Card' in self.USSR_hand: # Ignore China Card if it is in either hand
                 ussr_held = len(self.USSR_hand) - 1
-            else:
+            elif 'The_China_Card' in self.USSR_hand:
                 us_held = len(self.US_hand) - 1
 
             # if turn 4, add mid war cards into draw pile and shuffle, same for turn 8 for late war cards
@@ -146,7 +146,7 @@ class Game:
         '''Pre-headline setup'''
         if self.turn_track == 1 and self.ar_track == 1:
             # Move the China card from the early war pile to USSR hand, China card 6th from last
-            self.USSR_hand.append(self.cards.Early_War.pop(-6))
+            self.USSR_hand.append(self.cards.Early_War.pop(5))
             self.draw_pile.extend(self.cards.Early_War) # Put early war cards into the draw pile
             self.cards.Early_War = []
             random.shuffle(self.draw_pile) # Shuffle the draw pile
@@ -219,7 +219,7 @@ class Game:
         advance_turn_marker(self) #turn marker advanced before final scoring
         final_scoring(self)
         improve_defcon_status()
-        self.deal() # turn marker advanced before dealing
+        deal(self) # turn marker advanced before dealing
         headline(self)
 
     def score(self, region, presence_vps, domination_vps, control_vps):
@@ -275,26 +275,26 @@ def GainInfluenceForControlInJapan(_):
 
 '''Scoring Mechanics'''
 # TO ADD SHUTTLE DIPLOMACY AND FORMOSAN RESOLUTION
-def ScoreAsia(_):
+def ScoreAsia():
     Game.main.score(MapRegion.ASIA, 3, 7, 9)
 
-def ScoreEurope(_):
+def ScoreEurope():
     Game.main.score(MapRegion.EUROPE, 3, 7, 120)
 
 # TO ADD SHUTTLE DIPLOMACY
-def ScoreMiddleEast(_):
+def ScoreMiddleEast():
     Game.main.score(MapRegion.MIDDLE_EAST, 3, 5, 7)
 
-def ScoreCentralAmerica(_):
+def ScoreCentralAmerica():
     Game.main.score(MapRegion.CENTRAL_AMERICA, 1, 3, 5)
 
-def ScoreAfrica(_):
+def ScoreAfrica():
     Game.main.score(MapRegion.AFRICA, 1, 4, 6)
 
-def ScoreSouthAmerica(_):
+def ScoreSouthAmerica():
     Game.main.score(MapRegion.AFRICA, 2, 5, 6)
 
-def ScoreSoutheastAsia(_):
+def ScoreSoutheastAsia():
     country_count = [0,0]
     for n in CountryInfo.REGION_ALL[MapRegion.SOUTHEAST_ASIA]:
         x = Game.main.map[n]
