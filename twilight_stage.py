@@ -15,11 +15,11 @@ class Stage:
         game.map.build_standard()
         game.map.deal()
 
-    def operations_influence(n, side):
-        # here you receive a list of countries you can put influence into
+    def operations_influence(game, side, effective_operations_points):
+        # here you generate a list of countries you can put influence into
         # you call country.place_influence to all selected countries
         if side == Side.USSR:
-            pass
+            game.map
         elif side == Side.US:
             pass
         else:

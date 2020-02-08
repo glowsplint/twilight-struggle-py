@@ -82,35 +82,32 @@ class GameMap:
         return not (side == Side.US and country.ussr_influence == 0 or
                 side == Side.USSR and country.us_influence == 0)
 
-    def coup(self, country_name: str, side: Side, effective_operations_points: int):
+    def coup(self, country_name, side, effective_operations_points):
         '''
         TODO:
         1. Prevent coup if no opposing influence in the country. I would prefer to write this in a way that prevents this from happening altogether, as opposed to throwing up an error if this is tried.
         2. Prevent coup under DEFCON restrictions. Will write it in a style same as 1.
-        3. Prevent coup if there is no influence at all in the country.
+        3. Prevent coup if there is no influence at all in the country. (done in can_coup)
         4. Add military operations points.
         5. Reduce DEFCON status level if self.battleground = True
         '''
         assert(self.can_coup(country_name, side))
         country = self[country_name]
 
-        die_roll = random.randint(6) + 1
+        die_roll = random.randint(1,6)
         difference = die_roll + effective_operations_points - country.info.stability * 2
 
         if difference > 0:
-            if side == Side.US:
+            if side == 'us':
                 # subtract from opposing first.. and then add to yours
-                if difference > country.ussr_influence:
-                    country.change_influence(difference - country.ussr_influence, 0)
-                    country.change_influence(0, -min(difference, country.us_influence))
+                country.change_influence(-min(difference, country.ussr_influence), max(0, difference - country.ussr_influence))
 
-            if side == Side.USSR:
-                if difference > country.us_influence:
-                    country.change_influence(0, difference - country.us_influence)
-                    country.change_influence(-min(difference, country.us_influence), 0)
+            if side == 'ussr':
+                country.change_influence(max(0, difference - country.us_influence), -min(difference, country.us_influence))
             print(f'Coup successful with roll of {die_roll}. Difference: {difference}')
         else:
             print(f'Coup failed with roll of {die_roll}')
+
 
     def can_realignment(self, country_name: str, side: Side):
         country = self[country_name]
@@ -218,7 +215,7 @@ class Country:
         if self.info.stability == 0:
             return f'Country({self.info.country_name}, Superpower = True, Adjacent = {self.info.adjacent_countries})'
         else:
-            return f'Country({self.info.country_name}, \nRegion \t\t= {self.info.regions}, \nStability \t= {self.info.stability}, \nBattleground \t= {self.info.battleground}, \nAdjacent \t= {self.info.adjacent_countries}, \nUS_influence \t= {self.us_influence}, \nUSSR_influence \t= {self.ussr_influence}, \nControl \t= {self.control}), \nus_influence_only \t= {self.us_influence_only}, \nussr_influence_only \t= {self.ussr_influence_only}'
+            return f'Country({self.info.country_name}, \nRegion \t\t= {self.info.regions}, \nStability \t= {self.info.stability}, \nBattleground \t= {self.info.battleground}, \nAdjacent \t= {self.info.adjacent_countries}, \nUS_influence \t= {self.us_influence}, {self.us_influence_only}\nUSSR_influence \t= {self.ussr_influence}, {self.ussr_influence_only}\nControl \t= {self.control}'
 
     def set_influence(self, us_influence, ussr_influence):
         self.us_influence = us_influence
