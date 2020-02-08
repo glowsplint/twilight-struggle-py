@@ -1,19 +1,19 @@
 import enum
 
-# you can now refer to USSR and USA as Side.USSR / Side.USA / Side.NEUTRAL
+# you can now refer to USSR and US as Side.USSR / Side.US / Side.NEUTRAL
 # without concern about which is 0 and which is 1; also robust to
 # change any time.
 
 class Side(enum.IntEnum):
 
     USSR = 0
-    USA = 1
+    US = 1
     NEUTRAL = 2
 
     @staticmethod
     def fromStr(s):
-        if s.lower() == 'usa':
-            return Side.USA
+        if s.lower() == 'us':
+            return Side.US
         elif s.lower() == 'ussr':
             return Side.USSR
         elif s.lower() == 'neutral':
@@ -23,14 +23,14 @@ class Side(enum.IntEnum):
 
     @property
     def opp(self):
-        if self == Side.USSR: return Side.USA
-        elif self == Side.USA: return Side.USSR
+        if self == Side.USSR: return Side.US
+        elif self == Side.US: return Side.USSR
         else: return Side.NEUTRAL
 
     @property
     def vp_mult(self):
         if self == Side.USSR: return 1
-        elif self == Side.USA: return -1
+        elif self == Side.US: return -1
         else: return 0
 
 
