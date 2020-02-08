@@ -14,32 +14,52 @@ new         Start a new game.
 quit        Exit the game.
 '''
 
-    @staticmethod
-    def run():
+    '''ask_for_input is our primary means of getting input from the user.'''
 
+    ussr_prompt = '----- USSR Player: -----'
+    us_prompt = '----- US Player: -----'
+
+    def __init__(self, game_instance):
+        self.game = game_instance
+
+    @staticmethod
+    def ask_for_input(expected_number_of_arguments: int, rejection_msg):
         while True:
-            # get user input
-            user_choice = input('> ').split(' ', 1)
+            raw_input = input('> ').split(',', expected_number_of_arguments-1)
+            if raw_input[0].lower() == 'quit' or raw_input[0].lower() == 'exit' or raw_input[0].lower() == 'q':
+                return
+            elif len(raw_input) == 0 or raw_input[0] == '?':
+                print(UI.help)
+            elif len(raw_input) == expected_number_of_arguments:
+                return raw_input
+            print(rejection_msg)
+
+    def run(self):
+
+        print('Initalising game..')
+        while True:
+
+            if self.game.stage_list[-1]() == None:
+                self.game.stage_list.pop()
+                continue
+
+            user_choice = UI.ask_for_input(1)
+            if user_choice == None:
+                break
 
             if len(user_choice) == 1: user_choice.append('')
 
             # parse the input
-            if len(user_choice) == 0 or user_choice[0] == '?':
-                print(UI.help)
+            if user_choice[0].lower() == 'new':
+                print('Unimplemented')
 
-            elif user_choice[0] == 'quit' or user_choice[0] == 'exit' or user_choice[0].lower() == 'q':
-                break;
-
-            elif user_choice[0] == 'new':
-                print('Uninplemented')
-
-            elif user_choice[0] == 'c':
+            elif user_choice[0].lower() == 'c':
                 UI.parse_card(user_choice[1])
 
-            elif user_choice[0] == 's':
+            elif user_choice[0].lower() == 's':
                 UI.parse_state(user_choice[1])
 
-            elif user_choice[0] == 'm':
+            elif user_choice[0].lower() == 'm':
                 UI.parse_move(user_choice[1])
 
             else:

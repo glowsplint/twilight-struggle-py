@@ -5,7 +5,6 @@ import numpy as np
 from twilight_enums import *
 from twilight_map import *
 from twilight_cards import *
-from twilight_stage import *
 from twilight_ui import *
 
 class Game:
@@ -31,31 +30,185 @@ class Game:
 
         self.map = GameMap()
         self.cards = GameCards()
-        self.ui = UI()
-        self.stage = Stage(self)
+        self.ui = UI(self)
 
-        self.US_hand = []
-        self.USSR_hand = []
+        self.us_hand = []
+        self.ussr_hand = []
         self.removed_pile = []
         self.discard_pile = []
         self.draw_pile = []
+
+        self.us_basket = []
+        self.ussr_basket = []
+
+        self.stage_list = [self.map.build_standard, self.deal, self.put_start_USSR, self.put_start_US, self.put_start_extra, self.joint_choose_headline, self.resolve_headline]
+
+        self.ar6 = [self.select_card_and_action for i in range(6)]
+        self.ar6.append(self.end_of_turn)
+        self.ar7 = [self.select_card_and_action for i in range(7)]
+        self.ar7.append(self.end_of_turn)
+        self.stage_list.extend([*self.ar6*3, *self.ar7*4])
+        self.stage_list.reverse()
 
         # For new set the first created game to be the actual ongoing game.
         if Game.main is None: Game.main = self
 
     '''
-    Creating a game.stage which is a list of subevents (which are Game methods).
-    The list starts with the last possible event, and ends with the current.
-
-    self.stage.current returns current game stage.
-    self.stage.stage_list returns the full list of stages.
+    self.current returns current game stage.
+    self.stage_list returns the full list of stages. The list starts with the
+    last possible event, and ends with the current event. We pop items off the
+    list when they are resolved.
     '''
+    # 6 AR in t1-t3, 7 AR in t4-t10
+
+
+    @property
+    def current(self):
+        return self.stage_list[-1]
+
+    '''
+    operations_influence is the stage where a side is given the opportunity to place influence.
+    They are provided a list of all possible countries that they can place influence into, and
+    must choose from these. During this stage, the UI is waiting for a tuple of country indices.
+    '''
+    def operations_influence(self, side, effective_ops, start_flag=False, handicap_flag=False):
+        # here you generate a list of countries you can put influence into
+        # you call country.can_place_influence on all selected countries
+        available_list = []
+        if start_flag:
+            while True:
+                print()
+                available_list, available_list_values = [], []
+                if side == Side.USSR:
+                    print(UI.ussr_prompt)
+                    available_list = [n for n in CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE]] # list of strings
+                elif side == Side.US:
+                    print(UI.us_prompt)
+                    available_list = [n for n in CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE]]
+                else:
+                    raise ValueError('Side argument invalid.')
+                available_list_values = [self.map[n].info.country_index for n in available_list]
+
+                print(f'You may place {effective_ops} influence in these countries. Type in their country indices, separated by commas (no spaces).')
+                for available_country_name in available_list:
+                    print(f'{self.map[available_country_name].info.country_name}, {self.map[available_country_name].info.country_index}')
+
+                rejection_msg = f'Please key in {effective_ops} comma-separated values.'
+                user_choice = UI.ask_for_input(effective_ops, rejection_msg)
+                if user_choice == None:
+                    break
+
+                # VALIDATION CHECK - check if:
+                # 1. all user choices exist in available_list
+                # 2. all ops points are used
+                # then: only make changes if input is valid
+                if len(set(user_choice) - set(available_list_values)) > 0:
+                    for country_index in user_choice:
+                        country_name = self.map.index_country_map[int(country_index)]
+                        self.map.place_influence(country_name, side, 1, bypass_assert=True)
+                    break
+                print()
+
+        if handicap_flag:
+            while True:
+                print()
+                available_list, available_list_values = [], []
+                if side == Side.USSR:
+                    print(UI.ussr_prompt)
+                    available_list = [*self.map.has_us_influence()] # list of strings
+                elif side == Side.US:
+                    print(UI.us_prompt)
+                    available_list = [n for n in CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE]]
+                else:
+                    raise ValueError('Side argument invalid.')
+                available_list_values = [self.map[n].info.country_index for n in available_list]
+
+                rejection_msg = f'Please key in {effective_ops} comma-separated values.'
+                print(f'You may place {effective_ops} influence in these countries. Type in their country indices, separated by commas (no spaces).')
+                for available_country_name in available_list:
+                    print(f'{self.map[available_country_name].info.country_name}, {self.map[available_country_name].info.country_index}')
+
+                rejection_msg = f'Please key in {effective_ops} comma-separated values.'
+                user_choice = UI.ask_for_input(effective_ops, rejection_msg)
+                if user_choice == None:
+                    break
+
+                # VALIDATION CHECK - check if:
+                # 1. all user choices exist in available_list
+                # 2. all ops points are used
+                # then: only make changes if input is valid
+                if len(set(user_choice) - set(available_list_values)) > 0:
+                    for country_index in user_choice:
+                        country_name = self.map.index_country_map[int(country_index)]
+                        self.map.place_influence(country_name, side, 1, bypass_assert=True)
+                    break
+                print()
+
+    def put_start_USSR(self):
+        self.operations_influence(Side.USSR, 6, start_flag=True)
+
+    def put_start_US(self):
+        self.operations_influence(Side.US, 7, start_flag=True)
+
+    def put_start_extra(self):
+        if self.handicap < 0:
+            self.operations_influence(Side.US, -self.handicap, handicap_flag=True)
+        elif self.handicap > 0:
+            self.operations_influence(Side.USSR, self.handicap, handicap_flag=True)
+
+    def joint_choose_headline(self):
+        pass
+
+    def choose_headline(self, side: Side):
+        pass
+
+    def resolve_headline(self):
+        pass
+
+    def select_card_and_action(self):
+        self.ar_track += 1
+        pass
+
+    def forced_to_missile_envy(self):
+        pass
+
+    def card_event(self):
+        pass
+
+    def card_operation_add_influence(self):
+        pass
+
+    def card_operation_realignment(self):
+        pass
+
+    def card_operation_coup(self):
+        pass
+
+    def discard_held_card(self):
+        pass
+
+    def select_take_8_rounds(self):
+        pass
+
+    def quagmire_discard(self):
+        pass
+
+    def quagmire_play_scoring_card(self):
+        pass
+
+    def norad_influence(self):
+        pass
+
+    def cuba_missile_remove(self):
+        pass
+
+
+
+
+
+
 
     # to add game terminate functionality EndGame()
-
-    def start(self):
-        self.map.build_standard()
-        self.deal()
 
     def change_vp(self, n: int): # positive for ussr
         self.vp_track += n
@@ -123,22 +276,22 @@ class Game:
 
     def deal(self):
         def top_up_cards(self, n: int):
-            ussr_held = len(self.USSR_hand)
-            us_held = len(self.US_hand)
+            ussr_held = len(self.ussr_hand)
+            us_held = len(self.us_hand)
 
-            if 'The_China_Card' in self.USSR_hand: # Ignore China Card if it is in either hand
-                ussr_held = len(self.USSR_hand) - 1
-            elif 'The_China_Card' in self.USSR_hand:
-                us_held = len(self.US_hand) - 1
+            if 'The_China_Card' in self.ussr_hand: # Ignore China Card if it is in either hand
+                ussr_held = len(self.ussr_hand) - 1
+            elif 'The_China_Card' in self.ussr_hand:
+                us_held = len(self.us_hand) - 1
 
             # if turn 4, add mid war cards into draw pile and shuffle, same for turn 8 for late war cards
             if self.turn_track == 4:
-                self.draw_pile.extend(self.cards.Mid_War)
-                self.cards.Mid_War = []
+                self.draw_pile.extend(self.cards.mid_war)
+                self.cards.mid_war = []
                 random.shuffle(self.draw_pile)
             if self.turn_track == 8:
-                self.draw_pile.extend(self.cards.Late_War)
-                self.cards.Late_War = []
+                self.draw_pile.extend(self.cards.late_war)
+                self.cards.late_war = []
                 random.shuffle(self.draw_pile)
 
             # exhaust the draw pile
@@ -150,21 +303,21 @@ class Game:
                         self.discard_pile = []
                         random.shuffle(self.draw_pile)
                 if ussr_held < n:
-                    self.USSR_hand.extend([self.draw_pile.pop()])
+                    self.ussr_hand.extend([self.draw_pile.pop()])
                     ussr_held += 1
                     recreate_draw_pile()
                 if us_held < n:
-                    self.US_hand.extend([self.draw_pile.pop()])
+                    self.us_hand.extend([self.draw_pile.pop()])
                     us_held += 1
                     recreate_draw_pile()
 
         '''Pre-headline setup'''
         if self.turn_track == 1 and self.ar_track == 1:
             # Move the China card from the early war pile to USSR hand, China card 6th from last
-            self.USSR_hand.append(self.cards.Early_War.pop(5))
-            self.USSR_hand.append(self.cards.Early_War.pop(self.cards.Early_War.index('Asia_Scoring'))) # for testing of specific cards
-            self.draw_pile.extend(self.cards.Early_War) # Put early war cards into the draw pile
-            self.cards.Early_War = []
+            self.ussr_hand.append(self.cards.early_war.pop(5))
+            self.ussr_hand.append(self.cards.early_war.pop(self.cards.early_war.index('Asia_Scoring'))) # for testing of specific cards
+            self.draw_pile.extend(self.cards.early_war) # Put early war cards into the draw pile
+            self.cards.early_war = []
             random.shuffle(self.draw_pile) # Shuffle the draw pile
             top_up_cards(self, 8)
         else:
@@ -172,9 +325,10 @@ class Game:
                 top_up_cards(self, 8)
             else:
                 top_up_cards(self, 9)
+        return
 
     # need to make sure next_turn is only called after all extra rounds
-    def next_turn(self):
+    def end_of_turn(self):
         # played at the end of last US action round within turn
         # 1. Check milops
         def check_milops(self):
@@ -187,19 +341,19 @@ class Game:
         def check_for_scoring_cards(self):
             scoring_list = ['Asia_Scoring', 'Europe_Scoring', 'Middle_East_Scoring', 'Central_America_Scoring', 'Southeast_Asia_Scoring', 'Africa_Scoring', 'South_America_Scoring']
             scoring_cards = [self.cards[y] for y in scoring_list]
-            if any(True for x in scoring_cards if x in self.US_hand):
+            if any(True for x in scoring_cards if x in self.us_hand):
                 print('USSR Victory!')
                 # EndGame()
-            elif any(True for x in scoring_cards if x in self.USSR_hand):
+            elif any(True for x in scoring_cards if x in self.ussr_hand):
                 print('US Victory!')
                 # EndGame()
 
         # 3. Flip China Card
         def flip_china_card(self):
-            if 'The_China_Card' in self.USSR_hand:
-                self.USSR_hand[self.USSR_hand.index('The_China_Card')].can_play = True
-            elif 'The_China_Card' in self.US_hand:
-                self.US_hand[self.US_hand.index('The_China_Card')].can_play = True
+            if 'The_China_Card' in self.ussr_hand:
+                self.ussr_hand[self.ussr_hand.index('The_China_Card')].can_play = True
+            elif 'The_China_Card' in self.us_hand:
+                self.us_hand[self.us_hand.index('The_China_Card')].can_play = True
 
         # 4. Advance turn marker
         def advance_turn_marker(self):
@@ -209,19 +363,16 @@ class Game:
         # 5. Final scoring (end T10)
         def final_scoring(self):
             if self.turn_track == 10 and (self.ar_track in [15,16,17]):
-                ScoreAsia(0)
-                ScoreEurope(0)
-                ScoreMiddleEast(0)
-                ScoreCentralAmerica(0)
-                ScoreAfrica(0)
-                ScoreSouthAmerica(0)
+                ScoreAsia()
+                ScoreEurope()
+                ScoreMiddleEast()
+                ScoreCentralAmerica()
+                ScoreAfrica()
+                ScoreSouthAmerica()
             print(f'Final scoring complete.')
             # EndGame()
 
         # 6. Increase DEFCON status
-        def improve_defcon_status():
-            self.change_defcon(1)
-
         # 7. Deal Cards -- written outside the next_turn function
         # 8. Headline Phase
         def headline(self):
@@ -234,8 +385,8 @@ class Game:
         flip_china_card(self)
         advance_turn_marker(self) #turn marker advanced before final scoring
         final_scoring(self)
-        improve_defcon_status()
-        deal(self) # turn marker advanced before dealing
+        self.change_defcon(1)
+        self.deal() # turn marker advanced before dealing
         headline(self)
 
     def score(self, region, presence_vps, domination_vps, control_vps):
@@ -266,8 +417,6 @@ class Game:
         print(f'{region.name} scores for {swing} VPs')
 
 
-
-# definitely want to make all the country states be stored in the specific Game object
 
 def DegradeDEFCONLevel(n):
     Game.main.change_defcon(-n)
