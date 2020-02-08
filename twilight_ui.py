@@ -23,7 +23,7 @@ quit        Exit the game.
         self.game = game_instance
 
     @staticmethod
-    def ask_for_input(expected_number_of_arguments: int, rejection_msg):
+    def ask_for_input(expected_number_of_arguments: int, rejection_msg: str):
         while True:
             raw_input = input('> ').split(',', expected_number_of_arguments-1)
             if raw_input[0].lower() == 'quit' or raw_input[0].lower() == 'exit' or raw_input[0].lower() == 'q':
@@ -39,9 +39,13 @@ quit        Exit the game.
         print('Initalising game..')
         while True:
 
-            if self.game.stage_list[-1]() == None:
-                self.game.stage_list.pop()
-                continue
+            if len(self.game.stage_list) > 0:
+                if self.game.stage_list[-1]() == None:
+                    self.game.stage_list.pop()
+                    continue
+            else:
+                print('End of game.')
+                break
 
             user_choice = UI.ask_for_input(1)
             if user_choice == None:

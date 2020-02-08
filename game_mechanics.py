@@ -81,13 +81,13 @@ class Game:
                 available_list, available_list_values = [], []
                 if side == Side.USSR:
                     print(UI.ussr_prompt)
-                    available_list = [n for n in CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE]] # list of strings
+                    available_list = [n for n in CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE]]
                 elif side == Side.US:
                     print(UI.us_prompt)
                     available_list = [n for n in CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE]]
                 else:
                     raise ValueError('Side argument invalid.')
-                available_list_values = [self.map[n].info.country_index for n in available_list]
+                available_list_values = [str(self.map[n].info.country_index) for n in available_list]
 
                 print(f'You may place {effective_ops} influence in these countries. Type in their country indices, separated by commas (no spaces).')
                 for available_country_name in available_list:
@@ -98,16 +98,18 @@ class Game:
                 if user_choice == None:
                     break
 
+                print(len(set(user_choice) - set(available_list_values)), set(user_choice), set(available_list_values))
                 # VALIDATION CHECK - check if:
                 # 1. all user choices exist in available_list
                 # 2. all ops points are used
                 # then: only make changes if input is valid
-                if len(set(user_choice) - set(available_list_values)) > 0:
+                if len(set(user_choice) - set(available_list_values)) == 0:
                     for country_index in user_choice:
                         country_name = self.map.index_country_map[int(country_index)]
                         self.map.place_influence(country_name, side, 1, bypass_assert=True)
                     break
-                print()
+                else:
+                    print('\nThe values you keyed in cannot be accepted.')
 
         if handicap_flag:
             while True:
@@ -115,13 +117,13 @@ class Game:
                 available_list, available_list_values = [], []
                 if side == Side.USSR:
                     print(UI.ussr_prompt)
-                    available_list = [*self.map.has_us_influence()] # list of strings
+                    available_list = [*self.map.has_us_influence()]
                 elif side == Side.US:
                     print(UI.us_prompt)
-                    available_list = [n for n in CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE]]
+                    available_list = [*self.map.has_us_influence()]
                 else:
                     raise ValueError('Side argument invalid.')
-                available_list_values = [self.map[n].info.country_index for n in available_list]
+                available_list_values = [str(self.map[n].info.country_index) for n in available_list]
 
                 rejection_msg = f'Please key in {effective_ops} comma-separated values.'
                 print(f'You may place {effective_ops} influence in these countries. Type in their country indices, separated by commas (no spaces).')
@@ -137,12 +139,13 @@ class Game:
                 # 1. all user choices exist in available_list
                 # 2. all ops points are used
                 # then: only make changes if input is valid
-                if len(set(user_choice) - set(available_list_values)) > 0:
+                if len(set(user_choice) - set(available_list_values)) == 0:
                     for country_index in user_choice:
                         country_name = self.map.index_country_map[int(country_index)]
                         self.map.place_influence(country_name, side, 1, bypass_assert=True)
                     break
-                print()
+                else:
+                    print('\nThe values you keyed in cannot be accepted.')
 
     def put_start_USSR(self):
         self.operations_influence(Side.USSR, 6, start_flag=True)
@@ -239,7 +242,7 @@ class Game:
         else:
             modifier = 1
 
-        y = x.vp_mult # multiplier for VPs - gives 1 for USSR and -1 for US
+        y = x.vp_mult # multiplier for VP - gives 1 for USSR and -1 for US
         roll = random.randint(6) + 1
         if roll + modifier <= 3:
             space_track[x] += 1
@@ -414,7 +417,7 @@ class Game:
 
         swing = vps[Side.USSR] - vps[Side.US]
         self.change_vp(swing)
-        print(f'{region.name} scores for {swing} VPs')
+        print(f'{region.name} scores for {swing} VP')
 
 
 
@@ -476,4 +479,4 @@ def ScoreSoutheastAsia():
         swing -= 1
 
     Game.main.change_vp(swing)
-    print(f'Southeast Asia scores for {swing} VPs')
+    print(f'Southeast Asia scores for {swing} VP')
