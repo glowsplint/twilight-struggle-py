@@ -54,6 +54,11 @@ class GameMap:
         for country_name in CountryInfo.ALL.keys():
             self.ALL[country_name] = Country(country_name)
 
+        # Create mapping of (k,v) = (country_index, country_name)
+        self.index_map = dict()
+        for country in list(self.ALL.values()):
+            self.index_map[country.info.country_index] = country.info.country_name
+
     def __getitem__(self, item):
         return self.ALL[item]
 
@@ -155,7 +160,7 @@ class GameMap:
             if self[country_name].info.superpower:
                 return False
 
-            countries_to_check = self[country_name].info.adjacent_countries
+            countries_to_check = self[country_name].info.adjacent_countries.copy()
             countries_to_check.append(country_name)
             if side == Side.USSR:
                 for country in countries_to_check:
@@ -179,6 +184,31 @@ class GameMap:
 
         return has_influence_around(self, country_name, side) and sufficient_ops(self, effective_operations_points)
 
+    def place_influence(self, country_name: str, side: Side, effective_operations_points: int, bypass_assert=False):
+        if not bypass_assert:
+            assert(self.can_place_influence(country_name, side, effective_operations_points))
+        if side == Side.USSR and self[country_name].control == Side.US:
+            # here we deduct 2 from effective_operations_points, to place 1 influence in the country, and then call the function again
+            if effective_operations_points >= 2:
+                self[country_name].change_influence(0, 1)
+            else:
+                raise ValueError('Not enough operations points!')
+            if effective_operations_points - 2 > 0:
+                self.place_influence(country_name, side, effective_operations_points - 2)
+        elif side == Side.US and self[country_name].control == Side.USSR:
+            if effective_operations_points >= 2:
+                self[country_name].change_influence(1, 0)
+            else:
+                raise ValueError('Not enough operations points!')
+            if effective_operations_points - 2 > 0:
+                self.place_influence(country_name, side, effective_operations_points - 2)
+        else:
+            if side == Side.US:
+                self[country_name].change_influence(effective_operations_points, 0)
+            elif side == Side.USSR:
+                self[country_name].change_influence(0, effective_operations_points)
+            else:
+                raise ValueError('side must be \'us\' or \'ussr\'!')
 
 class Country:
 
@@ -229,29 +259,7 @@ class Country:
         self.us_influence += us_influence
         self.ussr_influence += ussr_influence
 
-    def place_influence(self, side: Side, effective_operations_points: int):
-        if side == Side.USSR and self.control == Side.US:
-            # here we deduct 2 from effective_operations_points, to place 1 influence in the country, and then call the function again
-            if effective_operations_points >= 2:
-                self.change_influence(0, 1)
-            else:
-                raise ValueError('Not enough operations points!')
-            if effective_operations_points - 2 > 0:
-                self.place_influence(side, effective_operations_points - 2)
-        elif side == Side.US and self.control == Side.USSR:
-            if effective_operations_points >= 2:
-                self.change_influence(1, 0)
-            else:
-                raise ValueError('Not enough operations points!')
-            if effective_operations_points - 2 > 0:
-                self.place_influence(side, effective_operations_points - 2)
-        else:
-            if side == Side.US:
-                self.change_influence(effective_operations_points, 0)
-            elif side == Side.USSR:
-                self.change_influence(0, effective_operations_points)
-            else:
-                raise ValueError('side must be \'us\' or \'ussr\'!')
+
 
 
 

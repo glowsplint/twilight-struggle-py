@@ -1,7 +1,13 @@
+from twilight_enums import *
+from twilight_map import *
+# from twilight
+
 class Stage:
-    def __init__(self):
+    def __init__(self, game):
         # should write full list here
         self.stage_list = []
+        self._map = game.map
+        self._ui = game.ui
 
     @property
     def current(self):
@@ -11,28 +17,56 @@ class Stage:
         self.stage_list.pop()
         # run next stage
 
-    def start(self, game):
-        game.map.build_standard()
-        game.map.deal()
+    def start(self):
+        self._map.build_standard()
+        self._map.deal()
 
-    def operations_influence(game, side, effective_operations_points):
+    '''
+    operations_influence is the stage where a side is given the opportunity to place influence.
+    They are provided a list of all possible countries that they can place influence into, and
+    must choose from these. During this stage, the UI is waiting for a tuple of country indices.
+    '''
+    def operations_influence(self, side, effective_operations_points, start_flag=False):
         # here you generate a list of countries you can put influence into
-        # you call country.place_influence to all selected countries
+        # you call country.can_place_influence on all selected countries
+        available_list = []
         if side == Side.USSR:
-            game.map
-        elif side == Side.US:
-            pass
+            if start_flag:
+                while True:
+                    available_list = [n for n in CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE]] # list of strings
+                    available_list_values = [self._map[n].info.country_index for n in CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE]] # list of ints
+                    print('You may place influence in any of the following countries by typing in their country indices, separated by commas (no spaces).')
+                    for available_country_name in available_list:
+                        print(f'{self._map[available_country_name].info.country_name}, {self._map[available_country_name].info.country_index}')
+                    user_choice = input('> ').split(',') # list of split strings
+
+                    # check if:
+                    # 1. all user choices in available_list
+                    # 2. if all ops points are used
+                    if len(set(user_choice) - set(available_list_values)) > 0:
+                        if len(user_choice) == effective_operations_points:
+                            break
+
+                    for country_index in user_choice:
+                        country_name = self._map.index_map[int(country_index)]
+                        self._map.place_influence(country_name, side, 1, bypass_assert=True)
+                    print()
+
+        # elif side == Side.US:
+        #     if start_flag:
+        #         available_list = [n for n in CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE]]
         else:
             raise ValueError('Side argument invalid.')
         pass
 
     def put_start_USSR(self):
         # limited to eastern europe countries
-        operations_influence(6, Side.USSR)
+        operations_influence(6, Side.USSR, start_flag=True)
         pass
 
     def put_start_US(self):
-        operations_influence(7, Side.US)
+        # limited to western europe countries
+        operations_influence(7, Side.US, start_flag=True)
         pass
 
     def put_start_extra(self, handicap):

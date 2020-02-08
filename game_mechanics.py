@@ -6,6 +6,7 @@ from twilight_enums import *
 from twilight_map import *
 from twilight_cards import *
 from twilight_stage import *
+from twilight_ui import *
 
 class Game:
 
@@ -19,6 +20,7 @@ class Game:
 
     '''VP, AR, Milops, Space tracks'''
     def __init__(self):
+        self.handicap = -2 # positive in favour of ussr
         self.vp_track = 0 # positive for ussr
         self.turn_track = 1
         self.ar_track = 1 # increment by 1 for each side's action round
@@ -26,9 +28,12 @@ class Game:
         self.milops_track = np.array([0, 0]) # ussr first
         self.space_track = np.array([0, 0]) # 0 is start, 1 is earth satellite etc
         self.has_spaced = [False, False]
+
         self.map = GameMap()
         self.cards = GameCards()
-        self.stage = Stage()
+        self.ui = UI()
+        self.stage = Stage(self)
+
         self.US_hand = []
         self.USSR_hand = []
         self.removed_pile = []
