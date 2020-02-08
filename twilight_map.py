@@ -58,29 +58,30 @@ class GameMap:
         return self.ALL[item]
 
     def build_standard(self):
-        self['Panama'].set_influence(1, 0)
-        self['Canada'].set_influence(2, 0)
-        self['UK'].set_influence(2, 0)
-        self['North_Korea'].set_influence(0, 1)
+        # USSR
+        self['North_Korea'].set_influence(0, 3)
         self['East_Germany'].set_influence(0, 3)
         self['Finland'].set_influence(0, 1)
         self['Syria'].set_influence(0, 1)
-        self['Israel'].set_influence(1, 0)
         self['Iraq'].set_influence(0, 1)
+        # US
+        self['Australia'].set_influence(4, 0)
+        self['Philippines'].set_influence(1, 0)
+        self['Canada'].set_influence(2, 0)
+        self['UK'].set_influence(5, 0)
+        self['Panama'].set_influence(1, 0)
+        self['Israel'].set_influence(1, 0)
         self['Iran'].set_influence(1, 0)
-        self['North_Korea'].set_influence(0, 3)
         self['South_Korea'].set_influence(1, 0)
         self['Japan'].set_influence(1, 0)
-        self['Philippines'].set_influence(1, 0)
-        self['Australia'].set_influence(4, 0)
         self['South_Africa'].set_influence(1, 0)
 
-    def can_coup(self, country_name, side):
+    def can_coup(self, country_name: str, side: Side):
         country = self[country_name]
-        return not (side == Side.USA and country.ussr_influence == 0 or
+        return not (side == Side.US and country.ussr_influence == 0 or
                 side == Side.USSR and country.us_influence == 0)
 
-    def coup(self, country_name, side, effective_operations_points):
+    def coup(self, country_name: str, side: Side, effective_operations_points: int):
         '''
         TODO:
         1. Prevent coup if no opposing influence in the country. I would prefer to write this in a way that prevents this from happening altogether, as opposed to throwing up an error if this is tried.
@@ -110,11 +111,16 @@ class GameMap:
         else:
             print(f'Coup failed with roll of {die_roll}')
 
-    def can_realignment(self, country_name):
+    def can_realignment(self, country_name: str, side: Side):
         country = self[country_name]
-        return not (country.ussr_influence == 0 and country.us_influence == 0)
+        if side == Side.USSR and country.ussr_influence_only:
+            return False
+        elif side == Side.US and country.us_influence_only:
+            return False
+        else:
+            return not (country.ussr_influence == 0 and country.us_influence == 0)
 
-    def realignment(self, country_name):
+    def realignment(self, country_name: str):
         '''
         TODO:
         1. Prevent realignment under DEFCON restrictions.
@@ -123,7 +129,7 @@ class GameMap:
         assert(self.can_realignment(country_name))
         country = self[country_name]
 
-        modifier = 0 # net positive is in favour of USA
+        modifier = 0 # net positive is in favour of US
         for adjacent_country in country.info.adjacent_countries:
             modifier += ((self[adjacent_country.country_name]).control == 'us')
             modifier -= ((self[adjacent_country.country_name]).control == 'ussr')
@@ -139,10 +145,9 @@ class GameMap:
             country.change_influence(-min(-difference, country.us_influence), 0)
         print(f'US rolled: {us_roll}, USSR rolled: {ussr_roll}, Modifer = {modifier}, Difference = {difference}')
 
-
 class Country:
 
-    def __init__(self, country_name):
+    def __init__(self, country_name: str):
         self.info = CountryInfo.ALL[country_name]
 
         self.us_influence = 0
@@ -151,17 +156,31 @@ class Country:
     @property
     def control(self):
         if self.us_influence - self.ussr_influence >= self.info.stability:
-            return Side.USA
+            return Side.US
         elif self.ussr_influence - self.us_influence >= self.info.stability:
             return Side.USSR
         else:
             return Side.NEUTRAL
 
+    @property
+    def us_influence_only(self):
+        if self.us_influence > 0 and self.ussr_influence == 0:
+            return True
+        else:
+            return False
+
+    @property
+    def ussr_influence_only(self):
+        if self.ussr_influence > 0 and self.us_influence == 0:
+            return True
+        else:
+            return False
+
     def __repr__(self):
         if self.info.stability == 0:
             return f'Country({self.info.country_name}, Superpower = True, Adjacent = {self.info.adjacent_countries})'
         else:
-            return f'Country({self.info.country_name}, \nRegion \t\t= {self.info.regions}, \nStability \t= {self.info.stability}, \nBattleground \t= {self.info.battleground}, \nAdjacent \t= {self.info.adjacent_countries}, \nUS_influence \t= {self.us_influence}, \nUSSR_influence \t= {self.ussr_influence}, \nControl \t= {self.control})'
+            return f'Country({self.info.country_name}, \nRegion \t\t= {self.info.regions}, \nStability \t= {self.info.stability}, \nBattleground \t= {self.info.battleground}, \nAdjacent \t= {self.info.adjacent_countries}, \nUS_influence \t= {self.us_influence}, \nUSSR_influence \t= {self.ussr_influence}, \nControl \t= {self.control}), \nus_influence_only \t= {self.us_influence_only}, \nussr_influence_only \t= {self.ussr_influence_only}'
 
     def set_influence(self, us_influence, ussr_influence):
         if self.info.superpower == True:
@@ -173,11 +192,11 @@ class Country:
         self.us_influence = 0
         self.ussr_influence = 0
 
-    def change_influence(self, us_influence, ussr_influence):
+    def change_influence(self, us_influence: int, ussr_influence: int):
         self.us_influence += us_influence
         self.ussr_influence += ussr_influence
 
-    def place_influence(self, side, effective_operations_points):
+    def place_influence(self, side: Side, effective_operations_points: int):
         if side == 'ussr' and self.control == 'us':
             # here we deduct 2 from effective_operations_points, to place 1 influence in the country, and then call the function again
             if effective_operations_points >= 2:
@@ -213,8 +232,8 @@ USSR = {
     'ussr_influence': 999,
 }
 
-USA = {
-    'country_name': 'USA',
+US = {
+    'country_name': 'US',
     'country_index': 2,
     'superpower': True,
     'adjacent_countries': ['Japan', 'Mexico', 'Cuba', 'Canada'],
@@ -227,7 +246,7 @@ Canada = {
     'country_index': 3,
     'region': 'Western Europe',
     'stability': 4,
-    'adjacent_countries': ['USA', 'UK'],
+    'adjacent_countries': ['US', 'UK'],
     'us_influence': 0,
     'ussr_influence': 0,
 }
@@ -692,7 +711,7 @@ Japan = {
     'region': 'Asia',
     'stability': 4,
     'battleground': True,
-    'adjacent_countries': ['Philippines', 'Taiwan', 'South_Korea', 'USA'],
+    'adjacent_countries': ['Philippines', 'Taiwan', 'South_Korea', 'US'],
     'us_influence': 0,
     'ussr_influence': 0,
 }
@@ -942,7 +961,7 @@ Mexico = {
     'region': 'Central America',
     'stability': 2,
     'battleground': True,
-    'adjacent_countries': ['Guatemala', 'USA'],
+    'adjacent_countries': ['Guatemala', 'US'],
     'us_influence': 0,
     'ussr_influence': 0,
 }
@@ -1021,7 +1040,7 @@ Cuba = {
     'region': 'Central America',
     'stability': 3,
     'battleground': True,
-    'adjacent_countries': ['Nicaragua', 'Haiti', 'USA'],
+    'adjacent_countries': ['Nicaragua', 'Haiti', 'US'],
     'us_influence': 0,
     'ussr_influence': 0,
 }
@@ -1175,7 +1194,7 @@ Chinese_Civil_War = {
 
 ''' Creates entire map. '''
 USSR = CountryInfo(**USSR)
-USA = CountryInfo(**USA)
+US = CountryInfo(**US)
 Canada = CountryInfo(**Canada)
 UK = CountryInfo(**UK)
 Norway = CountryInfo(**Norway)

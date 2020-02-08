@@ -5,6 +5,7 @@ import numpy as np
 from twilight_enums import *
 from twilight_map import *
 from twilight_cards import *
+from twilight_stage import *
 
 class Game:
 
@@ -27,6 +28,7 @@ class Game:
         self.has_spaced = [False, False]
         self.map = GameMap()
         self.cards = GameCards()
+        self.stage = Stage()
         self.US_hand = []
         self.USSR_hand = []
         self.removed_pile = []
@@ -35,6 +37,14 @@ class Game:
 
         # For new set the first created game to be the actual ongoing game.
         if Game.main is None: Game.main = self
+
+    '''
+    Creating a game.stage which is a list of subevents (which are Game methods).
+    The list starts with the last possible event, and ends with the current.
+
+    self.stage.current returns current game stage.
+    self.stage.stage_list returns the full list of stages.
+    '''
 
     # to add game terminate functionality EndGame()
 
@@ -182,9 +192,9 @@ class Game:
         # 3. Flip China Card
         def flip_china_card(self):
             if 'The_China_Card' in self.USSR_hand:
-                self.USSR_hand[self.USSR_hand.index('The_China_Card')].flipped = False
-            else:
-                self.US_hand[self.US_hand.index('The_China_Card')].flipped = False
+                self.USSR_hand[self.USSR_hand.index('The_China_Card')].can_play = True
+            elif 'The_China_Card' in self.US_hand:
+                self.US_hand[self.US_hand.index('The_China_Card')].can_play = True
 
         # 4. Advance turn marker
         def advance_turn_marker(self):
@@ -224,7 +234,7 @@ class Game:
         headline(self)
 
     def score(self, region, presence_vps, domination_vps, control_vps):
-        bg_count = [0, 0, 0]  # USSR, USA, NEUTRAL
+        bg_count = [0, 0, 0]  # USSR, US, NEUTRAL
         country_count = [0, 0, 0]
         vps = [0, 0]
 
@@ -236,7 +246,7 @@ class Game:
             if x.control.opp.name in x.info.adjacent_countries:
                 vps[x.control] += 1
 
-        for s in [Side.USSR, Side.USA]:
+        for s in [Side.USSR, Side.US]:
             vps[s] += bg_count[s]
             if country_count[s] > country_count[s.opp]:
                 if bg_count[s] == sum(bg_count):
@@ -246,9 +256,11 @@ class Game:
             elif country_count[s] > 0:
                 vps[s] += presence_vps
 
-        swing = vps[Side.USSR] - vps[Side.USA]
+        swing = vps[Side.USSR] - vps[Side.US]
         self.change_vp(swing)
         print(f'{region.name} scores for {swing} VPs')
+
+
 
 # definitely want to make all the country states be stored in the specific Game object
 
@@ -300,13 +312,13 @@ def ScoreSoutheastAsia():
     for n in CountryInfo.REGION_ALL[MapRegion.SOUTHEAST_ASIA]:
         x = Game.main.map[n]
         country_count[Side.USSR] += (x.control == Side.USSR)
-        country_count[Side.USA] += (x.control == Side.USA)
-    swing = country_count[Side.USSR] - country_count[Side.USA]
+        country_count[Side.US] += (x.control == Side.US)
+    swing = country_count[Side.USSR] - country_count[Side.US]
 
     # thailand double VP
     if Game.main.map['Thailand'].control == Side.USSR:
         swing += 1
-    if Game.main.map['Thailand'].control == Side.USA:
+    if Game.main.map['Thailand'].control == Side.US:
         swing -= 1
 
     Game.main.change_vp(swing)

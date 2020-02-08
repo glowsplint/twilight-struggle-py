@@ -146,7 +146,7 @@ class Duck_and_Cover(CardInfo):
         self.stage = 'Early War'
         self.card_number = 4
         self.ops = 3
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'Degrade DEFCON one level. Then US player earns VPs equal to 5 minus current DEFCON level.'
 
 
@@ -158,7 +158,7 @@ class Five_Year_Plan(CardInfo):
         self.stage = 'Early War'
         self.card_number = 5
         self.ops = 3
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'USSR player must randomly discard one card. If the card is a US associated Event, the Event occurs immediately. If the card is a USSR associated Event or and Event applicable to both players, then the card must be discarded without triggering the Event.'
 
 
@@ -337,7 +337,7 @@ class Truman_Doctrine(CardInfo):
         self.stage = 'Early War'
         self.card_number = 19
         self.ops = 1
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'Remove all USSR Influence markers in one uncontrolled country in Europe.'
         self.remove_if_used_as_event = True
 
@@ -362,7 +362,7 @@ class NATO(CardInfo):
         self.stage = 'Early War'
         self.card_number = 21
         self.ops = 4
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'Play after \'Marshall Plan\' or \'Warsaw Pact\'. USSR player may no longer make Coup or Realignment rolls in any US Controlled countries in Europe. US Controlled countries in Europe may not be attacked by play of the Brush War event.'
         self.remove_if_used_as_event = True
 
@@ -375,7 +375,7 @@ class Independent_Reds(CardInfo):
         self.stage = 'Early War'
         self.card_number = 22
         self.ops = 2
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'Adds sufficient US Influence in either Yugoslavia, Romania, Bulgaria, Hungary, or Czechoslavakia to equal USSR Influence.'
         self.remove_if_used_as_event = True
 
@@ -388,7 +388,7 @@ class Marshall_Plan(CardInfo):
         self.stage = 'Early War'
         self.card_number = 23
         self.ops = 4
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'Allows play of NATO. Add one US Influence in each of seven non-USSR Controlled Western European countries.'
         self.remove_if_used_as_event = True
 
@@ -413,7 +413,7 @@ class Containment(CardInfo):
         self.stage = 'Early War'
         self.card_number = 25
         self.ops = 3
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'All further Operations cards played by US this turn add one to their value (to a maximum of 4).'
         self.remove_if_used_as_event = True
 
@@ -426,7 +426,7 @@ class CIA_Created(CardInfo):
         self.stage = 'Early War'
         self.card_number = 26
         self.ops = 1
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'USSR reveals hand this turn. Then the US may Conduct Operations as if they played a 1 Op card.'
         self.remove_if_used_as_event = True
 
@@ -439,7 +439,7 @@ class US_Japan_Mutual_Defense_Pact(CardInfo):
         self.stage = 'Early War'
         self.card_number = 27
         self.ops = 4
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'US gains sufficient Influence in Japan for Control. USSR may no longer make Coup or Realignment rolls in Japan.'
         self.remove_if_used_as_event = True
 
@@ -465,7 +465,7 @@ class East_European_Unrest(CardInfo):
         self.stage = 'Early War'
         self.card_number = 29
         self.ops = 3
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'In Early or Mid War: Remove 1 USSR Influence from three countries in Eastern Europe. In Late War: Remove 2 USSR Influence from three countries in Eastern Europe.'
 
 
@@ -539,7 +539,7 @@ class Formosan_Resolution(CardInfo):
         self.stage = 'Early War'
         self.card_number = 35
         self.ops = 2
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'Taiwan shall be treated as a Battleground country for scoring purposes, if the US controls Taiwan when the Asia Scoring Card is played or during Final Scoring at the end of Turn 10. Taiwan is not a battleground country for any other game purpose. This card is discarded after US play of \'The China Card\'.'
         self.remove_if_used_as_event = True
 
@@ -552,7 +552,7 @@ class Defectors(CardInfo):
         self.stage = 'Early War'
         self.card_number = 103
         self.ops = 2
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.resolve_headline_first = True,
         self.event_text = 'Play in Headline Phase to cancel USSR Headline event, including Scoring Card. Cancelled card returns to the Discard Pile. If Defectors played by USSR during Soviet action round, US gains 1 VP (unless played on the Space Race).'
 
@@ -581,7 +581,7 @@ class Special_Relationship(CardInfo):
         self.card_number = 105
         self.optional_card = True,
         self.ops = 2
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'If UK is US controlled but NATO is not in effect, US adds 1 Influence to any country adjacent to the UK. If UK is US controlled and NATO is in effect, US adds 2 Influence to any Western European country and gains 2 VPs.'
 
 
@@ -595,7 +595,7 @@ class NORAD(CardInfo):
         self.card_number = 106
         self.optional_card = True,
         self.ops = 3
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'If the US controls Canada, the US may add 1 Influence to any country already containing US Influence at the conclusion of any Action Round in which the DEFCON marker moves to the \'2\' box. This event cancelled by \'Quagmire\'.'
         self.remove_if_used_as_event = True
 
@@ -676,7 +676,7 @@ class Nuclear_Subs(CardInfo):
         self.stage = 'Mid War'
         self.card_number = 41
         self.ops = 2
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'US Coup attempts in Battleground Countries do not affect the DEFCON track for the remainder of the turn (does not affect Cuban Missile Crisis).'
         self.remove_if_used_as_event = True
 
@@ -715,7 +715,7 @@ class Bear_Trap(CardInfo):
         self.stage = 'Mid War'
         self.card_number = 44
         self.ops = 3
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'On next action round, USSR player must discard an Operations card worth 2 or more and roll 1-4 to cancel this event. Repeat each USSR player Action Round until successful or no appropriate cards remain. If out of appropriate cards, the USSR player may only play scoring cards until the next turn.'
         self.remove_if_used_as_event = True
 
@@ -765,7 +765,7 @@ class Kitchen_Debates(CardInfo):
         self.stage = 'Mid War'
         self.card_number = 48
         self.ops = 1
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'If the US controls more Battleground countries than the USSR, poke opponent in chest and gain 2 VP!'
         self.remove_if_used_as_event = True
 
@@ -955,7 +955,7 @@ class Colonial_Rear_Guards(CardInfo):
         self.stage = 'Mid War'
         self.card_number = 63
         self.ops = 2
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'Add 1 US Influence in each of four different African and/or Southeast Asian countries.'
 
 
@@ -967,7 +967,7 @@ class Panama_Canal_Returned(CardInfo):
         self.stage = 'Mid War'
         self.card_number = 64
         self.ops = 1
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'Add 1 US Influence in Panama, Costa Rica, and Venezuela.'
         self.remove_if_used_as_event = True
 
@@ -980,7 +980,7 @@ class Camp_David_Accords(CardInfo):
         self.stage = 'Mid War'
         self.card_number = 65
         self.ops = 2
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'US gains 1 VP. US receives 1 Influence in Israel, Jordan and Egypt. Arab-Israeli War event no longer playable.'
         self.remove_if_used_as_event = True
 
@@ -993,7 +993,7 @@ class Puppet_Governments(CardInfo):
         self.stage = 'Mid War'
         self.card_number = 66
         self.ops = 2
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'US may add 1 Influence in three countries that currently contain no Influence from either power.'
         self.remove_if_used_as_event = True
 
@@ -1006,7 +1006,7 @@ class Grain_Sales_to_Soviets(CardInfo):
         self.stage = 'Mid War'
         self.card_number = 67
         self.ops = 2
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'Randomly choose one card from USSR hand. Play it or return it. If Soviet player has no cards, or returned, use this card to conduct Operations normally.'
 
 
@@ -1018,7 +1018,7 @@ class John_Paul_II_Elected_Pope(CardInfo):
         self.stage = 'Mid War'
         self.card_number = 68
         self.ops = 2
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'Remove 2 USSR Influence in Poland and then add 1 US Influence in Poland. Allows play of \'Solidarity\'.'
         self.remove_if_used_as_event = True
 
@@ -1043,7 +1043,7 @@ class OAS_Founded(CardInfo):
         self.stage = 'Mid War'
         self.card_number = 70
         self.ops = 1
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'Add 2 US Influence in Central America and/or South America.'
         self.remove_if_used_as_event = True
 
@@ -1056,7 +1056,7 @@ class Nixon_Plays_The_China_Card(CardInfo):
         self.stage = 'Mid War'
         self.card_number = 71
         self.ops = 2
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'If US has \'The China Card\', gain 2 VP. Otherwise, US player receives \'The China Card\' now, face down and unavailable for immediate play.'
         self.remove_if_used_as_event = True
 
@@ -1069,7 +1069,7 @@ class Sadat_Expels_Soviets(CardInfo):
         self.stage = 'Mid War'
         self.card_number = 72
         self.ops = 1
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'Remove all USSR Influence in Egypt and add one US Influence.'
         self.remove_if_used_as_event = True
 
@@ -1082,7 +1082,7 @@ class Shuttle_Diplomacy(CardInfo):
         self.stage = 'Mid War'
         self.card_number = 73
         self.ops = 3
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'Play in front of US player. During the next scoring of the Middle East or Asia (whichever comes first), subtract one Battleground country from USSR total, then put this card in the discard pile. Does not count for Final Scoring at the end of Turn 10.'
 
 
@@ -1094,7 +1094,7 @@ class The_Voice_Of_America(CardInfo):
         self.stage = 'Mid War'
         self.card_number = 74
         self.ops = 2
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'Remove 4 USSR Influence from non-European countries. No more than 2 may be removed from any one country.'
 
 
@@ -1118,7 +1118,7 @@ class Ussuri_River_Skirmish(CardInfo):
         self.stage = 'Mid War'
         self.card_number = 76
         self.ops = 3
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'If the USSR has \'The China Card\', claim it face up and available for play. If the US already has \'The China Card\', add 4 US Influence in Asia, no more than 2 per country.'
         self.remove_if_used_as_event = True
 
@@ -1131,7 +1131,7 @@ class Ask_Not_What_Your_Country_Can_Do_For_You(CardInfo):
         self.stage = 'Mid War'
         self.card_number = 77
         self.ops = 3
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'US player may discard up to entire hand (including Scoring cards) and draw replacements from the deck. The number of cards discarded must be decided prior to drawing any replacements.'
         self.remove_if_used_as_event = True
 
@@ -1145,7 +1145,7 @@ class Alliance_for_Progress(CardInfo):
         self.stage = 'Mid War'
         self.card_number = 78
         self.ops = 3
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'US gains 1 VP for each US controlled Battleground country in Central America and South America.'
         self.remove_if_used_as_event = True
 
@@ -1215,7 +1215,7 @@ class Our_Man_In_Tehran(CardInfo):
         self.card_number = 108
         self.optional_card = True,
         self.ops = 2
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'If the US controls at least one Middle East country, the US player draws the top 5 cards from the draw pile. They may reveal and then discard any or all of these drawn cards without triggering the Event. Any remaining drawn cards are returned to the draw deck, and it is reshuffled.'
         self.remove_if_used_as_event = True
 
@@ -1250,7 +1250,7 @@ class The_Iron_Lady(CardInfo):
         self.stage = 'Late War'
         self.card_number = 83
         self.ops = 3
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'US gains 1 VP. Add 1 USSR Influence in Argentina. Remove all USSR Influence from UK. Socialist Governments event no longer playable.'
         self.remove_if_used_as_event = True
 
@@ -1264,7 +1264,7 @@ class Reagan_Bombs_Libya(CardInfo):
         self.stage = 'Late War'
         self.card_number = 84
         self.ops = 2
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'US gains 1 VP for every 2 USSR Influence in Libya.'
         self.remove_if_used_as_event = True
 
@@ -1278,7 +1278,7 @@ class Star_Wars(CardInfo):
         self.stage = 'Late War'
         self.card_number = 85
         self.ops = 2
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'If the US is ahead on the Space Race Track, play this card to search through the discard pile for a non-scoring card of your choice. Event occurs immediately.'
         self.remove_if_used_as_event = True
 
@@ -1292,7 +1292,7 @@ class North_Sea_Oil(CardInfo):
         self.stage = 'Late War'
         self.card_number = 86
         self.ops = 3
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'OPEC event is no longer playable. US may play 8 cards this turn.'
         self.remove_if_used_as_event = True
 
@@ -1334,7 +1334,7 @@ class Soviets_Shoot_Down_KAL(CardInfo):
         self.stage = 'Late War'
         self.card_number = 89
         self.ops = 4
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'Degrade DEFCON one level. US gains 2 VP. If South Korea is US Controlled, then the US may place Influence or attempt Realignment as if they played a 4 Ops card.'
         self.remove_if_used_as_event = True
 
@@ -1399,7 +1399,7 @@ class Chernobyl(CardInfo):
         self.stage = 'Late War'
         self.card_number = 94
         self.ops = 3
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'The US player may designate one Region. For the remainder of the turn the USSR may not add additional Influence to that Region by the play of Operations Points via placing Influence.'
         self.remove_if_used_as_event = True
 
@@ -1426,7 +1426,7 @@ class Tear_Down_This_Wall(CardInfo):
         self.stage = 'Late War'
         self.card_number = 96
         self.ops = 3
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'Cancels/prevent Willy Brandt. Add 3 US Influence in East Germany. Then US may make a free Coup attempt or Realignment rolls in Europe using this card\'s Ops Value.'
         self.remove_if_used_as_event = True
 
@@ -1440,7 +1440,7 @@ class An_Evil_Empire(CardInfo):
         self.stage = 'Late War'
         self.card_number = 97
         self.ops = 3
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'Cancels/Prevents Flower Power. US gains 1 VP.'
         self.remove_if_used_as_event = True
 
@@ -1495,7 +1495,7 @@ class Solidarity(CardInfo):
         self.stage = 'Late War'
         self.card_number = 101
         self.ops = 2
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'Playable as an event only if John Paul II Elected Pope is in effect. Add 3 US Influence in Poland.'
         self.remove_if_used_as_event = True
 
@@ -1541,7 +1541,7 @@ class AWACS_Sale_to_Saudis(CardInfo):
         self.card_number = 110
         self.optional_card = True,
         self.ops = 3
-        self.event_owner = 'USA'
+        self.event_owner = 'US'
         self.event_text = 'US receives 2 Influence in Saudi Arabia. Muslim Revolution may no longer be played as an event.'
         self.remove_if_used_as_event = True
 

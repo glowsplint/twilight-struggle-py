@@ -155,3 +155,21 @@ Europe_Scoring.use_for_event()
 Game.main.vp_track
 UI.run()
 
+
+# In[4]:
+
+
+g.map['Iran']
+
+
+# In[5]:
+
+
+g.map.can_realignment('Iran', Side.US)
+
+
+# In[6]:
+
+
+# g.USSR_hand[1].event()
+
