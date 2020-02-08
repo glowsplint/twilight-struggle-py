@@ -52,7 +52,7 @@ class Game:
         self.map.build_standard()
         self.deal()
 
-    def change_vp(self, n): # positive for ussr
+    def change_vp(self, n: int): # positive for ussr
         self.vp_track += n
         if self.vp_track >= 20:
             print('USSR victory')
@@ -61,14 +61,14 @@ class Game:
             print('US victory')
             # EndGame()
 
-    def change_defcon(self, n):
+    def change_defcon(self, n: int):
         self.defcon_track += min(n, 5 - self.defcon_track)
         if self.defcon_track < 2:
             print('Game ended by thermonuclear war')
             # EndGame()
 
     # SPACE (function)
-    def space(self, side):
+    def space(self, side: Side):
         x = Side.fromStr(side)
 
         # this one could be something game specific later
@@ -117,7 +117,7 @@ class Game:
             print(f'Failure with roll of {roll}.')
 
     def deal(self):
-        def top_up_cards(self, n):
+        def top_up_cards(self, n: int):
             ussr_held = len(self.USSR_hand)
             us_held = len(self.US_hand)
 

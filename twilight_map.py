@@ -58,13 +58,14 @@ class GameMap:
         return self.ALL[item]
 
     def build_standard(self):
-        # USSR
+        self['USSR'].set_influence(0, 999)
         self['North_Korea'].set_influence(0, 3)
         self['East_Germany'].set_influence(0, 3)
         self['Finland'].set_influence(0, 1)
         self['Syria'].set_influence(0, 1)
         self['Iraq'].set_influence(0, 1)
-        # US
+
+        self['US'].set_influence(999, 0)
         self['Australia'].set_influence(4, 0)
         self['Philippines'].set_influence(1, 0)
         self['Canada'].set_influence(2, 0)
@@ -97,13 +98,13 @@ class GameMap:
         difference = die_roll + effective_operations_points - country.info.stability * 2
 
         if difference > 0:
-            if side == 'us':
+            if side == Side.US:
                 # subtract from opposing first.. and then add to yours
                 if difference > country.ussr_influence:
                     country.change_influence(difference - country.ussr_influence, 0)
                     country.change_influence(0, -min(difference, country.us_influence))
 
-            if side == 'ussr':
+            if side == Side.USSR:
                 if difference > country.us_influence:
                     country.change_influence(0, difference - country.us_influence)
                     country.change_influence(-min(difference, country.us_influence), 0)
@@ -131,8 +132,8 @@ class GameMap:
 
         modifier = 0 # net positive is in favour of US
         for adjacent_country in country.info.adjacent_countries:
-            modifier += ((self[adjacent_country.country_name]).control == 'us')
-            modifier -= ((self[adjacent_country.country_name]).control == 'ussr')
+            modifier += ((self[adjacent_country.country_name]).control == Side.US)
+            modifier -= ((self[adjacent_country.country_name]).control == Side.USSR)
         if country.us_influence - country.ussr_influence > 0:
             modifier += 1
         elif country.us_influence - country.ussr_influence < 0:
@@ -144,6 +145,43 @@ class GameMap:
         elif difference < 0:
             country.change_influence(-min(-difference, country.us_influence), 0)
         print(f'US rolled: {us_roll}, USSR rolled: {ussr_roll}, Modifer = {modifier}, Difference = {difference}')
+
+    # assume that a specific card has already been selected before the running of this function
+    def can_place_influence(self, country_name: str, side: Side, effective_operations_points: int):
+        # Here we run two different checks in order:
+        # 1. In any of the adjacent countries and itself, is there existing influence of the same side?
+        # 2. If this country is controlled by the opposite power, is effective_operations_points at least 2?
+        # 2a. Also checks if the card being used has at least 1 effective operation point (so scoring cards can't be used for influence)
+        country = self[country_name]
+
+        def has_influence_around(self, country_name: str, side: Side):
+            if self[country_name].info.superpower:
+                return False
+
+            countries_to_check = self[country_name].info.adjacent_countries
+            countries_to_check.append(country_name)
+            if side == Side.USSR:
+                for country in countries_to_check:
+                    if self[country].ussr_influence > 0:
+                        return True
+                return False # returns false if none of the above are true
+            if side == Side.US:
+                for country in countries_to_check:
+                    if self[country].us_influence > 0:
+                        return True
+                return False # returns false if none of the above are true
+
+        def sufficient_ops(self, effective_operations_points: int):
+            # if country is controlled by opposition, if ops > 1, return true, else false
+            if effective_operations_points >= 1:
+                if country.control == Side.NEUTRAL or country.control == side:
+                    return True
+                elif effective_operations_points > 1:
+                    return True
+            else: return False
+
+        return has_influence_around(self, country_name, side) and sufficient_ops(self, effective_operations_points)
+
 
 class Country:
 
@@ -183,8 +221,6 @@ class Country:
             return f'Country({self.info.country_name}, \nRegion \t\t= {self.info.regions}, \nStability \t= {self.info.stability}, \nBattleground \t= {self.info.battleground}, \nAdjacent \t= {self.info.adjacent_countries}, \nUS_influence \t= {self.us_influence}, \nUSSR_influence \t= {self.ussr_influence}, \nControl \t= {self.control}), \nus_influence_only \t= {self.us_influence_only}, \nussr_influence_only \t= {self.ussr_influence_only}'
 
     def set_influence(self, us_influence, ussr_influence):
-        if self.info.superpower == True:
-            raise ValueError('Cannot set influence on superpower!')
         self.us_influence = us_influence
         self.ussr_influence = ussr_influence
 
@@ -197,7 +233,7 @@ class Country:
         self.ussr_influence += ussr_influence
 
     def place_influence(self, side: Side, effective_operations_points: int):
-        if side == 'ussr' and self.control == 'us':
+        if side == Side.USSR and self.control == Side.US:
             # here we deduct 2 from effective_operations_points, to place 1 influence in the country, and then call the function again
             if effective_operations_points >= 2:
                 self.change_influence(0, 1)
@@ -205,7 +241,7 @@ class Country:
                 raise ValueError('Not enough operations points!')
             if effective_operations_points - 2 > 0:
                 self.place_influence(side, effective_operations_points - 2)
-        elif side == 'us' and self.control == 'ussr':
+        elif side == Side.US and self.control == Side.USSR:
             if effective_operations_points >= 2:
                 self.change_influence(1, 0)
             else:
@@ -213,9 +249,9 @@ class Country:
             if effective_operations_points - 2 > 0:
                 self.place_influence(side, effective_operations_points - 2)
         else:
-            if side == 'us':
+            if side == Side.US:
                 self.change_influence(effective_operations_points, 0)
-            elif side == 'ussr':
+            elif side == Side.USSR:
                 self.change_influence(0, effective_operations_points)
             else:
                 raise ValueError('side must be \'us\' or \'ussr\'!')
