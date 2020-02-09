@@ -66,16 +66,23 @@ class Game:
         return self.stage_list[-1]
 
 
-
-
     '''
-    operations_influence is the generic stage where a side is given the opportunity to place influence.
+    card_operation_add_influence is the generic stage where a side is given the opportunity to place influence.
     They are provided a list of all possible countries that they can place influence into, and
     must choose from these. During this stage, the UI is waiting for a tuple of country indices.
 
     This is the actual use of operations to place influence.
     '''
-    def operations_influence(self, side, effective_ops, available_list):
+    def card_operation_add_influence(self, side, effective_ops):
+
+        '''Generates the list of all possible countries that influence can be placed in.'''
+
+        filter = np.array([self.map.can_place_influence(country_name, side, effective_ops) for country_name in self.map.ALL])
+        all_countries = np.array([country_name for country_name in self.map.ALL])
+        available_list = all_countries[filter]
+        available_list_values = [str(self.map[n].info.country_index) for n in available_list]
+        guide_msg = f'You may modify {effective_ops} influence in these countries. Type in their country indices, separated by commas (no spaces).'
+        rejection_msg = f'Please key in {effective_ops} comma-separated values.'
 
         while True:
             print()
@@ -85,10 +92,8 @@ class Game:
                 print(UI.us_prompt)
             else:
                 raise ValueError('Side argument invalid.')
-            available_list_values = [str(self.map[n].info.country_index) for n in available_list]
 
-            rejection_msg = f'Please key in {effective_ops} comma-separated values.'
-            print(f'You may place {effective_ops} influence in these countries. Type in their country indices, separated by commas (no spaces).')
+            print(guide_msg)
             for available_country_name in available_list:
                 print(f'{self.map[available_country_name].info.country_name}, {self.map[available_country_name].info.country_index}')
 
@@ -110,13 +115,17 @@ class Game:
 
     '''
     event_influence is the generic stage where a side is given the opportunity to modify influence.
-    Unlike operations_influence, this is mostly used for card events where the player has to choose
+    Unlike card_operation_add_influence, this is mostly used for card events where the player has to choose
     which regions in which to directly insert influence.
 
     Examples of cards that use this function are: VOA, Decolonization, OAS_Founded, Junta.
     See put_start_USSR below for an example.
     '''
     def event_influence(self, side, effective_ops, available_list: list, can_split: bool, positive: bool):
+
+        available_list_values = [str(self.map[n].info.country_index) for n in available_list]
+        guide_msg = f'You may modify {effective_ops} influence in these countries. Type in their country indices, separated by commas (no spaces).'
+        rejection_msg = f'Please key in {effective_ops} comma-separated values.'
 
         while True:
             print()
@@ -126,10 +135,8 @@ class Game:
                 print(UI.us_prompt)
             else:
                 raise ValueError('Side argument invalid.')
-            available_list_values = [str(self.map[n].info.country_index) for n in available_list]
 
-            rejection_msg = f'Please key in {effective_ops} comma-separated values.'
-            print(f'You may modify {effective_ops} influence in these countries. Type in their country indices, separated by commas (no spaces).')
+            print(guide_msg)
             for available_country_name in available_list:
                 print(f'{self.map[available_country_name].info.country_name}, {self.map[available_country_name].info.country_index}')
 
@@ -203,13 +210,6 @@ class Game:
 
     def card_event(self):
         # can only be used if the event is yours
-        pass
-
-    def card_operation_add_influence(self):
-        '''
-        Generates the list of all possible countries that influence can be
-        placed in.
-        '''
         pass
 
     def card_operation_realignment(self):
