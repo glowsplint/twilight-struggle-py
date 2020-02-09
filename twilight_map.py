@@ -198,10 +198,7 @@ class GameMap:
 
         return has_influence_around(self, country_name, side) and sufficient_ops(self, effective_ops)
 
-    def place_influence(self, country_name: str, side: Side, effective_ops: int, bypass_assert=False):
-        if not bypass_assert:
-            assert(self.can_place_influence(country_name, side, effective_ops))
-
+    def place_influence(self, country_name: str, side: Side, effective_ops: int):
         if side == Side.USSR and self[country_name].control == Side.US:
             # here we deduct 2 from effective_ops, to place 1 influence in the country, and then call the function again
             if effective_ops >= 2:
@@ -224,6 +221,10 @@ class GameMap:
                 self[country_name].change_influence(0, effective_ops)
             else:
                 raise ValueError('side must be \'us\' or \'ussr\'!')
+
+    def change_influence(self, country_name: str, us_influence: int, ussr_influence: int):
+        self[country_name].us_influence += us_influence
+        self[country_name].ussr_influence += ussr_influence
 
 class Country:
 

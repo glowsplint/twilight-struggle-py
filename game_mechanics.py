@@ -61,105 +61,128 @@ class Game:
     '''
     # 6 AR in t1-t3, 7 AR in t4-t10
 
-
     @property
     def current(self):
         return self.stage_list[-1]
 
+
+
+
     '''
-    operations_influence is the stage where a side is given the opportunity to place influence.
+    operations_influence is the generic stage where a side is given the opportunity to place influence.
     They are provided a list of all possible countries that they can place influence into, and
     must choose from these. During this stage, the UI is waiting for a tuple of country indices.
+
+    This is the actual use of operations to place influence.
     '''
-    def operations_influence(self, side, effective_ops, start_flag=False, handicap_flag=False):
-        # here you generate a list of countries you can put influence into
-        # you call country.can_place_influence on all selected countries
-        available_list = []
-        if start_flag:
-            while True:
-                print()
-                available_list, available_list_values = [], []
-                if side == Side.USSR:
-                    print(UI.ussr_prompt)
-                    available_list = [n for n in CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE]]
-                elif side == Side.US:
-                    print(UI.us_prompt)
-                    available_list = [n for n in CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE]]
-                else:
-                    raise ValueError('Side argument invalid.')
-                available_list_values = [str(self.map[n].info.country_index) for n in available_list]
+    def operations_influence(self, side, effective_ops, available_list):
 
-                print(f'You may place {effective_ops} influence in these countries. Type in their country indices, separated by commas (no spaces).')
-                for available_country_name in available_list:
-                    print(f'{self.map[available_country_name].info.country_name}, {self.map[available_country_name].info.country_index}')
+        while True:
+            print()
+            if side == Side.USSR:
+                print(UI.ussr_prompt)
+            elif side == Side.US:
+                print(UI.us_prompt)
+            else:
+                raise ValueError('Side argument invalid.')
+            available_list_values = [str(self.map[n].info.country_index) for n in available_list]
 
-                rejection_msg = f'Please key in {effective_ops} comma-separated values.'
-                user_choice = UI.ask_for_input(effective_ops, rejection_msg)
-                if user_choice == None:
-                    break
+            rejection_msg = f'Please key in {effective_ops} comma-separated values.'
+            print(f'You may place {effective_ops} influence in these countries. Type in their country indices, separated by commas (no spaces).')
+            for available_country_name in available_list:
+                print(f'{self.map[available_country_name].info.country_name}, {self.map[available_country_name].info.country_index}')
 
-                print(len(set(user_choice) - set(available_list_values)), set(user_choice), set(available_list_values))
-                # VALIDATION CHECK - check if:
-                # 1. all user choices exist in available_list
-                # 2. all ops points are used
-                # then: only make changes if input is valid
-                if len(set(user_choice) - set(available_list_values)) == 0:
-                    for country_index in user_choice:
-                        country_name = self.map.index_country_map[int(country_index)]
-                        self.map.place_influence(country_name, side, 1, bypass_assert=True)
-                    break
-                else:
-                    print('\nThe values you keyed in cannot be accepted.')
+            user_choice = UI.ask_for_input(effective_ops, rejection_msg)
+            if user_choice == None:
+                break
 
-        if handicap_flag:
-            while True:
-                print()
-                available_list, available_list_values = [], []
-                if side == Side.USSR:
-                    print(UI.ussr_prompt)
-                    available_list = [*self.map.has_us_influence()]
-                elif side == Side.US:
-                    print(UI.us_prompt)
-                    available_list = [*self.map.has_us_influence()]
-                else:
-                    raise ValueError('Side argument invalid.')
-                available_list_values = [str(self.map[n].info.country_index) for n in available_list]
+            if len(set(user_choice) - set(available_list_values)) == 0:
+                for country_index in user_choice:
+                    country_name = self.map.index_country_map[int(country_index)]
+                    self.map.place_influence(country_name, side, 1)
+                break
+            else:
+                print('\nThe values you keyed in cannot be accepted.')
+        pass
 
-                rejection_msg = f'Please key in {effective_ops} comma-separated values.'
-                print(f'You may place {effective_ops} influence in these countries. Type in their country indices, separated by commas (no spaces).')
-                for available_country_name in available_list:
-                    print(f'{self.map[available_country_name].info.country_name}, {self.map[available_country_name].info.country_index}')
 
-                rejection_msg = f'Please key in {effective_ops} comma-separated values.'
-                user_choice = UI.ask_for_input(effective_ops, rejection_msg)
-                if user_choice == None:
-                    break
 
-                # VALIDATION CHECK - check if:
-                # 1. all user choices exist in available_list
-                # 2. all ops points are used
-                # then: only make changes if input is valid
-                if len(set(user_choice) - set(available_list_values)) == 0:
-                    for country_index in user_choice:
-                        country_name = self.map.index_country_map[int(country_index)]
-                        self.map.place_influence(country_name, side, 1, bypass_assert=True)
-                    break
-                else:
-                    print('\nThe values you keyed in cannot be accepted.')
+
+    '''
+    event_influence is the generic stage where a side is given the opportunity to modify influence.
+    Unlike operations_influence, this is mostly used for card events where the player has to choose
+    which regions in which to directly insert influence.
+
+    Examples of cards that use this function are: VOA, Decolonization, OAS_Founded, Junta.
+    See put_start_USSR below for an example.
+    '''
+    def event_influence(self, side, effective_ops, available_list: list, can_split: bool, positive: bool):
+
+        while True:
+            print()
+            if side == Side.USSR:
+                print(UI.ussr_prompt)
+            elif side == Side.US:
+                print(UI.us_prompt)
+            else:
+                raise ValueError('Side argument invalid.')
+            available_list_values = [str(self.map[n].info.country_index) for n in available_list]
+
+            rejection_msg = f'Please key in {effective_ops} comma-separated values.'
+            print(f'You may modify {effective_ops} influence in these countries. Type in their country indices, separated by commas (no spaces).')
+            for available_country_name in available_list:
+                print(f'{self.map[available_country_name].info.country_name}, {self.map[available_country_name].info.country_index}')
+
+            user_choice = UI.ask_for_input(effective_ops, rejection_msg)
+            if user_choice == None:
+                break
+
+            if can_split:
+                additional_input_check = True
+            else:
+                additional_input_check = (len(set(user_choice)) == 1)
+
+            if len(set(user_choice) - set(available_list_values)) == 0 and additional_input_check:
+                for country_index in user_choice:
+                    country_name = self.map.index_country_map[int(country_index)]
+                    if side == Side.USSR:
+                        if positive:
+                            self.map.change_influence(country_name, 0, 1)
+                        else:
+                            self.map.change_influence(country_name, -1, 0)
+                    elif side == Side.US:
+                        if positive:
+                            self.map.change_influence(country_name, 1, 0)
+                        else:
+                            self.map.change_influence(country_name, 0, -1)
+                break
+            else:
+                print('\nThe values you keyed in cannot be accepted.')
+
+
 
     def put_start_USSR(self):
-        self.operations_influence(Side.USSR, 6, start_flag=True)
+        available_list = [n for n in CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE]]
+        self.event_influence(Side.USSR, 6, available_list, can_split=True, positive=True)
 
     def put_start_US(self):
-        self.operations_influence(Side.US, 7, start_flag=True)
+        available_list = [n for n in CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE]]
+        self.event_influence(Side.US, 7, available_list, can_split=True, positive=True)
 
     def put_start_extra(self):
         if self.handicap < 0:
-            self.operations_influence(Side.US, -self.handicap, handicap_flag=True)
+            available_list = [*self.map.has_us_influence()]
+            self.event_influence(Side.US, -self.handicap, available_list, can_split=True, positive=True)
         elif self.handicap > 0:
-            self.operations_influence(Side.USSR, self.handicap, handicap_flag=True)
+            available_list = [*self.map.has_ussr_influence()]
+            self.event_influence(Side.USSR, self.handicap, available_list, can_split=True, positive=True)
 
     def joint_choose_headline(self):
+        '''
+        Both players are to simultaneously choose their headline card.
+        USSR chooses first, then US, then display to both players the other's
+        choice.
+        '''
         pass
 
     def choose_headline(self, side: Side):
@@ -169,6 +192,9 @@ class Game:
         pass
 
     def select_card_and_action(self):
+        '''
+        This function should lead to one of the below.
+        '''
         self.ar_track += 1
         pass
 
@@ -176,15 +202,26 @@ class Game:
         pass
 
     def card_event(self):
+        # can only be used if the event is yours
         pass
 
     def card_operation_add_influence(self):
+        '''
+        Generates the list of all possible countries that influence can be
+        placed in.
+        '''
         pass
 
     def card_operation_realignment(self):
+        '''
+        Generates the list of all possible countries that can be realigned.
+        '''
         pass
 
     def card_operation_coup(self):
+        '''
+        Generates the list of all possible countries that can be couped.
+        '''
         pass
 
     def discard_held_card(self):
