@@ -67,6 +67,21 @@ class Game:
 
 
     '''
+    Here, we define a few utility functions used frequently in the code below.
+    prompt_side serves to print the headers ----- USSR/US turn -----.
+    '''
+    @staticmethod
+    def prompt_side(side: Side):
+        print()
+        if side == Side.USSR:
+            print(UI.ussr_prompt)
+        elif side == Side.US:
+            print(UI.us_prompt)
+        else:
+            raise ValueError('Side argument invalid.')
+
+
+    '''
     card_operation_add_influence is the generic stage where a side is given the opportunity to place influence.
     They are provided a list of all possible countries that they can place influence into, and
     must choose from these. During this stage, the UI is waiting for a tuple of country indices.
@@ -77,25 +92,18 @@ class Game:
 
         '''Generates the list of all possible countries that influence can be placed in.'''
 
-        filter = np.array([self.map.can_place_influence(country_name, side, effective_ops) for country_name in self.map.ALL])
-        all_countries = np.array([country_name for country_name in self.map.ALL])
+        filter = np.array([self.map.can_place_influence(name, side, effective_ops) for name in self.map.ALL])
+        all_countries = np.array([name for name in self.map.ALL])
         available_list = all_countries[filter]
         available_list_values = [str(self.map[n].info.country_index) for n in available_list]
         guide_msg = f'You may modify {effective_ops} influence in these countries. Type in their country indices, separated by commas (no spaces).'
         rejection_msg = f'Please key in {effective_ops} comma-separated values.'
 
         while True:
-            print()
-            if side == Side.USSR:
-                print(UI.ussr_prompt)
-            elif side == Side.US:
-                print(UI.us_prompt)
-            else:
-                raise ValueError('Side argument invalid.')
-
+            self.prompt_side(side)
             print(guide_msg)
-            for available_country_name in available_list:
-                print(f'{self.map[available_country_name].info.country_name}, {self.map[available_country_name].info.country_index}')
+            for available_name in available_list:
+                print(f'{self.map[available_name].info.name}, {self.map[available_name].info.country_index}')
 
             user_choice = UI.ask_for_input(effective_ops, rejection_msg)
             if user_choice == None:
@@ -103,8 +111,8 @@ class Game:
 
             if len(set(user_choice) - set(available_list_values)) == 0:
                 for country_index in user_choice:
-                    country_name = self.map.index_country_map[int(country_index)]
-                    self.map.place_influence(country_name, side, 1)
+                    name = self.map.index_country_map[int(country_index)]
+                    self.map.place_influence(name, side, 1)
                 break
             else:
                 print('\nYour input cannot be accepted.')
@@ -118,7 +126,8 @@ class Game:
     which regions in which to directly insert influence.
 
     Examples of cards that use this function are: VOA, Decolonization, OAS_Founded, Junta.
-    See put_start_USSR below for an example.
+    See put_start_USSR below for an example of how to use this function.
+    available_list is the list of names that can be manipulated by the effect.
     '''
     def event_influence(self, side: Side, effective_ops: int, available_list: list, can_split: bool, positive: bool):
 
@@ -127,17 +136,10 @@ class Game:
         rejection_msg = f'Please key in {effective_ops} comma-separated values.'
 
         while True:
-            print()
-            if side == Side.USSR:
-                print(UI.ussr_prompt)
-            elif side == Side.US:
-                print(UI.us_prompt)
-            else:
-                raise ValueError('Side argument invalid.')
-
+            self.prompt_side(side)
             print(guide_msg)
-            for available_country_name in available_list:
-                print(f'{self.map[available_country_name].info.country_name}, {self.map[available_country_name].info.country_index}')
+            for available_name in available_list:
+                print(f'{self.map[available_name].info.name}, {self.map[available_name].info.country_index}')
 
             user_choice = UI.ask_for_input(effective_ops, rejection_msg)
             if user_choice == None:
@@ -150,17 +152,17 @@ class Game:
 
             if len(set(user_choice) - set(available_list_values)) == 0 and additional_input_check:
                 for country_index in user_choice:
-                    country_name = self.map.index_country_map[int(country_index)]
+                    name = self.map.index_country_map[int(country_index)]
                     if side == Side.USSR:
                         if positive:
-                            self.map.change_influence(country_name, 0, 1)
+                            self.map.change_influence(name, 0, 1)
                         else:
-                            self.map.change_influence(country_name, -1, 0)
+                            self.map.change_influence(name, -1, 0)
                     elif side == Side.US:
                         if positive:
-                            self.map.change_influence(country_name, 1, 0)
+                            self.map.change_influence(name, 1, 0)
                         else:
-                            self.map.change_influence(country_name, 0, -1)
+                            self.map.change_influence(name, 0, -1)
                 break
             else:
                 print('\nYour input cannot be accepted.')
@@ -192,14 +194,45 @@ class Game:
         pass
 
     def choose_headline(self, side: Side):
-        pass
+        if side == Side.USSR:
+            hand = self.ussr_hand
+        elif side == Side.US:
+            hand = self.us_hand
+
+        guide_msg = f'You may headline any of these cards. Type in the card index.'
+        rejection_msg = f'Please key in a single value.'
+
+        while True:
+            filter = np.array([card.info.can_headline for card in hand])
+            cards_in_hand = np.array([card.info.name for card in hand])
+            available_list = cards_in_hand[filter]
+            available_list_values = [str(self.cards[n].info.card_index) for n in available_list]
+
+            self.prompt_side(side)
+            print(guide_msg)
+            for available_name in available_list:
+                print(f'{self.cards[available_name].info.name}, {self.cards[available_name].info.card_index}')
+
+            user_choice = UI.ask_for_input(1, rejection_msg)
+            if user_choice == None:
+                break
+
+            if len(set(user_choice) - set(available_list_values)) == 0:
+                name = self.cards.index_card_map[int(user_choice[0])]
+                hand.pop(hand.index(name))
+                break
+            else:
+                print('\nYour input cannot be accepted.')
+
+
 
     def resolve_headline(self):
         pass
 
     def select_card_and_action(self):
         '''
-        This function should lead to one of the below.
+        This function should lead to card_operation_realignment, card_operation_coup,
+        or card_operation_influence, or a space race function.
         '''
         self.ar_track += 1
         pass
@@ -222,30 +255,23 @@ class Game:
         rejection_msg = f'Please key in a single value.'
 
         while current_effective_ops > 0:
-            filter = np.array([self.map.can_realignment(country_name, side, self.defcon_track) for country_name in self.map.ALL])
-            all_countries = np.array([country_name for country_name in self.map.ALL])
+            filter = np.array([self.map.can_realignment(name, side, self.defcon_track) for name in self.map.ALL])
+            all_countries = np.array([name for name in self.map.ALL])
             available_list = all_countries[filter]
             available_list_values = [str(self.map[n].info.country_index) for n in available_list]
 
-            print()
-            if side == Side.USSR:
-                print(UI.ussr_prompt)
-            elif side == Side.US:
-                print(UI.us_prompt)
-            else:
-                raise ValueError('Side argument invalid.')
-
+            self.prompt_side(side)
             print(guide_msg)
-            for available_country_name in available_list:
-                print(f'{self.map[available_country_name].info.country_name}, {self.map[available_country_name].info.country_index}')
+            for available_name in available_list:
+                print(f'{self.map[available_name].info.name}, {self.map[available_name].info.country_index}')
 
             user_choice = UI.ask_for_input(1, rejection_msg)
             if user_choice == None:
                 break
 
             if len(set(user_choice) - set(available_list_values)) == 0:
-                country_name = self.map.index_country_map[int(user_choice[0])]
-                self.map.realignment(country_name, side, self.defcon_track)
+                name = self.map.index_country_map[int(user_choice[0])]
+                self.map.realignment(name, side, self.defcon_track)
                 current_effective_ops -= 1
             else:
                 print('\nYour input cannot be accepted.')
@@ -258,8 +284,8 @@ class Game:
         Adjusts for DEFCON status only.
         Does not currently check the player baskets for continuous effects.
         '''
-        filter = np.array([self.map.can_coup(country_name, side, self.defcon_track) for country_name in self.map.ALL])
-        all_countries = np.array([country_name for country_name in self.map.ALL])
+        filter = np.array([self.map.can_coup(name, side, self.defcon_track) for name in self.map.ALL])
+        all_countries = np.array([name for name in self.map.ALL])
         available_list = all_countries[filter]
 
         available_list_values = [str(self.map[n].info.country_index) for n in available_list]
@@ -267,25 +293,18 @@ class Game:
         rejection_msg = f'Please key in a single value.'
 
         while True:
-            print()
-            if side == Side.USSR:
-                print(UI.ussr_prompt)
-            elif side == Side.US:
-                print(UI.us_prompt)
-            else:
-                raise ValueError('Side argument invalid.')
-
+            self.prompt_side(side)
             print(guide_msg)
-            for available_country_name in available_list:
-                print(f'{self.map[available_country_name].info.country_name}, {self.map[available_country_name].info.country_index}')
+            for available_name in available_list:
+                print(f'{self.map[available_name].info.name}, {self.map[available_name].info.country_index}')
 
             user_choice = UI.ask_for_input(1, rejection_msg)
             if user_choice == None:
                 break
 
             if len(set(user_choice) - set(available_list_values)) == 0:
-                country_name = self.map.index_country_map[int(user_choice[0])]
-                self.map.coup(country_name, side, effective_ops, self.defcon_track)
+                name = self.map.index_country_map[int(user_choice[0])]
+                self.map.coup(name, side, effective_ops, self.defcon_track)
                 break
             else:
                 print('\nYour input cannot be accepted.')
