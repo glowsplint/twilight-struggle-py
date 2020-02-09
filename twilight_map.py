@@ -60,18 +60,18 @@ class GameMap:
         return self.ALL[item]
 
     def has_us_influence(self):
-        '''Returns list of names that have US influence.'''
+        '''Returns list of names that have US influence, less superpowers..'''
         country_list = []
         for country in self.ALL.values():
-            if country.us_influence > 0:
+            if country.us_influence > 0 and country.info.superpower == False:
                 country_list.append(country.info.name)
         return country_list
 
     def has_ussr_influence(self):
-        '''Returns list of names that have USSR influence.'''
+        '''Returns list of names that have USSR influence, less superpowers..'''
         country_list = []
         for country in self.ALL.values():
-            if country.ussr_influence > 0:
+            if country.ussr_influence > 0 and country.info.superpower == False:
                 country_list.append(country.info.name)
         return country_list
 
@@ -117,7 +117,7 @@ class GameMap:
         return not (side == Side.US and country.ussr_influence == 0 or
                 side == Side.USSR and country.us_influence == 0)
 
-    def coup(self, name, side, effective_ops, defcon_track):
+    def coup(self, name: str, side: Side, effective_ops: int, defcon_track: int):
         '''
         TODO:
         1. Prevent coup if no opposing influence in the country. I would prefer to write this in a way that prevents this from happening altogether, as opposed to throwing up an error if this is tried.
@@ -133,11 +133,11 @@ class GameMap:
         difference = die_roll + effective_ops - country.info.stability * 2
 
         if difference > 0:
-            if side == 'us':
+            if side == Side.US:
                 # subtract from opposing first.. and then add to yours
                 country.change_influence(-min(difference, country.ussr_influence), max(0, difference - country.ussr_influence))
 
-            if side == 'ussr':
+            if side == Side.USSR:
                 country.change_influence(max(0, difference - country.us_influence), -min(difference, country.us_influence))
             print(f'Coup successful with roll of {die_roll}. Difference: {difference}')
         else:
