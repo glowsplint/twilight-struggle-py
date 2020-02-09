@@ -51,10 +51,10 @@ class GameMap:
 
     def __init__(self):
         self.ALL = dict()
-        self.index_country_map = dict() # Create mapping of (k,v) = (country_index, name)
+        self.index_country_mapping = dict() # Create mapping of (k,v) = (country_index, name)
         for name in CountryInfo.ALL.keys():
             self.ALL[name] = Country(name)
-            self.index_country_map[self.ALL[name].info.country_index] = self.ALL[name].info.name
+            self.index_country_mapping[self.ALL[name].info.country_index] = self.ALL[name].info.name
 
     def __getitem__(self, item):
         return self.ALL[item]
@@ -133,12 +133,12 @@ class GameMap:
         difference = die_roll + effective_ops - country.info.stability * 2
 
         if difference > 0:
-            if side == Side.US:
-                # subtract from opposing first.. and then add to yours
-                country.change_influence(-min(difference, country.ussr_influence), max(0, difference - country.ussr_influence))
-
             if side == Side.USSR:
-                country.change_influence(max(0, difference - country.us_influence), -min(difference, country.us_influence))
+                # subtract from opposing first.. and then add to yours
+                country.change_influence(-min(difference, country.us_influence), max(0, difference - country.us_influence))
+
+            if side == Side.US:
+                country.change_influence(max(0, difference - country.ussr_influence), -min(difference, country.ussr_influence))
             print(f'Coup successful with roll of {die_roll}. Difference: {difference}')
         else:
             print(f'Coup failed with roll of {die_roll}')

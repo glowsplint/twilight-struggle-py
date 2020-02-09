@@ -114,7 +114,7 @@ class Game:
 
             if len(set(user_choice) - set(available_list_values)) == 0:
                 for country_index in user_choice:
-                    name = self.map.index_country_map[int(country_index)]
+                    name = self.map.index_country_mapping[int(country_index)]
                     self.map.place_influence(name, side, 1)
                 break
             else:
@@ -155,7 +155,7 @@ class Game:
 
             if len(set(user_choice) - set(available_list_values)) == 0 and additional_input_check:
                 for country_index in user_choice:
-                    name = self.map.index_country_map[int(country_index)]
+                    name = self.map.index_country_mapping[int(country_index)]
                     if side == Side.USSR:
                         if positive:
                             self.map.change_influence(name, 0, 1)
@@ -221,7 +221,7 @@ class Game:
                 break
 
             if len(set(user_choice) - set(available_list_values)) == 0:
-                name = self.cards.index_card_map[int(user_choice[0])]
+                name = self.cards.index_card_mapping[int(user_choice[0])]
                 hand[hand.index(name)].event()
                 hand.pop(hand.index(name))
                 break
@@ -277,7 +277,7 @@ class Game:
                 break
 
             if len(set(user_choice) - set(available_list_values)) == 0:
-                name = self.map.index_country_map[int(user_choice[0])]
+                name = self.map.index_country_mapping[int(user_choice[0])]
                 self.map.realignment(name, side, self.defcon_track)
                 current_effective_ops -= 1
             else:
@@ -310,7 +310,7 @@ class Game:
                 break
 
             if len(set(user_choice) - set(available_list_values)) == 0:
-                name = self.map.index_country_map[int(user_choice[0])]
+                name = self.map.index_country_mapping[int(user_choice[0])]
                 self.map.coup(name, side, effective_ops, self.defcon_track)
                 break
             else:
@@ -344,7 +344,7 @@ class Game:
                 break
 
             if len(set(user_choice) - set(available_list_values)) == 0:
-                name = self.cards.index_card_map[int(user_choice[0])]
+                name = self.cards.index_card_mapping[int(user_choice[0])]
                 self.discard_pile.append(hand.pop(hand.index(name)))
                 break
             else:
@@ -355,6 +355,10 @@ class Game:
         pass
 
     def quagmire_discard(self):
+        '''
+        Player is given a list of suitable discards. Card has to be at least 2
+        effective ops.
+        '''
         pass
 
     def quagmire_play_scoring_card(self):
@@ -582,13 +586,452 @@ class Game:
         print(f'{region.name} scores for {swing} VP')
 
     '''
-    Card functions will come here. Here we create a card dictionary, which ties
+    Card functions will come here. We also create a card dictionary, which ties
     every card_name to their card_function. The card functions are named with an
     underscore prefix.
     '''
+    def _Asia_Scoring(self):
+        pass
 
+    def _Europe_Scoring(self):
+        pass
 
+    def _Middle_East_Scoring(self):
+        pass
 
+    def _Duck_and_Cover(self):
+        pass
+
+    def _Five_Year_Plan(self):
+        pass
+
+    def _The_China_Card(self):
+        pass
+
+    def _Socialist_Governments(self):
+        pass
+
+    def _Fidel(self):
+        pass
+
+    def _Vietnam_Revolts(self):
+        pass
+
+    def _Blockade(self):
+        pass
+
+    def _Korean_War(self):
+        pass
+
+    def _Romanian_Abdication(self):
+        pass
+
+    def _Arab_Israeli_War(self):
+        pass
+
+    def _COMECON(self):
+        pass
+
+    def _Nasser(self):
+        pass
+
+    def _Warsaw_Pact_Formed(self):
+        pass
+
+    def _De_Gaulle_Leads_France(self):
+        pass
+
+    def _Captured_Nazi_Scientist(self):
+        pass
+
+    def _Truman_Doctrine(self):
+        pass
+
+    def _Olympic_Games(self):
+        pass
+
+    def _NATO(self):
+        pass
+
+    def _Independent_Reds(self):
+        pass
+
+    def _Marshall_Plan(self):
+        pass
+
+    def _Indo_Pakistani_War(self):
+        pass
+
+    def _Containment(self):
+        pass
+
+    def _CIA_Created(self):
+        pass
+
+    def _US_Japan_Mutual_Defense_Pact(self):
+        pass
+
+    def _Suez_Crisis(self):
+        pass
+
+    def _East_European_Unrest(self):
+        pass
+
+    def _Decolonization(self):
+        pass
+
+    def _Red_Scare_Purge(self):
+        pass
+
+    def _UN_Intervention(self):
+        pass
+
+    def _De_Stalinization(self):
+        pass
+
+    def _Nuclear_Test_Ban(self):
+        pass
+
+    def _Formosan_Resolution(self):
+        pass
+
+    def _Defectors(self):
+        pass
+
+    def _The_Cambridge_Five(self):
+        pass
+
+    def _Special_Relationship(self):
+        pass
+
+    def _NORAD(self):
+        pass
+
+    def _Brush_War(self):
+        pass
+
+    def _Central_America_Scoring(self):
+        pass
+
+    def _Southeast_Asia_Scoring(self):
+        pass
+
+    def _Arms_Race(self):
+        pass
+
+    def _Cuban_Missile_Crisis(self):
+        pass
+
+    def _Nuclear_Subs(self):
+        pass
+
+    def _Quagmire(self):
+        pass
+
+    def _Salt_Negotiations(self):
+        pass
+
+    def _Bear_Trap(self):
+        pass
+
+    def _Summit(self):
+        pass
+
+    def _How_I_Learned_to_Stop_Worrying(self):
+        pass
+
+    def _Junta(self):
+        pass
+
+    def _Kitchen_Debates(self):
+        pass
+
+    def _Missile_Envy(self):
+        pass
+
+    def _We_Will_Bury_You(self):
+        pass
+
+    def _Brezhnev_Doctrine(self):
+        pass
+
+    def _Portuguese_Empire_Crumbles(self):
+        pass
+
+    def _South_African_Unrest(self):
+        pass
+
+    def _Allende(self):
+        pass
+
+    def _Willy_Brandt(self):
+        pass
+
+    def _Muslim_Revolution(self):
+        pass
+
+    def _ABM_Treaty(self):
+        pass
+
+    def _Cultural_Revolution(self):
+        pass
+
+    def _Flower_Power(self):
+        pass
+
+    def _U2_Incident(self):
+        pass
+
+    def _OPEC(self):
+        pass
+
+    def _Lone_Gunman(self):
+        pass
+
+    def _Colonial_Rear_Guards(self):
+        pass
+
+    def _Panama_Canal_Returned(self):
+        pass
+
+    def _Camp_David_Accords(self):
+        pass
+
+    def _Puppet_Governments(self):
+        pass
+
+    def _Grain_Sales_to_Soviets(self):
+        pass
+
+    def _John_Paul_II_Elected_Pope(self):
+        pass
+
+    def _Latin_American_Death_Squads(self):
+        pass
+
+    def _OAS_Founded(self):
+        pass
+
+    def _Nixon_Plays_The_China_Card(self):
+        pass
+
+    def _Sadat_Expels_Soviets(self):
+        pass
+
+    def _Shuttle_Diplomacy(self):
+        pass
+
+    def _The_Voice_Of_America(self):
+        pass
+
+    def _Liberation_Theology(self):
+        pass
+
+    def _Ussuri_River_Skirmish(self):
+        pass
+
+    def _Ask_Not_What_Your_Country_Can_Do_For_You(self):
+        pass
+
+    def _Alliance_for_Progress(self):
+        pass
+
+    def _Africa_Scoring(self):
+        pass
+
+    def _One_Small_Step(self):
+        pass
+
+    def _South_America_Scoring(self):
+        pass
+
+    def _Che(self):
+        pass
+
+    def _Our_Man_In_Tehran(self):
+        pass
+
+    def _Iranian_Hostage_Crisis(self):
+        pass
+
+    def _The_Iron_Lady(self):
+        pass
+
+    def _Reagan_Bombs_Libya(self):
+        pass
+
+    def _Star_Wars(self):
+        pass
+
+    def _North_Sea_Oil(self):
+        pass
+
+    def _The_Reformer(self):
+        pass
+
+    def _Marine_Barracks_Bombing(self):
+        pass
+
+    def _Soviets_Shoot_Down_KAL(self):
+        pass
+
+    def _Glasnost(self):
+        pass
+
+    def _Ortega_Elected_in_Nicaragua(self):
+        pass
+
+    def _Terrorism(self):
+        pass
+
+    def _Iran_Contra_Scandal(self):
+        pass
+
+    def _Chernobyl(self):
+        pass
+
+    def _Latin_American_Debt_Crisis(self):
+        pass
+
+    def _Tear_Down_This_Wall(self):
+        pass
+
+    def _An_Evil_Empire(self):
+        pass
+
+    def _Aldrich_Ames_Remix(self):
+        pass
+
+    def _Pershing_II_Deployed(self):
+        pass
+
+    def _Wargames(self):
+        pass
+
+    def _Solidarity(self):
+        pass
+
+    def _Iran_Iraq_War(self):
+        pass
+
+    def _Yuri_and_Samantha(self):
+        pass
+
+    def _AWACS_Sale_to_Saudis(self):
+        pass
+
+    card_function_mapping = {
+        'Asia_Scoring': _Asia_Scoring,
+        'Europe_Scoring': _Europe_Scoring,
+        'Middle_East_Scoring': _Middle_East_Scoring,
+        'Duck_and_Cover': _Duck_and_Cover,
+        'Five_Year_Plan': _Five_Year_Plan,
+        'The_China_Card': _The_China_Card,
+        'Socialist_Governments': _Socialist_Governments,
+        'Fidel': _Fidel,
+        'Vietnam_Revolts': _Vietnam_Revolts,
+        'Blockade': _Blockade,
+        'Korean_War': _Korean_War,
+        'Romanian_Abdication': _Romanian_Abdication,
+        'Arab_Israeli_War': _Arab_Israeli_War,
+        'COMECON': _COMECON,
+        'Nasser': _Nasser,
+        'Warsaw_Pact_Formed': _Warsaw_Pact_Formed,
+        'De_Gaulle_Leads_France': _De_Gaulle_Leads_France,
+        'Captured_Nazi_Scientist': _Captured_Nazi_Scientist,
+        'Truman_Doctrine': _Truman_Doctrine,
+        'Olympic_Games': _Olympic_Games,
+        'NATO': _NATO,
+        'Independent_Reds': _Independent_Reds,
+        'Marshall_Plan': _Marshall_Plan,
+        'Indo_Pakistani_War': _Indo_Pakistani_War,
+        'Containment': _Containment,
+        'CIA_Created': _CIA_Created,
+        'US_Japan_Mutual_Defense_Pact': _US_Japan_Mutual_Defense_Pact,
+        'Suez_Crisis': _Suez_Crisis,
+        'East_European_Unrest': _East_European_Unrest,
+        'Decolonization': _Decolonization,
+        'Red_Scare_Purge': _Red_Scare_Purge,
+        'UN_Intervention': _UN_Intervention,
+        'De_Stalinization': _De_Stalinization,
+        'Nuclear_Test_Ban': _Nuclear_Test_Ban,
+        'Formosan_Resolution': _Formosan_Resolution,
+        'Defectors': _Defectors,
+        'The_Cambridge_Five': _The_Cambridge_Five,
+        'Special_Relationship': _Special_Relationship,
+        'NORAD': _NORAD,
+        'Brush_War': _Brush_War,
+        'Central_America_Scoring': _Central_America_Scoring,
+        'Southeast_Asia_Scoring': _Southeast_Asia_Scoring,
+        'Arms_Race': _Arms_Race,
+        'Cuban_Missile_Crisis': _Cuban_Missile_Crisis,
+        'Nuclear_Subs': _Nuclear_Subs,
+        'Quagmire': _Quagmire,
+        'Salt_Negotiations': _Salt_Negotiations,
+        'Bear_Trap': _Bear_Trap,
+        'Summit': _Summit,
+        'How_I_Learned_to_Stop_Worrying': _How_I_Learned_to_Stop_Worrying,
+        'Junta': _Junta,
+        'Kitchen_Debates': _Kitchen_Debates,
+        'Missile_Envy': _Missile_Envy,
+        'We_Will_Bury_You': _We_Will_Bury_You,
+        'Brezhnev_Doctrine': _Brezhnev_Doctrine,
+        'Portuguese_Empire_Crumbles': _Portuguese_Empire_Crumbles,
+        'South_African_Unrest': _South_African_Unrest,
+        'Allende': _Allende,
+        'Willy_Brandt': _Willy_Brandt,
+        'Muslim_Revolution': _Muslim_Revolution,
+        'ABM_Treaty': _ABM_Treaty,
+        'Cultural_Revolution': _Cultural_Revolution,
+        'Flower_Power': _Flower_Power,
+        'U2_Incident': _U2_Incident,
+        'OPEC': _OPEC,
+        'Lone_Gunman': _Lone_Gunman,
+        'Colonial_Rear_Guards': _Colonial_Rear_Guards,
+        'Panama_Canal_Returned': _Panama_Canal_Returned,
+        'Camp_David_Accords': _Camp_David_Accords,
+        'Puppet_Governments': _Puppet_Governments,
+        'Grain_Sales_to_Soviets': _Grain_Sales_to_Soviets,
+        'John_Paul_II_Elected_Pope': _John_Paul_II_Elected_Pope,
+        'Latin_American_Death_Squads': _Latin_American_Death_Squads,
+        'OAS_Founded': _OAS_Founded,
+        'Nixon_Plays_The_China_Card': _Nixon_Plays_The_China_Card,
+        'Sadat_Expels_Soviets': _Sadat_Expels_Soviets,
+        'Shuttle_Diplomacy': _Shuttle_Diplomacy,
+        'The_Voice_Of_America': _The_Voice_Of_America,
+        'Liberation_Theology': _Liberation_Theology,
+        'Ussuri_River_Skirmish': _Ussuri_River_Skirmish,
+        'Ask_Not_What_Your_Country_Can_Do_For_You': _Ask_Not_What_Your_Country_Can_Do_For_You,
+        'Alliance_for_Progress': _Alliance_for_Progress,
+        'Africa_Scoring': _Africa_Scoring,
+        'One_Small_Step': _One_Small_Step,
+        'South_America_Scoring': _South_America_Scoring,
+        'Che': _Che,
+        'Our_Man_In_Tehran': _Our_Man_In_Tehran,
+        'Iranian_Hostage_Crisis': _Iranian_Hostage_Crisis,
+        'The_Iron_Lady': _The_Iron_Lady,
+        'Reagan_Bombs_Libya': _Reagan_Bombs_Libya,
+        'Star_Wars': _Star_Wars,
+        'North_Sea_Oil': _North_Sea_Oil,
+        'The_Reformer': _The_Reformer,
+        'Marine_Barracks_Bombing': _Marine_Barracks_Bombing,
+        'Soviets_Shoot_Down_KAL': _Soviets_Shoot_Down_KAL,
+        'Glasnost': _Glasnost,
+        'Ortega_Elected_in_Nicaragua': _Ortega_Elected_in_Nicaragua,
+        'Terrorism': _Terrorism,
+        'Iran_Contra_Scandal': _Iran_Contra_Scandal,
+        'Chernobyl': _Chernobyl,
+        'Latin_American_Debt_Crisis': _Latin_American_Debt_Crisis,
+        'Tear_Down_This_Wall': _Tear_Down_This_Wall,
+        'An_Evil_Empire': _An_Evil_Empire,
+        'Aldrich_Ames_Remix': _Aldrich_Ames_Remix,
+        'Pershing_II_Deployed': _Pershing_II_Deployed,
+        'Wargames': _Wargames,
+        'Solidarity': _Solidarity,
+        'Iran_Iraq_War': _Iran_Iraq_War,
+        'Yuri_and_Samantha': _Yuri_and_Samantha,
+        'AWACS_Sale_to_Saudis': _AWACS_Sale_to_Saudis,
+    }
 
 '''Utility functions'''
 def RemoveAllOpponentInfluenceInCuba(_):
