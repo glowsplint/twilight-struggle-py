@@ -6,11 +6,11 @@ class CountryInfo:
     ALL = dict()
     REGION_ALL = [set() for r in MapRegion]
 
-    def __init__(self, country_name='', country_index='', adjacent_countries=None,
+    def __init__(self, name='', country_index='', adjacent_countries=None,
                  region='', stability=0, battleground=False, superpower=False,
                  chinese_civil_war=False, **kwargs):
 
-        self.country_name = country_name
+        self.name = name
         self.country_index = country_index
         self.stability = stability
         self.battleground = battleground
@@ -18,7 +18,7 @@ class CountryInfo:
         self.superpower = superpower
         self.chinese_civil_war = chinese_civil_war
 
-        CountryInfo.ALL[country_name] = self
+        CountryInfo.ALL[name] = self
         if region == 'Europe':
             self.regions = [MapRegion.EUROPE, MapRegion.EASTERN_EUROPE, MapRegion.WESTERN_EUROPE]
         elif region == 'Western Europe':
@@ -44,35 +44,35 @@ class CountryInfo:
             self.regions = []
 
         for r in self.regions:
-            CountryInfo.REGION_ALL[r].add(country_name)
+            CountryInfo.REGION_ALL[r].add(name)
 
 
 class GameMap:
 
     def __init__(self):
         self.ALL = dict()
-        self.index_country_map = dict() # Create mapping of (k,v) = (country_index, country_name)
-        for country_name in CountryInfo.ALL.keys():
-            self.ALL[country_name] = Country(country_name)
-            self.index_country_map[self.ALL[country_name].info.country_index] = self.ALL[country_name].info.country_name
+        self.index_country_map = dict() # Create mapping of (k,v) = (country_index, name)
+        for name in CountryInfo.ALL.keys():
+            self.ALL[name] = Country(name)
+            self.index_country_map[self.ALL[name].info.country_index] = self.ALL[name].info.name
 
     def __getitem__(self, item):
         return self.ALL[item]
 
     def has_us_influence(self):
-        '''Returns list of country_names that have US influence.'''
+        '''Returns list of names that have US influence.'''
         country_list = []
         for country in self.ALL.values():
             if country.us_influence > 0:
-                country_list.append(country.info.country_name)
+                country_list.append(country.info.name)
         return country_list
 
     def has_ussr_influence(self):
-        '''Returns list of country_names that have USSR influence.'''
+        '''Returns list of names that have USSR influence.'''
         country_list = []
         for country in self.ALL.values():
             if country.ussr_influence > 0:
-                country_list.append(country.info.country_name)
+                country_list.append(country.info.name)
         return country_list
 
     def build_standard(self):
@@ -96,22 +96,38 @@ class GameMap:
         self['South_Africa'].set_influence(1, 0)
         return
 
-    def can_coup(self, country_name: str, side: Side):
-        country = self[country_name]
+    def can_coup(self, name: str, side: Side, defcon_track: int):
+        country = self[name]
+        if country.info.superpower:
+            return False
+
+        d4 = [n for n in CountryInfo.REGION_ALL[MapRegion.EUROPE]]
+        d3 = [n for n in CountryInfo.REGION_ALL[MapRegion.ASIA]]
+        d3.extend(d4)
+        d2 = [n for n in CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST]]
+        d2.extend(d3)
+
+        if defcon_track == 4 and name in d4:
+            return False
+        elif defcon_track == 3 and name in d3:
+            return False
+        elif defcon_track == 2 and name in d2:
+            return False
+
         return not (side == Side.US and country.ussr_influence == 0 or
                 side == Side.USSR and country.us_influence == 0)
 
-    def coup(self, country_name, side, effective_ops):
+    def coup(self, name, side, effective_ops, defcon_track):
         '''
         TODO:
         1. Prevent coup if no opposing influence in the country. I would prefer to write this in a way that prevents this from happening altogether, as opposed to throwing up an error if this is tried.
         2. Prevent coup under DEFCON restrictions. Will write it in a style same as 1.
-        3. Prevent coup if there is no influence at all in the country. (done in can_coup)
+        3. Prevent coup if there is no influence at all in the country. (done in game.map.can_coup)
         4. Add military operations points.
         5. Reduce DEFCON status level if self.battleground = True
         '''
-        assert(self.can_coup(country_name, side))
-        country = self[country_name]
+        assert(self.can_coup(name, side, defcon_track))
+        country = self[name]
 
         die_roll = random.randint(1,6)
         difference = die_roll + effective_ops - country.info.stability * 2
@@ -128,8 +144,24 @@ class GameMap:
             print(f'Coup failed with roll of {die_roll}')
 
 
-    def can_realignment(self, country_name: str, side: Side):
-        country = self[country_name]
+    def can_realignment(self, name: str, side: Side, defcon_track: int):
+        country = self[name]
+        if country.info.superpower:
+            return False
+
+        d4 = [n for n in CountryInfo.REGION_ALL[MapRegion.EUROPE]]
+        d3 = [n for n in CountryInfo.REGION_ALL[MapRegion.ASIA]]
+        d3.extend(d4)
+        d2 = [n for n in CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST]]
+        d2.extend(d3)
+
+        if defcon_track == 4 and name in d4:
+            return False
+        elif defcon_track == 3 and name in d3:
+            return False
+        elif defcon_track == 2 and name in d2:
+            return False
+
         if side == Side.USSR and country.ussr_influence_only:
             return False
         elif side == Side.US and country.us_influence_only:
@@ -137,24 +169,24 @@ class GameMap:
         else:
             return not (country.ussr_influence == 0 and country.us_influence == 0)
 
-    def realignment(self, country_name: str):
+    def realignment(self, name: str, side: Side, defcon_track: int):
         '''
         TODO:
         1. Prevent realignment under DEFCON restrictions.
-        2. Prevent realignment if there is no influence at all in the country.
+        2. Prevent realignment if there is no influence at all in the country. (done in game.card_operation_coup)
         '''
-        assert(self.can_realignment(country_name))
-        country = self[country_name]
+        assert(self.can_realignment(name, side, defcon_track))
+        country = self[name]
 
         modifier = 0 # net positive is in favour of US
-        for adjacent_country in country.info.adjacent_countries:
-            modifier += ((self[adjacent_country.country_name]).control == Side.US)
-            modifier -= ((self[adjacent_country.country_name]).control == Side.USSR)
+        for adjacent_name in country.info.adjacent_countries:
+            modifier += ((self[adjacent_name]).control == Side.US)
+            modifier -= ((self[adjacent_name]).control == Side.USSR)
         if country.us_influence - country.ussr_influence > 0:
             modifier += 1
         elif country.us_influence - country.ussr_influence < 0:
             modifier -= 1
-        us_roll, ussr_roll = random.randint(6) + 1, random.randint(6) + 1
+        us_roll, ussr_roll = random.randint(1,6), random.randint(1,6)
         difference = us_roll - ussr_roll + modifier
         if difference > 0:
             country.change_influence(0, -min(difference, country.ussr_influence))
@@ -163,19 +195,19 @@ class GameMap:
         print(f'US rolled: {us_roll}, USSR rolled: {ussr_roll}, Modifer = {modifier}, Difference = {difference}')
 
     # assume that a specific card has already been selected before the running of this function
-    def can_place_influence(self, country_name: str, side: Side, effective_ops: int):
+    def can_place_influence(self, name: str, side: Side, effective_ops: int):
         # Here we run two different checks in order:
         # 1. In any of the adjacent countries and itself, is there existing influence of the same side?
         # 2. If this country is controlled by the opposite power, is effective_ops at least 2?
         # 2a. Also checks if the card being used has at least 1 effective operation point (so scoring cards can't be used for influence)
-        country = self[country_name]
+        country = self[name]
 
-        def has_influence_around(self, country_name: str, side: Side):
-            if self[country_name].info.superpower:
+        def has_influence_around(self, name: str, side: Side):
+            if self[name].info.superpower:
                 return False
 
-            countries_to_check = self[country_name].info.adjacent_countries.copy()
-            countries_to_check.append(country_name)
+            countries_to_check = self[name].info.adjacent_countries.copy()
+            countries_to_check.append(name)
             if side == Side.USSR:
                 for country in countries_to_check:
                     if self[country].ussr_influence > 0:
@@ -196,39 +228,40 @@ class GameMap:
                     return True
             else: return False
 
-        return has_influence_around(self, country_name, side) and sufficient_ops(self, effective_ops)
+        return has_influence_around(self, name, side) and sufficient_ops(self, effective_ops)
 
-    def place_influence(self, country_name: str, side: Side, effective_ops: int, bypass_assert=False):
-        if not bypass_assert:
-            assert(self.can_place_influence(country_name, side, effective_ops))
-
-        if side == Side.USSR and self[country_name].control == Side.US:
+    def place_influence(self, name: str, side: Side, effective_ops: int):
+        if side == Side.USSR and self[name].control == Side.US:
             # here we deduct 2 from effective_ops, to place 1 influence in the country, and then call the function again
             if effective_ops >= 2:
-                self[country_name].change_influence(0, 1)
+                self[name].change_influence(0, 1)
             else:
                 raise ValueError('Not enough operations points!')
             if effective_ops - 2 > 0:
-                self.place_influence(country_name, side, effective_ops - 2)
-        elif side == Side.US and self[country_name].control == Side.USSR:
+                self.place_influence(name, side, effective_ops - 2)
+        elif side == Side.US and self[name].control == Side.USSR:
             if effective_ops >= 2:
-                self[country_name].change_influence(1, 0)
+                self[name].change_influence(1, 0)
             else:
                 raise ValueError('Not enough operations points!')
             if effective_ops - 2 > 0:
-                self.place_influence(country_name, side, effective_ops - 2)
+                self.place_influence(name, side, effective_ops - 2)
         else:
             if side == Side.US:
-                self[country_name].change_influence(effective_ops, 0)
+                self[name].change_influence(effective_ops, 0)
             elif side == Side.USSR:
-                self[country_name].change_influence(0, effective_ops)
+                self[name].change_influence(0, effective_ops)
             else:
                 raise ValueError('side must be \'us\' or \'ussr\'!')
 
+    def change_influence(self, name: str, us_influence: int, ussr_influence: int):
+        self[name].us_influence += us_influence
+        self[name].ussr_influence += ussr_influence
+
 class Country:
 
-    def __init__(self, country_name: str):
-        self.info = CountryInfo.ALL[country_name]
+    def __init__(self, name: str):
+        self.info = CountryInfo.ALL[name]
 
         self.us_influence = 0
         self.ussr_influence = 0
@@ -258,9 +291,9 @@ class Country:
 
     def __repr__(self):
         if self.info.stability == 0:
-            return f'Country({self.info.country_name}, Superpower = True, Adjacent = {self.info.adjacent_countries})'
+            return f'Country({self.info.name}, Superpower = True, Adjacent = {self.info.adjacent_countries})'
         else:
-            return f'Country({self.info.country_name}, \nRegion \t\t= {self.info.regions}, \nStability \t= {self.info.stability}, \nBattleground \t= {self.info.battleground}, \nAdjacent \t= {self.info.adjacent_countries}, \nUS_influence \t= {self.us_influence}, {self.us_influence_only}\nUSSR_influence \t= {self.ussr_influence}, {self.ussr_influence_only}\nControl \t= {self.control}'
+            return f'Country({self.info.name}, \nRegion \t\t= {self.info.regions}, \nStability \t= {self.info.stability}, \nBattleground \t= {self.info.battleground}, \nAdjacent \t= {self.info.adjacent_countries}, \nUS_influence \t= {self.us_influence}, {self.us_influence_only}\nUSSR_influence \t= {self.ussr_influence}, {self.ussr_influence_only}\nControl \t= {self.control}'
 
     def set_influence(self, us_influence, ussr_influence):
         self.us_influence = us_influence
@@ -280,7 +313,7 @@ class Country:
 
 
 USSR = {
-    'country_name': 'USSR',
+    'name': 'USSR',
     'country_index': 1,
     'superpower': True,
     'adjacent_countries': ['Finland', 'Poland', 'Romania', 'Afghanistan', 'North_Korea', 'Chinese_Civil_War'],
@@ -289,7 +322,7 @@ USSR = {
 }
 
 US = {
-    'country_name': 'US',
+    'name': 'US',
     'country_index': 2,
     'superpower': True,
     'adjacent_countries': ['Japan', 'Mexico', 'Cuba', 'Canada'],
@@ -298,7 +331,7 @@ US = {
 }
 
 Canada = {
-    'country_name': 'Canada',
+    'name': 'Canada',
     'country_index': 3,
     'region': 'Western Europe',
     'stability': 4,
@@ -308,7 +341,7 @@ Canada = {
 }
 
 UK = {
-    'country_name': 'UK',
+    'name': 'UK',
     'country_index': 4,
     'region': 'Western Europe',
     'stability': 5,
@@ -318,7 +351,7 @@ UK = {
 }
 
 Norway = {
-    'country_name': 'Norway',
+    'name': 'Norway',
     'country_index': 5,
     'region': 'Western Europe',
     'stability': 4,
@@ -328,7 +361,7 @@ Norway = {
 }
 
 Sweden = {
-    'country_name': 'Sweden',
+    'name': 'Sweden',
     'country_index': 6,
     'region': 'Western Europe',
     'stability': 4,
@@ -338,7 +371,7 @@ Sweden = {
 }
 
 Finland = {
-    'country_name': 'Finland',
+    'name': 'Finland',
     'country_index': 7,
     'region': 'Europe',
     'stability': 4,
@@ -348,7 +381,7 @@ Finland = {
 }
 
 Denmark = {
-    'country_name': 'Denmark',
+    'name': 'Denmark',
     'country_index': 8,
     'region': 'Western Europe',
     'stability': 3,
@@ -358,7 +391,7 @@ Denmark = {
 }
 
 Benelux = {
-    'country_name': 'Benelux',
+    'name': 'Benelux',
     'country_index': 9,
     'region': 'Western Europe',
     'stability': 3,
@@ -368,7 +401,7 @@ Benelux = {
 }
 
 France = {
-    'country_name': 'France',
+    'name': 'France',
     'country_index': 10,
     'region': 'Western Europe',
     'stability': 3,
@@ -379,7 +412,7 @@ France = {
 }
 
 Spain_Portugal = {
-    'country_name': 'Spain_Portugal',
+    'name': 'Spain_Portugal',
     'country_index': 11,
     'region': 'Western Europe',
     'stability': 2,
@@ -389,7 +422,7 @@ Spain_Portugal = {
 }
 
 Italy = {
-    'country_name': 'Italy',
+    'name': 'Italy',
     'country_index': 12,
     'region': 'Western Europe',
     'stability': 2,
@@ -400,7 +433,7 @@ Italy = {
 }
 
 Greece = {
-    'country_name': 'Greece',
+    'name': 'Greece',
     'country_index': 13,
     'region': 'Western Europe',
     'stability': 2,
@@ -410,7 +443,7 @@ Greece = {
 }
 
 Austria = {
-    'country_name': 'Austria',
+    'name': 'Austria',
     'country_index': 14,
     'region': 'Europe',
     'stability': 4,
@@ -420,7 +453,7 @@ Austria = {
 }
 
 West_Germany = {
-    'country_name': 'West_Germany',
+    'name': 'West_Germany',
     'country_index': 15,
     'region': 'Western Europe',
     'stability': 4,
@@ -432,7 +465,7 @@ West_Germany = {
 
 
 East_Germany = {
-    'country_name': 'East_Germany',
+    'name': 'East_Germany',
     'country_index': 16,
     'region': 'Eastern Europe',
     'stability': 3,
@@ -444,7 +477,7 @@ East_Germany = {
 
 
 Poland = {
-    'country_name': 'Poland',
+    'name': 'Poland',
     'country_index': 17,
     'region': 'Eastern Europe',
     'stability': 3,
@@ -456,7 +489,7 @@ Poland = {
 
 
 Czechoslovakia = {
-    'country_name': 'Czechoslovakia',
+    'name': 'Czechoslovakia',
     'country_index': 18,
     'region': 'Eastern Europe',
     'stability': 3,
@@ -467,7 +500,7 @@ Czechoslovakia = {
 
 
 Hungary = {
-    'country_name': 'Hungary',
+    'name': 'Hungary',
     'country_index': 19,
     'region': 'Eastern Europe',
     'stability': 3,
@@ -478,7 +511,7 @@ Hungary = {
 
 
 Yugoslavia = {
-    'country_name': 'Yugoslavia',
+    'name': 'Yugoslavia',
     'country_index': 20,
     'region': 'Eastern Europe',
     'stability': 3,
@@ -489,7 +522,7 @@ Yugoslavia = {
 
 
 Romania = {
-    'country_name': 'Romania',
+    'name': 'Romania',
     'country_index': 21,
     'region': 'Eastern Europe',
     'stability': 3,
@@ -500,7 +533,7 @@ Romania = {
 
 
 Bulgaria = {
-    'country_name': 'Bulgaria',
+    'name': 'Bulgaria',
     'country_index': 22,
     'region': 'Eastern Europe',
     'stability': 3,
@@ -511,7 +544,7 @@ Bulgaria = {
 
 
 Turkey = {
-    'country_name': 'Turkey',
+    'name': 'Turkey',
     'country_index': 23,
     'region': 'Western Europe',
     'stability': 2,
@@ -522,7 +555,7 @@ Turkey = {
 
 
 Libya = {
-    'country_name': 'Libya',
+    'name': 'Libya',
     'country_index': 24,
     'region': 'Middle East',
     'stability': 2,
@@ -534,7 +567,7 @@ Libya = {
 
 
 Egypt = {
-    'country_name': 'Egypt',
+    'name': 'Egypt',
     'country_index': 25,
     'region': 'Middle East',
     'stability': 2,
@@ -546,7 +579,7 @@ Egypt = {
 
 
 Israel = {
-    'country_name': 'Israel',
+    'name': 'Israel',
     'country_index': 26,
     'region': 'Middle East',
     'stability': 4,
@@ -558,7 +591,7 @@ Israel = {
 
 
 Lebanon = {
-    'country_name': 'Lebanon',
+    'name': 'Lebanon',
     'country_index': 27,
     'region': 'Middle East',
     'stability': 1,
@@ -569,7 +602,7 @@ Lebanon = {
 
 
 Syria = {
-    'country_name': 'Syria',
+    'name': 'Syria',
     'country_index': 28,
     'region': 'Middle East',
     'stability': 2,
@@ -580,7 +613,7 @@ Syria = {
 
 
 Iraq = {
-    'country_name': 'Iraq',
+    'name': 'Iraq',
     'country_index': 29,
     'region': 'Middle East',
     'stability': 3,
@@ -592,7 +625,7 @@ Iraq = {
 
 
 Iran = {
-    'country_name': 'Iran',
+    'name': 'Iran',
     'country_index': 30,
     'region': 'Middle East',
     'stability': 2,
@@ -604,7 +637,7 @@ Iran = {
 
 
 Jordan = {
-    'country_name': 'Jordan',
+    'name': 'Jordan',
     'country_index': 31,
     'region': 'Middle East',
     'stability': 2,
@@ -615,7 +648,7 @@ Jordan = {
 
 
 Gulf_States = {
-    'country_name': 'Gulf_States',
+    'name': 'Gulf_States',
     'country_index': 32,
     'region': 'Middle East',
     'stability': 3,
@@ -626,7 +659,7 @@ Gulf_States = {
 
 
 Saudi_Arabia = {
-    'country_name': 'Saudi_Arabia',
+    'name': 'Saudi_Arabia',
     'country_index': 33,
     'region': 'Middle East',
     'stability': 3,
@@ -638,7 +671,7 @@ Saudi_Arabia = {
 
 
 Afghanistan = {
-    'country_name': 'Afghanistan',
+    'name': 'Afghanistan',
     'country_index': 34,
     'region': 'Asia',
     'stability': 2,
@@ -649,7 +682,7 @@ Afghanistan = {
 
 
 Pakistan = {
-    'country_name': 'Pakistan',
+    'name': 'Pakistan',
     'country_index': 35,
     'region': 'Asia',
     'stability': 2,
@@ -661,7 +694,7 @@ Pakistan = {
 
 
 India = {
-    'country_name': 'India',
+    'name': 'India',
     'country_index': 36,
     'region': 'Asia',
     'stability': 3,
@@ -673,7 +706,7 @@ India = {
 
 
 Burma = {
-    'country_name': 'Burma',
+    'name': 'Burma',
     'country_index': 37,
     'region': 'Southeast Asia',
     'stability': 2,
@@ -684,7 +717,7 @@ Burma = {
 
 
 Laos_Cambodia = {
-    'country_name': 'Laos_Cambodia',
+    'name': 'Laos_Cambodia',
     'country_index': 38,
     'region': 'Southeast Asia',
     'stability': 1,
@@ -695,7 +728,7 @@ Laos_Cambodia = {
 
 
 Thailand = {
-    'country_name': 'Thailand',
+    'name': 'Thailand',
     'country_index': 39,
     'region': 'Southeast Asia',
     'stability': 2,
@@ -707,7 +740,7 @@ Thailand = {
 
 
 Vietnam = {
-    'country_name': 'Vietnam',
+    'name': 'Vietnam',
     'country_index': 40,
     'region': 'Southeast Asia',
     'stability': 1,
@@ -718,7 +751,7 @@ Vietnam = {
 
 
 Malaysia = {
-    'country_name': 'Malaysia',
+    'name': 'Malaysia',
     'country_index': 41,
     'region': 'Southeast Asia',
     'stability': 2,
@@ -729,7 +762,7 @@ Malaysia = {
 
 
 Australia = {
-    'country_name': 'Australia',
+    'name': 'Australia',
     'country_index': 42,
     'region': 'Asia',
     'stability': 4,
@@ -740,7 +773,7 @@ Australia = {
 
 
 Indonesia = {
-    'country_name': 'Indonesia',
+    'name': 'Indonesia',
     'country_index': 43,
     'region': 'Southeast Asia',
     'stability': 1,
@@ -751,7 +784,7 @@ Indonesia = {
 
 
 Philippines = {
-    'country_name': 'Philippines',
+    'name': 'Philippines',
     'country_index': 44,
     'region': 'Southeast Asia',
     'stability': 2,
@@ -762,7 +795,7 @@ Philippines = {
 
 
 Japan = {
-    'country_name': 'Japan',
+    'name': 'Japan',
     'country_index': 45,
     'region': 'Asia',
     'stability': 4,
@@ -774,7 +807,7 @@ Japan = {
 
 
 Taiwan = {
-    'country_name': 'Taiwan',
+    'name': 'Taiwan',
     'country_index': 46,
     'region': 'Asia',
     'stability': 3,
@@ -785,7 +818,7 @@ Taiwan = {
 
 
 South_Korea = {
-    'country_name': 'South_Korea',
+    'name': 'South_Korea',
     'country_index': 47,
     'region': 'Asia',
     'stability': 3,
@@ -797,7 +830,7 @@ South_Korea = {
 
 
 North_Korea = {
-    'country_name': 'North_Korea',
+    'name': 'North_Korea',
     'country_index': 48,
     'region': 'Asia',
     'stability': 3,
@@ -809,7 +842,7 @@ North_Korea = {
 
 
 Algeria = {
-    'country_name': 'Algeria',
+    'name': 'Algeria',
     'country_index': 49,
     'region': 'Africa',
     'stability': 2,
@@ -821,7 +854,7 @@ Algeria = {
 
 
 Morocco = {
-    'country_name': 'Morocco',
+    'name': 'Morocco',
     'country_index': 50,
     'region': 'Africa',
     'stability': 3,
@@ -832,7 +865,7 @@ Morocco = {
 
 
 Tunisia = {
-    'country_name': 'Tunisia',
+    'name': 'Tunisia',
     'country_index': 51,
     'region': 'Africa',
     'stability': 2,
@@ -843,7 +876,7 @@ Tunisia = {
 
 
 West_African_States = {
-    'country_name': 'West_African_States',
+    'name': 'West_African_States',
     'country_index': 52,
     'region': 'Africa',
     'stability': 2,
@@ -854,7 +887,7 @@ West_African_States = {
 
 
 Ivory_Coast = {
-    'country_name': 'Ivory_Coast',
+    'name': 'Ivory_Coast',
     'country_index': 53,
     'region': 'Africa',
     'stability': 2,
@@ -865,7 +898,7 @@ Ivory_Coast = {
 
 
 Saharan_States = {
-    'country_name': 'Saharan_States',
+    'name': 'Saharan_States',
     'country_index': 54,
     'region': 'Africa',
     'stability': 1,
@@ -876,7 +909,7 @@ Saharan_States = {
 
 
 Nigeria = {
-    'country_name': 'Nigeria',
+    'name': 'Nigeria',
     'country_index': 55,
     'region': 'Africa',
     'stability': 1,
@@ -888,7 +921,7 @@ Nigeria = {
 
 
 Cameroon = {
-    'country_name': 'Cameroon',
+    'name': 'Cameroon',
     'country_index': 56,
     'region': 'Africa',
     'stability': 1,
@@ -899,7 +932,7 @@ Cameroon = {
 
 
 Zaire = {
-    'country_name': 'Zaire',
+    'name': 'Zaire',
     'country_index': 57,
     'region': 'Africa',
     'stability': 1,
@@ -911,7 +944,7 @@ Zaire = {
 
 
 Angola = {
-    'country_name': 'Angola',
+    'name': 'Angola',
     'country_index': 58,
     'region': 'Africa',
     'stability': 1,
@@ -923,7 +956,7 @@ Angola = {
 
 
 South_Africa = {
-    'country_name': 'South_Africa',
+    'name': 'South_Africa',
     'country_index': 59,
     'region': 'Africa',
     'stability': 3,
@@ -935,7 +968,7 @@ South_Africa = {
 
 
 Botswana = {
-    'country_name': 'Botswana',
+    'name': 'Botswana',
     'country_index': 60,
     'region': 'Africa',
     'stability': 2,
@@ -946,7 +979,7 @@ Botswana = {
 
 
 Zimbabwe = {
-    'country_name': 'Zimbabwe',
+    'name': 'Zimbabwe',
     'country_index': 61,
     'region': 'Africa',
     'stability': 1,
@@ -957,7 +990,7 @@ Zimbabwe = {
 
 
 SE_African_States = {
-    'country_name': 'SE_African_States',
+    'name': 'SE_African_States',
     'country_index': 62,
     'region': 'Africa',
     'stability': 1,
@@ -968,7 +1001,7 @@ SE_African_States = {
 
 
 Kenya = {
-    'country_name': 'Kenya',
+    'name': 'Kenya',
     'country_index': 63,
     'region': 'Africa',
     'stability': 2,
@@ -979,7 +1012,7 @@ Kenya = {
 
 
 Somalia = {
-    'country_name': 'Somalia',
+    'name': 'Somalia',
     'country_index': 64,
     'region': 'Africa',
     'stability': 2,
@@ -990,7 +1023,7 @@ Somalia = {
 
 
 Ethiopia = {
-    'country_name': 'Ethiopia',
+    'name': 'Ethiopia',
     'country_index': 65,
     'region': 'Africa',
     'stability': 1,
@@ -1001,7 +1034,7 @@ Ethiopia = {
 
 
 Sudan = {
-    'country_name': 'Sudan',
+    'name': 'Sudan',
     'country_index': 66,
     'region': 'Africa',
     'stability': 1,
@@ -1012,7 +1045,7 @@ Sudan = {
 
 
 Mexico = {
-    'country_name': 'Mexico',
+    'name': 'Mexico',
     'country_index': 67,
     'region': 'Central America',
     'stability': 2,
@@ -1024,7 +1057,7 @@ Mexico = {
 
 
 Guatemala = {
-    'country_name': 'Guatemala',
+    'name': 'Guatemala',
     'country_index': 68,
     'region': 'Central America',
     'stability': 1,
@@ -1035,7 +1068,7 @@ Guatemala = {
 
 
 El_Salvador = {
-    'country_name': 'El_Salvador',
+    'name': 'El_Salvador',
     'country_index': 69,
     'region': 'Central America',
     'stability': 1,
@@ -1046,7 +1079,7 @@ El_Salvador = {
 
 
 Honduras = {
-    'country_name': 'Honduras',
+    'name': 'Honduras',
     'country_index': 70,
     'region': 'Central America',
     'stability': 2,
@@ -1057,7 +1090,7 @@ Honduras = {
 
 
 Costa_Rica = {
-    'country_name': 'Costa_Rica',
+    'name': 'Costa_Rica',
     'country_index': 71,
     'region': 'Central America',
     'stability': 3,
@@ -1068,7 +1101,7 @@ Costa_Rica = {
 
 
 Panama = {
-    'country_name': 'Panama',
+    'name': 'Panama',
     'country_index': 72,
     'region': 'Central America',
     'stability': 2,
@@ -1080,7 +1113,7 @@ Panama = {
 
 
 Nicaragua = {
-    'country_name': 'Nicaragua',
+    'name': 'Nicaragua',
     'country_index': 73,
     'region': 'Central America',
     'stability': 1,
@@ -1091,7 +1124,7 @@ Nicaragua = {
 
 
 Cuba = {
-    'country_name': 'Cuba',
+    'name': 'Cuba',
     'country_index': 74,
     'region': 'Central America',
     'stability': 3,
@@ -1103,7 +1136,7 @@ Cuba = {
 
 
 Haiti = {
-    'country_name': 'Haiti',
+    'name': 'Haiti',
     'country_index': 75,
     'region': 'Central America',
     'stability': 1,
@@ -1114,7 +1147,7 @@ Haiti = {
 
 
 Dominican_Republic = {
-    'country_name': 'Dominican_Republic',
+    'name': 'Dominican_Republic',
     'country_index': 76,
     'region': 'Central America',
     'stability': 1,
@@ -1124,7 +1157,7 @@ Dominican_Republic = {
 }
 
 Colombia = {
-    'country_name': 'Colombia',
+    'name': 'Colombia',
     'country_index': 77,
     'region': 'South America',
     'stability': 1,
@@ -1135,7 +1168,7 @@ Colombia = {
 
 
 Ecuador = {
-    'country_name': 'Ecuador',
+    'name': 'Ecuador',
     'country_index': 78,
     'region': 'South America',
     'stability': 2,
@@ -1146,7 +1179,7 @@ Ecuador = {
 
 
 Peru = {
-    'country_name': 'Peru',
+    'name': 'Peru',
     'country_index': 79,
     'region' : 'South America',
     'stability': 2,
@@ -1157,7 +1190,7 @@ Peru = {
 
 
 Chile = {
-    'country_name': 'Chile',
+    'name': 'Chile',
     'country_index': 80,
     'region': 'South America',
     'stability': 3,
@@ -1169,7 +1202,7 @@ Chile = {
 
 
 Argentina = {
-    'country_name': 'Argentina',
+    'name': 'Argentina',
     'country_index': 81,
     'region': 'South America',
     'stability': 2,
@@ -1181,7 +1214,7 @@ Argentina = {
 
 
 Uruguay = {
-    'country_name': 'Uruguay',
+    'name': 'Uruguay',
     'country_index': 82,
     'region': 'South America',
     'stability': 2,
@@ -1192,7 +1225,7 @@ Uruguay = {
 
 
 Paraguay = {
-    'country_name': 'Paraguay',
+    'name': 'Paraguay',
     'country_index': 83,
     'region': 'South America',
     'stability': 2,
@@ -1203,7 +1236,7 @@ Paraguay = {
 
 
 Bolivia = {
-    'country_name': 'Bolivia',
+    'name': 'Bolivia',
     'country_index': 84,
     'region': 'South America',
     'stability': 2,
@@ -1214,7 +1247,7 @@ Bolivia = {
 
 
 Brazil = {
-    'country_name': 'Brazil',
+    'name': 'Brazil',
     'country_index': 85,
     'region': 'South America',
     'stability': 2,
@@ -1226,7 +1259,7 @@ Brazil = {
 
 
 Venezuela = {
-    'country_name': 'Venezuela',
+    'name': 'Venezuela',
     'country_index': 86,
     'region': 'South America',
     'stability': 2,
@@ -1238,7 +1271,7 @@ Venezuela = {
 
 
 Chinese_Civil_War = {
-    'country_name': 'Chinese_Civil_War',
+    'name': 'Chinese_Civil_War',
     'country_index': 87,
     'chinese_civil_war': True,
     'region': 'Asia',
