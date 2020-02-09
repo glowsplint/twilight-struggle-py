@@ -73,7 +73,7 @@ class Game:
 
     This is the actual use of operations to place influence.
     '''
-    def card_operation_add_influence(self, side, effective_ops):
+    def card_operation_add_influence(self, side: Side, effective_ops: int):
 
         '''Generates the list of all possible countries that influence can be placed in.'''
 
@@ -107,8 +107,7 @@ class Game:
                     self.map.place_influence(country_name, side, 1)
                 break
             else:
-                print('\nThe values you keyed in cannot be accepted.')
-        pass
+                print('\nYour input cannot be accepted.')
 
 
 
@@ -121,7 +120,7 @@ class Game:
     Examples of cards that use this function are: VOA, Decolonization, OAS_Founded, Junta.
     See put_start_USSR below for an example.
     '''
-    def event_influence(self, side, effective_ops, available_list: list, can_split: bool, positive: bool):
+    def event_influence(self, side: Side, effective_ops: int, available_list: list, can_split: bool, positive: bool):
 
         available_list_values = [str(self.map[n].info.country_index) for n in available_list]
         guide_msg = f'You may modify {effective_ops} influence in these countries. Type in their country indices, separated by commas (no spaces).'
@@ -164,7 +163,7 @@ class Game:
                             self.map.change_influence(country_name, 0, -1)
                 break
             else:
-                print('\nThe values you keyed in cannot be accepted.')
+                print('\nYour input cannot be accepted.')
 
 
 
@@ -212,17 +211,86 @@ class Game:
         # can only be used if the event is yours
         pass
 
-    def card_operation_realignment(self):
+    def card_operation_realignment(self, side: Side, effective_ops: int):
         '''
         Generates the list of all possible countries that can be realigned.
+        Adjusts for DEFCON status only.
+        Does not currently check the player baskets for continuous effects.
         '''
-        pass
+        current_effective_ops = effective_ops
+        guide_msg = f'You may attempt realignment in these countries. Type in the target country index.'
+        rejection_msg = f'Please key in a single value.'
 
-    def card_operation_coup(self):
+        while current_effective_ops > 0:
+            filter = np.array([self.map.can_realignment(country_name, side, self.defcon_track) for country_name in self.map.ALL])
+            all_countries = np.array([country_name for country_name in self.map.ALL])
+            available_list = all_countries[filter]
+            available_list_values = [str(self.map[n].info.country_index) for n in available_list]
+
+            print()
+            if side == Side.USSR:
+                print(UI.ussr_prompt)
+            elif side == Side.US:
+                print(UI.us_prompt)
+            else:
+                raise ValueError('Side argument invalid.')
+
+            print(guide_msg)
+            for available_country_name in available_list:
+                print(f'{self.map[available_country_name].info.country_name}, {self.map[available_country_name].info.country_index}')
+
+            user_choice = UI.ask_for_input(1, rejection_msg)
+            if user_choice == None:
+                break
+
+            if len(set(user_choice) - set(available_list_values)) == 0:
+                country_name = self.map.index_country_map[int(user_choice[0])]
+                self.map.realignment(country_name, side, self.defcon_track)
+                current_effective_ops -= 1
+            else:
+                print('\nYour input cannot be accepted.')
+
+
+
+    def card_operation_coup(self, side: Side, effective_ops: int):
         '''
         Generates the list of all possible countries that can be couped.
+        Adjusts for DEFCON status only.
+        Does not currently check the player baskets for continuous effects.
         '''
-        pass
+        filter = np.array([self.map.can_coup(country_name, side, self.defcon_track) for country_name in self.map.ALL])
+        all_countries = np.array([country_name for country_name in self.map.ALL])
+        available_list = all_countries[filter]
+
+        available_list_values = [str(self.map[n].info.country_index) for n in available_list]
+        guide_msg = f'You may coup these countries. Type in the country index.'
+        rejection_msg = f'Please key in a single value.'
+
+        while True:
+            print()
+            if side == Side.USSR:
+                print(UI.ussr_prompt)
+            elif side == Side.US:
+                print(UI.us_prompt)
+            else:
+                raise ValueError('Side argument invalid.')
+
+            print(guide_msg)
+            for available_country_name in available_list:
+                print(f'{self.map[available_country_name].info.country_name}, {self.map[available_country_name].info.country_index}')
+
+            user_choice = UI.ask_for_input(1, rejection_msg)
+            if user_choice == None:
+                break
+
+            if len(set(user_choice) - set(available_list_values)) == 0:
+                country_name = self.map.index_country_map[int(user_choice[0])]
+                self.map.coup(country_name, side, effective_ops, self.defcon_track)
+                break
+            else:
+                print('\nYour input cannot be accepted.')
+
+
 
     def discard_held_card(self):
         pass
