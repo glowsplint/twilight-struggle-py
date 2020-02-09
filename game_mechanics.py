@@ -4,7 +4,7 @@ import numpy as np
 
 from twilight_enums import *
 from twilight_map import *
-from twilight_cards import *
+from twilight_cards import GameCards
 from twilight_ui import *
 
 class Game:
@@ -27,6 +27,9 @@ class Game:
         self.milops_track = np.array([0, 0]) # ussr first
         self.space_track = np.array([0, 0]) # 0 is start, 1 is earth satellite etc
         self.has_spaced = [False, False]
+
+        self.realignment_modifier = np.array([0, 0]) # ussr first
+        self.coup_modifier = np.array([0, 0]) # ussr first
 
         self.map = GameMap()
         self.cards = GameCards()
@@ -219,6 +222,7 @@ class Game:
 
             if len(set(user_choice) - set(available_list_values)) == 0:
                 name = self.cards.index_card_map[int(user_choice[0])]
+                hand[hand.index(name)].event()
                 hand.pop(hand.index(name))
                 break
             else:
@@ -240,6 +244,9 @@ class Game:
     def forced_to_missile_envy(self):
         pass
 
+    def trigger_event(self):
+        pass
+
     def card_event(self):
         # can only be used if the event is yours
         pass
@@ -248,7 +255,7 @@ class Game:
         '''
         Generates the list of all possible countries that can be realigned.
         Adjusts for DEFCON status only.
-        Does not currently check the player baskets for continuous effects.
+        TODO: Does not currently check the player baskets for continuous effects.
         '''
         current_effective_ops = effective_ops
         guide_msg = f'You may attempt realignment in these countries. Type in the target country index.'
@@ -282,7 +289,7 @@ class Game:
         '''
         Generates the list of all possible countries that can be couped.
         Adjusts for DEFCON status only.
-        Does not currently check the player baskets for continuous effects.
+        TODO: Does not currently check the player baskets for continuous effects.
         '''
         filter = np.array([self.map.can_coup(name, side, self.defcon_track) for name in self.map.ALL])
         all_countries = np.array([name for name in self.map.ALL])
@@ -310,9 +317,39 @@ class Game:
                 print('\nYour input cannot be accepted.')
 
 
-
+    '''
+    The player is given here an option to discard a card at the end of the turn.
+    This effect is a buff from the space race.
+    '''
     def discard_held_card(self):
-        pass
+        if side == Side.USSR:
+            hand = self.ussr_hand
+        elif side == Side.US:
+            hand = self.us_hand
+
+        guide_msg = f'You may discard a card. Type in the card index.'
+        rejection_msg = f'Please key in a single value.'
+
+        while True:
+            available_list = hand
+            available_list_values = [str(self.cards[n].info.card_index) for n in available_list]
+
+            self.prompt_side(side)
+            print(guide_msg)
+            for available_name in available_list:
+                print(f'{self.cards[available_name].info.name}, {self.cards[available_name].info.card_index}')
+
+            user_choice = UI.ask_for_input(1, rejection_msg)
+            if user_choice == None:
+                break
+
+            if len(set(user_choice) - set(available_list_values)) == 0:
+                name = self.cards.index_card_map[int(user_choice[0])]
+                self.discard_pile.append(hand.pop(hand.index(name)))
+                break
+            else:
+                print('\nYour input cannot be accepted.')
+
 
     def select_take_8_rounds(self):
         pass
@@ -367,7 +404,7 @@ class Game:
             modifier = 1
 
         y = x.vp_mult # multiplier for VP - gives 1 for USSR and -1 for US
-        roll = random.randint(6) + 1
+        roll = random.randint(1,6)
         if roll + modifier <= 3:
             space_track[x] += 1
             print(f'Success with roll of {roll}.')
@@ -441,7 +478,8 @@ class Game:
         '''Pre-headline setup'''
         if self.turn_track == 1 and self.ar_track == 1:
             # Move the China card from the early war pile to USSR hand, China card 6th from last
-            self.ussr_hand.append(self.cards.early_war.pop(5))
+            self.ussr_hand.append(self.cards.early_war.pop(self.cards.early_war.index('The_China_Card')))
+            # self.ussr_hand.append(self.cards.early_war.pop(self.cards.early_war.index('The_China_Card')))
             self.ussr_hand.append(self.cards.early_war.pop(self.cards.early_war.index('Asia_Scoring'))) # for testing of specific cards
             self.draw_pile.extend(self.cards.early_war) # Put early war cards into the draw pile
             self.cards.early_war = []
@@ -516,7 +554,7 @@ class Game:
         self.deal() # turn marker advanced before dealing
         headline(self)
 
-    def score(self, region, presence_vps, domination_vps, control_vps):
+    def score(self, region: MapRegion, presence_vps: int, domination_vps: int, control_vps: int):
         bg_count = [0, 0, 0]  # USSR, US, NEUTRAL
         country_count = [0, 0, 0]
         vps = [0, 0]
@@ -543,14 +581,16 @@ class Game:
         self.change_vp(swing)
         print(f'{region.name} scores for {swing} VP')
 
+    '''
+    Card functions will come here. Here we create a card dictionary, which ties
+    every card_name to their card_function. The card functions are named with an
+    underscore prefix.
+    '''
 
 
-def DegradeDEFCONLevel(n):
-    Game.main.change_defcon(-n)
 
-def GainVictoryPointsForDEFCONBelow(n):
-    Game.main.change_vp(Game.main.defcon_track - n)
 
+'''Utility functions'''
 def RemoveAllOpponentInfluenceInCuba(_):
     Cuba.set_influence(0, max(3, Cuba.ussr_influence))
 
@@ -569,24 +609,24 @@ def GainInfluenceForControlInJapan(_):
 
 '''Scoring Mechanics'''
 # TO ADD SHUTTLE DIPLOMACY AND FORMOSAN RESOLUTION
-def ScoreAsia():
-    Game.main.score(MapRegion.ASIA, 3, 7, 9)
+def ScoreAsia(game):
+    score(MapRegion.ASIA, 3, 7, 9)
 
 def ScoreEurope():
-    Game.main.score(MapRegion.EUROPE, 3, 7, 120)
+    score(MapRegion.EUROPE, 3, 7, 120)
 
 # TO ADD SHUTTLE DIPLOMACY
 def ScoreMiddleEast():
-    Game.main.score(MapRegion.MIDDLE_EAST, 3, 5, 7)
+    score(MapRegion.MIDDLE_EAST, 3, 5, 7)
 
 def ScoreCentralAmerica():
-    Game.main.score(MapRegion.CENTRAL_AMERICA, 1, 3, 5)
+    score(MapRegion.CENTRAL_AMERICA, 1, 3, 5)
 
 def ScoreAfrica():
-    Game.main.score(MapRegion.AFRICA, 1, 4, 6)
+    score(MapRegion.AFRICA, 1, 4, 6)
 
 def ScoreSouthAmerica():
-    Game.main.score(MapRegion.AFRICA, 2, 5, 6)
+    score(MapRegion.SOUTH_AMERICA, 2, 5, 6)
 
 def ScoreSoutheastAsia():
     country_count = [0,0]

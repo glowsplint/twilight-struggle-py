@@ -23,3 +23,9 @@ from twilight_cards import *
 g = Game()
 g.ui.run()
 
+
+# In[3]:
+
+
+g.ussr_hand
+
