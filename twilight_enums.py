@@ -42,7 +42,7 @@ class MapRegion(enum.IntEnum):
     AFRICA = 3
     CENTRAL_AMERICA = 4
     SOUTH_AMERICA = 5
-    # Subregions
+
     WESTERN_EUROPE = 6
     EASTERN_EUROPE = 7
     SOUTHEAST_ASIA = 8

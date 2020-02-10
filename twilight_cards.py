@@ -16,7 +16,7 @@ class CardInfo:
     def __init__(self, name="", type="", stage="", card_index=0,
                      optional_card=False, ops=0,
                      event_text="", scoring_region="", may_be_held=True,
-                     event_owner="NEUTRAL", remove_if_used_as_event=False,
+                     owner="NEUTRAL", remove_if_used_as_event=False,
                      resolve_headline_first=False, can_headline=True,
                      **kwargs):
         self.name = name
@@ -25,7 +25,7 @@ class CardInfo:
         self.card_index = card_index
         self.ops = ops
         self.text = event_text
-        self.owner = Side[event_owner]
+        self.owner = Side[owner]
         self.optional = optional_card
 
         self.event_unique = remove_if_used_as_event
@@ -136,7 +136,7 @@ Duck_and_Cover = {
     'stage': 'Early War',
     'card_index': 4,
     'ops': 3,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'Degrade DEFCON one level. Then US player earns VPs equal to 5 minus current DEFCON level.',
 }
 
@@ -146,7 +146,7 @@ Five_Year_Plan = {
     'stage': 'Early War',
     'card_index': 5,
     'ops': 3,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'USSR player must randomly discard one card. If the card is a US associated Event, the Event occurs immediately. If the card is a USSR associated Event or and Event applicable to both players, then the card must be discarded without triggering the Event.',
 }
 
@@ -156,7 +156,7 @@ The_China_Card = {
     'stage': 'Early War',
     'card_index': 6,
     'ops': 4,
-    'event_owner': 'NEUTRAL',
+    'owner': 'NEUTRAL',
     'can_headline': False,
     'event_text': 'Begins the game with the USSR player. +1 Operations value when all points are used in Asia. Pass to opponent after play. +1 VP for the player holding this card at the end of Turn 10. Cancels effect of \'Formosan Resolution\' if this card is played by the US player.',
 }
@@ -167,7 +167,7 @@ Socialist_Governments = {
     'stage': 'Early War',
     'card_index': 7,
     'ops': 3,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'Unplayable as an event if \'The Iron Lady\' is in effect. Remove US Influence in Western Europe by a total of 3 Influence points, removing no more than 2 per country.',
 }
 
@@ -177,7 +177,7 @@ Fidel = {
     'stage': 'Early War',
     'card_index': 8,
     'ops': 2,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'Remove all US Influence in Cuba. USSR gains sufficient Influence in Cuba for Control.',
     'remove_if_used_as_event': True,
 }
@@ -189,7 +189,7 @@ Vietnam_Revolts = {
     'stage': 'Early War',
     'card_index': 9,
     'ops': 2,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'Add 2 USSR Influence in Vietnam. For the remainder of the turn, the Soviet player may add 1 Operations point to any card that uses all points in Southeast Asia.',
     'remove_if_used_as_event': True,
 }
@@ -201,7 +201,7 @@ Blockade = {
     'stage': 'Early War',
     'card_index': 10,
     'ops': 1,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'Unless US Player immediately discards a \'3\' or more value Operations card, eliminate all US Influence in West Germany.',
     'remove_if_used_as_event': True,
 }
@@ -213,7 +213,7 @@ Korean_War = {
     'stage': 'Early War',
     'card_index': 11,
     'ops': 2,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'North Korea invades South Korea. Roll one die and subtract 1 for every US Controlled country adjacent to South Korea. USSR Victory on modified die roll 4-6. USSR add 2 to Military Ops Track. Effects of Victory: USSR gains 2 VP and replaces all US Influence in South Korea with USSR Influence.',
     'remove_if_used_as_event': True,
 }
@@ -225,7 +225,7 @@ Romanian_Abdication = {
     'stage': 'Early War',
     'card_index': 12,
     'ops': 1,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'Remove all US Influence in Romania. USSR gains sufficient Influence in Romania for Control.',
     'remove_if_used_as_event': True,
 }
@@ -237,7 +237,7 @@ Arab_Israeli_War = {
     'stage': 'Early War',
     'card_index': 13,
     'ops': 2,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'A Pan-Arab Coalition invades Israel. Roll one die and subtract 1 for US Control of Israel and for US-controlled country adjacent to Israel. USSR Victory on modified die roll 4-6. USSR adds 2 to Military Ops Track. Effects of Victory: USSR gains 2 VP and replaces all US Influence in Israel with USSR Influence.',
 }
 
@@ -248,7 +248,7 @@ COMECON = {
     'stage': 'Early War',
     'card_index': 14,
     'ops': 3,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'Add 1 USSR Influence in each of four non-US Controlled countries in Eastern Europe.',
     'remove_if_used_as_event': True,
 }
@@ -260,7 +260,7 @@ Nasser = {
     'stage': 'Early War',
     'card_index': 15,
     'ops': 1,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'Add 2 USSR Influence in Egypt. Remove half (rounded up) of the US Influence in Egypt.',
     'remove_if_used_as_event': True,
 }
@@ -272,7 +272,7 @@ Warsaw_Pact_Formed = {
     'stage': 'Early War',
     'card_index': 16,
     'ops': 3,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'Remove all US Influence from four countries in Eastern Europe, or add 5 USSR Influence in Eastern Europe, adding no more than 2 per country. Allow play of NATO.',
     'remove_if_used_as_event': True,
 }
@@ -284,7 +284,7 @@ De_Gaulle_Leads_France = {
     'stage': 'Early War',
     'card_index': 17,
     'ops': 3,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'Remove 2 US Influence in France, add 1 USSR Influence. Cancels effects of NATO for France.',
     'remove_if_used_as_event': True,
 }
@@ -296,7 +296,7 @@ Captured_Nazi_Scientist = {
     'stage': 'Early War',
     'card_index': 18,
     'ops': 1,
-    'event_owner': 'NEUTRAL',
+    'owner': 'NEUTRAL',
     'event_text': 'Advance player\'s Space Race marker one box.',
     'remove_if_used_as_event': True,
 }
@@ -308,7 +308,7 @@ Truman_Doctrine = {
     'stage': 'Early War',
     'card_index': 19,
     'ops': 1,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'Remove all USSR Influence markers in one uncontrolled country in Europe.',
     'remove_if_used_as_event': True,
 }
@@ -320,7 +320,7 @@ Olympic_Games = {
     'stage': 'Early War',
     'card_index': 20,
     'ops': 2,
-    'event_owner': 'NEUTRAL',
+    'owner': 'NEUTRAL',
     'event_text': 'Player sponsors Olympics. Opponent may participate or boycott. If Opponent participates, each player rolls one die, with the sponsor adding 2 to his roll. High roll gains 2 VP. Reroll ties If Opponent boycotts, degrade DEFCON one level and the Sponsor may Conduct Operations as if they played a 4 Ops card.',
 }
 
@@ -331,7 +331,7 @@ NATO = {
     'stage': 'Early War',
     'card_index': 21,
     'ops': 4,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'Play after \'Marshall Plan\' or \'Warsaw Pact\'. USSR player may no longer make Coup or Realignment rolls in any US Controlled countries in Europe. US Controlled countries in Europe may not be attacked by play of the Brush War event.',
     'remove_if_used_as_event': True,
 }
@@ -343,7 +343,7 @@ Independent_Reds = {
     'stage': 'Early War',
     'card_index': 22,
     'ops': 2,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'Adds sufficient US Influence in either Yugoslavia, Romania, Bulgaria, Hungary, or Czechoslavakia to equal USSR Influence.',
     'remove_if_used_as_event': True,
 }
@@ -355,7 +355,7 @@ Marshall_Plan = {
     'stage': 'Early War',
     'card_index': 23,
     'ops': 4,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'Allows play of NATO. Add one US Influence in each of seven non-USSR Controlled Western European countries.',
     'remove_if_used_as_event': True,
 }
@@ -367,7 +367,7 @@ Indo_Pakistani_War = {
     'stage': 'Early War',
     'card_index': 24,
     'ops': 2,
-    'event_owner': 'NEUTRAL',
+    'owner': 'NEUTRAL',
     'event_text': 'India or Pakistan invades the other (player\'s choice). Roll one die and subtract 1 for every opponent-controlled country adjacent to the target of the invasion. Player Victory on modified die roll of 4-6. Player adds 2 to Military Ops Track. Effects of Victory: Player gains 2 VP and replaces all opponent\'s Influence in target country with his Influence.',
 }
 
@@ -379,7 +379,7 @@ Containment = {
     'stage': 'Early War',
     'card_index': 25,
     'ops': 3,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'All further Operations cards played by US this turn add one to their value (to a maximum of 4).',
     'remove_if_used_as_event': True,
 }
@@ -391,7 +391,7 @@ CIA_Created = {
     'stage': 'Early War',
     'card_index': 26,
     'ops': 1,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'USSR reveals hand this turn. Then the US may Conduct Operations as if they played a 1 Op card.',
     'remove_if_used_as_event': True,
 }
@@ -403,7 +403,7 @@ US_Japan_Mutual_Defense_Pact = {
     'stage': 'Early War',
     'card_index': 27,
     'ops': 4,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'US gains sufficient Influence in Japan for Control. USSR may no longer make Coup or Realignment rolls in Japan.',
     'remove_if_used_as_event': True,
 }
@@ -415,7 +415,7 @@ Suez_Crisis = {
     'stage': 'Early War',
     'card_index': 28,
     'ops': 3,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'Remove a total of 4 US Influence from France, the United Kingdom or Israel. Remove no more than 2 Influence per country.',
     'remove_if_used_as_event': True,
 }
@@ -427,7 +427,7 @@ East_European_Unrest = {
     'stage': 'Early War',
     'card_index': 29,
     'ops': 3,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'In Early or Mid War: Remove 1 USSR Influence from three countries in Eastern Europe. In Late War: Remove 2 USSR Influence from three countries in Eastern Europe.',
 }
 
@@ -439,7 +439,7 @@ Decolonization = {
     'stage': 'Early War',
     'card_index': 30,
     'ops': 2,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'Add one USSR Influence in each of any four African and/or SE Asian countries.',
 }
 
@@ -451,7 +451,7 @@ Red_Scare_Purge = {
     'stage': 'Early War',
     'card_index': 31,
     'ops': 4,
-    'event_owner': 'NEUTRAL',
+    'owner': 'NEUTRAL',
     'event_text': 'All further Operations cards played by your opponent this turn are -1 to their value (to a minimum of 1 Op).',
 }
 
@@ -463,7 +463,7 @@ UN_Intervention = {
     'stage': 'Early War',
     'card_index': 32,
     'ops': 1,
-    'event_owner': 'NEUTRAL',
+    'owner': 'NEUTRAL',
     'can_headline': False,
     'event_text': 'Play this card simultaneously with a card containing your opponent\'s associated Event. The Event is cancelled, but you may use its Operations value to Conduct Operations. The cancelled event returns to the discard pile. May not be played during headline phase.',
 }
@@ -476,7 +476,7 @@ De_Stalinization = {
     'stage': 'Early War',
     'card_index': 33,
     'ops': 3,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'USSR may relocate up to 4 Influence points to non-US controlled countries. No more than 2 Influence may be placed in the same country.',
     'remove_if_used_as_event': True,
 }
@@ -488,7 +488,7 @@ Nuclear_Test_Ban = {
     'stage': 'Early War',
     'card_index': 34,
     'ops': 4,
-    'event_owner': 'NEUTRAL',
+    'owner': 'NEUTRAL',
     'event_text': 'Player earns VPs equal to the current DEFCON level minus 2, then improve DEFCON two levels.',
 }
 
@@ -500,7 +500,7 @@ Formosan_Resolution = {
     'stage': 'Early War',
     'card_index': 35,
     'ops': 2,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'Taiwan shall be treated as a Battleground country for scoring purposes, if the US controls Taiwan when the Asia Scoring Card is played or during Final Scoring at the end of Turn 10. Taiwan is not a battleground country for any other game purpose. This card is discarded after US play of \'The China Card\'.',
     'remove_if_used_as_event': True,
 }
@@ -512,7 +512,7 @@ Defectors = {
     'stage': 'Early War',
     'card_index': 103,
     'ops': 2,
-    'event_owner': 'US',
+    'owner': 'US',
     'resolve_headline_first': True,
     'event_text': 'Play in Headline Phase to cancel USSR Headline event, including Scoring Card. Cancelled card returns to the Discard Pile. If Defectors played by USSR during Soviet action round, US gains 1 VP (unless played on the Space Race).',
 }
@@ -527,7 +527,7 @@ The_Cambridge_Five = {
     'card_index': 104,
     'optional_card': True,
     'ops': 2,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'The US player exposes all scoring cards in their hand. The USSR player may then add 1 Influence in any single region named on one of those scoring cards (USSR choice). Cannot be played as an event in Late War.',
 }
 
@@ -541,7 +541,7 @@ Special_Relationship = {
     'card_index': 105,
     'optional_card': True,
     'ops': 2,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'If UK is US controlled but NATO is not in effect, US adds 1 Influence to any country adjacent to the UK. If UK is US controlled and NATO is in effect, US adds 2 Influence to any Western European country and gains 2 VPs.',
 }
 
@@ -555,7 +555,7 @@ NORAD = {
     'card_index': 106,
     'optional_card': True,
     'ops': 3,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'If the US controls Canada, the US may add 1 Influence to any country already containing US Influence at the conclusion of any Action Round in which the DEFCON marker moves to the \'2\' box. This event cancelled by \'Quagmire\'.',
     'remove_if_used_as_event': True,
 }
@@ -573,7 +573,7 @@ Brush_War = {
     'stage': 'Mid War',
     'card_index': 36,
     'ops': 3,
-    'event_owner': 'NEUTRAL',
+    'owner': 'NEUTRAL',
     'event_text': 'Attack any country with a stability of 1 or 2. Roll a die and subtract 1 for every adjacent enemy controlled country. Success on 3-6. Player adds 3 to his Military Ops Track. Effects of Victory: Player gains 1 VP and replaces all opponent\'s Influence with his Influence.',
 }
 
@@ -608,7 +608,7 @@ Arms_Race = {
     'stage': 'Mid War',
     'card_index': 39,
     'ops': 3,
-    'event_owner': 'NEUTRAL',
+    'owner': 'NEUTRAL',
     'event_text': 'Compare each player\'s status on the Military Operations Track. If Phasing Player has more Military Operations points, he scores 1 VP. If Phasing Player has more Military Operations points and has met the Required Military Operations amount, he scores 3 VP instead.',
 }
 
@@ -620,7 +620,7 @@ Cuban_Missile_Crisis = {
     'stage': 'Mid War',
     'card_index': 40,
     'ops': 3,
-    'event_owner': 'NEUTRAL',
+    'owner': 'NEUTRAL',
     'event_text': 'Set DEFCON to Level 2. Any further Coup attempt by your opponent this turn, anywhere on the board, will result in Global Thermonuclear War. Your opponent will lose the game. This event may be cancelled at any time if the USSR player removes two Influence from Cuba or the US player removes 2 Influence from either West Germany or Turkey.',
     'remove_if_used_as_event': True,
 }
@@ -633,7 +633,7 @@ Nuclear_Subs = {
     'stage': 'Mid War',
     'card_index': 41,
     'ops': 2,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'US Coup attempts in Battleground Countries do not affect the DEFCON track for the remainder of the turn (does not affect Cuban Missile Crisis).',
     'remove_if_used_as_event': True,
 }
@@ -645,7 +645,7 @@ Quagmire = {
     'stage': 'Mid War',
     'card_index': 42,
     'ops': 3,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'On next action round, US player must discard an Operations card worth 2 or more and roll 1-4 to cancel this event. Repeat each US player Action round until successful or no appropriate cards remain. If out of appropriate cards, the US player may only play scoring cards until the next turn.',
     'remove_if_used_as_event': True,
 }
@@ -657,7 +657,7 @@ Salt_Negotiations = {
     'stage': 'Mid War',
     'card_index': 43,
     'ops': 3,
-    'event_owner': 'NEUTRAL',
+    'owner': 'NEUTRAL',
     'event_text': 'Improve DEFCON two levels. Further Coup attempts incur -1 die roll modifier for both players for the remainder of the turn. Player may sort through discard pile and reclaim one non-scoring card, after revealing it to their opponent.',
     'remove_if_used_as_event': True,
 }
@@ -669,7 +669,7 @@ Bear_Trap = {
     'stage': 'Mid War',
     'card_index': 44,
     'ops': 3,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'On next action round, USSR player must discard an Operations card worth 2 or more and roll 1-4 to cancel this event. Repeat each USSR player Action Round until successful or no appropriate cards remain. If out of appropriate cards, the USSR player may only play scoring cards until the next turn.',
     'remove_if_used_as_event': True,
 }
@@ -681,7 +681,7 @@ Summit = {
     'stage': 'Mid War',
     'card_index': 45,
     'ops': 1,
-    'event_owner': 'NEUTRAL',
+    'owner': 'NEUTRAL',
     'event_text': 'Both players roll a die.  Each adds 1 for each Region they Dominate or Control. High roller gains 2 VP and may move DEFCON marker one level in either direction. o not reroll ties.',
 }
 
@@ -693,7 +693,7 @@ How_I_Learned_to_Stop_Worrying = {
     'stage': 'Mid War',
     'card_index': 46,
     'ops': 2,
-    'event_owner': 'NEUTRAL',
+    'owner': 'NEUTRAL',
     'event_text': 'Set the DEFCON at any level you want (1-5). This event counts as 5 Military Operations for the purpose of required Military Operations.',
     'remove_if_used_as_event': True,
 }
@@ -705,7 +705,7 @@ Junta = {
     'stage': 'Mid War',
     'card_index': 47,
     'ops': 2,
-    'event_owner': 'NEUTRAL',
+    'owner': 'NEUTRAL',
     'event_text': 'Place 2 Influence in any one Central or South American country. Then you may make a free Coup attempt or Realignment roll in one of these regions (using this card\'s Operations Value).',
 }
 
@@ -717,7 +717,7 @@ Kitchen_Debates = {
     'stage': 'Mid War',
     'card_index': 48,
     'ops': 1,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'If the US controls more Battleground countries than the USSR, poke opponent in chest and gain 2 VP!',
     'remove_if_used_as_event': True,
 }
@@ -729,7 +729,7 @@ Missile_Envy = {
     'stage': 'Mid War',
     'card_index': 49,
     'ops': 2,
-    'event_owner': 'NEUTRAL',
+    'owner': 'NEUTRAL',
     'event_text': 'Exchange this card for your opponent\'s highest valued Operations card in his hand. If two or more cards are tied, opponent chooses. If the exchanged card contains your event, or an event applicable to both players, it occurs immediately. If it contains opponent\'s event, use Operations value without triggering event. Opponent must use this card for Operations during his next action round.',
 }
 
@@ -741,7 +741,7 @@ We_Will_Bury_You = {
     'stage': 'Mid War',
     'card_index': 50,
     'ops': 4,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'Unless UN Invervention is played as an Event on the US player\'s next round, USSR gains 3 VP prior to any US VP award. Degrade DEFCON one level.',
     'remove_if_used_as_event': True,
 }
@@ -754,7 +754,7 @@ Brezhnev_Doctrine = {
     'stage': 'Mid War',
     'card_index': 51,
     'ops': 3,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'All further Operations cards played by the USSR this turn increase their Ops value by one (to a maximum of 4).',
     'remove_if_used_as_event': True,
 }
@@ -766,7 +766,7 @@ Portuguese_Empire_Crumbles = {
     'stage': 'Mid War',
     'card_index': 52,
     'ops': 2,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'Add 2 USSR Influence in both SE African States and Angola.',
     'remove_if_used_as_event': True,
 }
@@ -778,7 +778,7 @@ South_African_Unrest = {
     'stage': 'Mid War',
     'card_index': 53,
     'ops': 2,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'USSR either adds 2 Influence in South Africa or adds 1 Influence in South Africa and 2 Influence in any countries adjacent to South Africa.',
 }
 
@@ -790,7 +790,7 @@ Allende = {
     'stage': 'Mid War',
     'card_index': 54,
     'ops': 1,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'USSR receives 2 Influence in Chile.',
     'remove_if_used_as_event': True,
 }
@@ -803,7 +803,7 @@ Willy_Brandt = {
     'stage': 'Mid War',
     'card_index': 55,
     'ops': 2,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'USSR receives gains 1 VP. USSR receives 1 Influence in West Germany. Cancels NATO for West Germany. This event unplayable and/or cancelled by Tear Down This Wall.',
     'remove_if_used_as_event': True,
 }
@@ -815,7 +815,7 @@ Muslim_Revolution = {
     'stage': 'Mid War',
     'card_index': 56,
     'ops': 4,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'Remove all US Influence in two of the following countries: Sudan, Iran, Iraq, Egypt, Libya, Saudi Arabia, Syria, Jordan.',
 }
 
@@ -827,7 +827,7 @@ ABM_Treaty = {
     'stage': 'Mid War',
     'card_index': 57,
     'ops': 4,
-    'event_owner': 'NEUTRAL',
+    'owner': 'NEUTRAL',
     'event_text': 'Improve DEFCON one level. Then player may Conduct Operations as if they played a 4 Ops card.',
 }
 
@@ -839,7 +839,7 @@ Cultural_Revolution = {
     'stage': 'Mid War',
     'card_index': 58,
     'ops': 3,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'If the US has \'The China Card\', claim it face up and available for play. If the USSR already had it, USSR gains 1 VP.',
     'remove_if_used_as_event': True,
 }
@@ -851,7 +851,7 @@ Flower_Power = {
     'stage': 'Mid War',
     'card_index': 59,
     'ops': 4,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'USSR gains 2 VP for every subsequently US played \'war card\' (played as an Event or Operations) unless played on the Space Race. War Cards: Arab-Israeli War, Korean War, Brush War, Indo-Pakistani War or Iran-Iraq War. This event cancelled by \'An Evil Empire\'.',
     'remove_if_used_as_event': True,
 }
@@ -863,7 +863,7 @@ U2_Incident = {
     'stage': 'Mid War',
     'card_index': 60,
     'ops': 3,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'USSR gains 1 VP. If UN Intervention played later this turn as an Event, either by US or USSR, gain 1 additional VP.',
     'remove_if_used_as_event': True,
 }
@@ -875,7 +875,7 @@ OPEC = {
     'stage': 'Mid War',
     'card_index': 61,
     'ops': 3,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'USSR gains 1VP for each of the following countries he controls: Egypt, Iran, Libya, Saudi Arabia, Iraq, Gulf States, and Venezuela. Unplayable as an event if \'North Sea Oil\' is in effect.',
 }
 
@@ -887,7 +887,7 @@ Lone_Gunman = {
     'stage': 'Mid War',
     'card_index': 62,
     'ops': 1,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'US player reveals his hand. Then the USSR may Conduct Operations as if they played a 1 Op card.',
     'remove_if_used_as_event': True,
 }
@@ -899,7 +899,7 @@ Colonial_Rear_Guards = {
     'stage': 'Mid War',
     'card_index': 63,
     'ops': 2,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'Add 1 US Influence in each of four different African and/or Southeast Asian countries.',
 }
 
@@ -911,7 +911,7 @@ Panama_Canal_Returned = {
     'stage': 'Mid War',
     'card_index': 64,
     'ops': 1,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'Add 1 US Influence in Panama, Costa Rica, and Venezuela.',
     'remove_if_used_as_event': True,
 }
@@ -923,7 +923,7 @@ Camp_David_Accords = {
     'stage': 'Mid War',
     'card_index': 65,
     'ops': 2,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'US gains 1 VP. US receives 1 Influence in Israel, Jordan and Egypt. Arab-Israeli War event no longer playable.',
     'remove_if_used_as_event': True,
 }
@@ -935,7 +935,7 @@ Puppet_Governments = {
     'stage': 'Mid War',
     'card_index': 66,
     'ops': 2,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'US may add 1 Influence in three countries that currently contain no Influence from either power.',
     'remove_if_used_as_event': True,
 }
@@ -947,7 +947,7 @@ Grain_Sales_to_Soviets = {
     'stage': 'Mid War',
     'card_index': 67,
     'ops': 2,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'Randomly choose one card from USSR hand. Play it or return it. If Soviet player has no cards, or returned, use this card to conduct Operations normally.',
 }
 
@@ -959,7 +959,7 @@ John_Paul_II_Elected_Pope = {
     'stage': 'Mid War',
     'card_index': 68,
     'ops': 2,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'Remove 2 USSR Influence in Poland and then add 1 US Influence in Poland. Allows play of \'Solidarity\'.',
     'remove_if_used_as_event': True,
 }
@@ -971,7 +971,7 @@ Latin_American_Death_Squads = {
     'stage': 'Mid War',
     'card_index': 69,
     'ops': 2,
-    'event_owner': 'NEUTRAL',
+    'owner': 'NEUTRAL',
     'event_text': 'All of the player\'s Coup attempts in Central and South America are +1 for the remainder of the turn, while all opponent\'s Coup attempts are -1 for the remainder of the turn.',
 }
 
@@ -983,7 +983,7 @@ OAS_Founded = {
     'stage': 'Mid War',
     'card_index': 70,
     'ops': 1,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'Add 2 US Influence in Central America and/or South America.',
     'remove_if_used_as_event': True,
 }
@@ -995,7 +995,7 @@ Nixon_Plays_The_China_Card = {
     'stage': 'Mid War',
     'card_index': 71,
     'ops': 2,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'If US has \'The China Card\', gain 2 VP. Otherwise, US player receives \'The China Card\' now, face down and unavailable for immediate play.',
     'remove_if_used_as_event': True,
 }
@@ -1007,7 +1007,7 @@ Sadat_Expels_Soviets = {
     'stage': 'Mid War',
     'card_index': 72,
     'ops': 1,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'Remove all USSR Influence in Egypt and add one US Influence.',
     'remove_if_used_as_event': True,
 }
@@ -1019,7 +1019,7 @@ Shuttle_Diplomacy = {
     'stage': 'Mid War',
     'card_index': 73,
     'ops': 3,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'Play in front of US player. During the next scoring of the Middle East or Asia (whichever comes first), subtract one Battleground country from USSR total, then put this card in the discard pile. Does not count for Final Scoring at the end of Turn 10.',
 }
 
@@ -1031,7 +1031,7 @@ The_Voice_Of_America = {
     'stage': 'Mid War',
     'card_index': 74,
     'ops': 2,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'Remove 4 USSR Influence from non-European countries. No more than 2 may be removed from any one country.',
 }
 
@@ -1043,7 +1043,7 @@ Liberation_Theology = {
     'stage': 'Mid War',
     'card_index': 75,
     'ops': 2,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'Add 3 USSR Influence in Central America, no more than 2 per country.',
 }
 
@@ -1055,7 +1055,7 @@ Ussuri_River_Skirmish = {
     'stage': 'Mid War',
     'card_index': 76,
     'ops': 3,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'If the USSR has \'The China Card\', claim it face up and available for play. If the US already has \'The China Card\', add 4 US Influence in Asia, no more than 2 per country.',
     'remove_if_used_as_event': True,
 }
@@ -1067,7 +1067,7 @@ Ask_Not_What_Your_Country_Can_Do_For_You = {
     'stage': 'Mid War',
     'card_index': 77,
     'ops': 3,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'US player may discard up to entire hand (including Scoring cards) and draw replacements from the deck. The number of cards discarded must be decided prior to drawing any replacements.',
     'remove_if_used_as_event': True,
 }
@@ -1080,7 +1080,7 @@ Alliance_for_Progress = {
     'stage': 'Mid War',
     'card_index': 78,
     'ops': 3,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'US gains 1 VP for each US controlled Battleground country in Central America and South America.',
     'remove_if_used_as_event': True,
 }
@@ -1105,7 +1105,7 @@ One_Small_Step = {
     'stage': 'Mid War',
     'card_index': 80,
     'ops': 2,
-    'event_owner': 'NEUTRAL',
+    'owner': 'NEUTRAL',
     'event_text': 'If you are behind on the Space Race Track, play this card to move your marker two boxes forward on the Space Rack Track, gaining the VP value of the second box only.',
 }
 
@@ -1132,7 +1132,7 @@ Che = {
     'card_index': 107,
     'optional_card': True,
     'ops': 3,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'USSR may immediately make a Coup attempt using this card\'s Operations value against a non-battleground country in Central America, South America, or Africa. If the Coup removes any US Influence, USSR may make a second Coup attempt against a different target under the same restrictions.',
 }
 
@@ -1147,7 +1147,7 @@ Our_Man_In_Tehran = {
     'card_index': 108,
     'optional_card': True,
     'ops': 2,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'If the US controls at least one Middle East country, the US player draws the top 5 cards from the draw pile. They may reveal and then discard any or all of these drawn cards without triggering the Event. Any remaining drawn cards are returned to the draw deck, and it is reshuffled.',
     'remove_if_used_as_event': True,
 }
@@ -1167,7 +1167,7 @@ Iranian_Hostage_Crisis = {
     'stage': 'Late War',
     'card_index': 82,
     'ops': 3,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'Remove all US Influence in Iran. Add 2 USSR Influence in Iran. Doubles the effect of Terrorism card against US.',
     'remove_if_used_as_event': True,
 }
@@ -1180,7 +1180,7 @@ The_Iron_Lady = {
     'stage': 'Late War',
     'card_index': 83,
     'ops': 3,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'US gains 1 VP. Add 1 USSR Influence in Argentina. Remove all USSR Influence from UK. Socialist Governments event no longer playable.',
     'remove_if_used_as_event': True,
 }
@@ -1193,7 +1193,7 @@ Reagan_Bombs_Libya = {
     'stage': 'Late War',
     'card_index': 84,
     'ops': 2,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'US gains 1 VP for every 2 USSR Influence in Libya.',
     'remove_if_used_as_event': True,
 }
@@ -1206,7 +1206,7 @@ Star_Wars = {
     'stage': 'Late War',
     'card_index': 85,
     'ops': 2,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'If the US is ahead on the Space Race Track, play this card to search through the discard pile for a non-scoring card of your choice. Event occurs immediately.',
     'remove_if_used_as_event': True,
 }
@@ -1219,7 +1219,7 @@ North_Sea_Oil = {
     'stage': 'Late War',
     'card_index': 86,
     'ops': 3,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'OPEC event is no longer playable. US may play 8 cards this turn.',
     'remove_if_used_as_event': True,
 }
@@ -1232,7 +1232,7 @@ The_Reformer = {
     'stage': 'Late War',
     'card_index': 87,
     'ops': 3,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'Add 4 Influence in Europe (no more than 2 per country). If USSR is ahead of US in VP, then 6 Influence may be added instead. USSR may no longer conduct Coup attempts in Europe. Improves effect of Glasnost event.',
     'remove_if_used_as_event': True,
 }
@@ -1245,7 +1245,7 @@ Marine_Barracks_Bombing = {
     'stage': 'Late War',
     'card_index': 88,
     'ops': 2,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'Remove all US Influence in Lebanon plus remove 2 additional US Influence from anywhere in the Middle East.',
     'remove_if_used_as_event': True,
 }
@@ -1258,7 +1258,7 @@ Soviets_Shoot_Down_KAL = {
     'stage': 'Late War',
     'card_index': 89,
     'ops': 4,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'Degrade DEFCON one level. US gains 2 VP. If South Korea is US Controlled, then the US may place Influence or attempt Realignment as if they played a 4 Ops card.',
     'remove_if_used_as_event': True,
 }
@@ -1270,7 +1270,7 @@ Glasnost = {
     'stage': 'Late War',
     'card_index': 90,
     'ops': 4,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'USSR gains 2 VP. Improve DEFCON one level. If The Reformer is in effect, then the USSR may place Influence or attempt Realignments as if they played a 4 Ops card.',
     'remove_if_used_as_event': True,
 }
@@ -1282,7 +1282,7 @@ Ortega_Elected_in_Nicaragua = {
     'stage': 'Late War',
     'card_index': 91,
     'ops': 2,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'Remove all US Influence from Nicaragua. Then USSR may make one free Coup attempt (with this card\'s Operations value) in a country adjacent to Nicaragua.',
     'remove_if_used_as_event': True,
 }
@@ -1294,7 +1294,7 @@ Terrorism = {
     'stage': 'Late War',
     'card_index': 92,
     'ops': 2,
-    'event_owner': 'NEUTRAL',
+    'owner': 'NEUTRAL',
     'event_text': 'Opponent must randomly discard one card. If played by USSR and Iranian Hostage Crisis is in effect, the US player must randomly discard two cards. (Events on discards do not occur.)',
 }
 
@@ -1306,7 +1306,7 @@ Iran_Contra_Scandal = {
     'stage': 'Late War',
     'card_index': 93,
     'ops': 2,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'All US Realignment rolls have a -1 die roll modifier for the remainder of the turn.',
     'remove_if_used_as_event': True,
 }
@@ -1319,7 +1319,7 @@ Chernobyl = {
     'stage': 'Late War',
     'card_index': 94,
     'ops': 3,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'The US player may designate one Region. For the remainder of the turn the USSR may not add additional Influence to that Region by the play of Operations Points via placing Influence.',
     'remove_if_used_as_event': True,
 }
@@ -1331,7 +1331,7 @@ Latin_American_Debt_Crisis = {
     'stage': 'Late War',
     'card_index': 95,
     'ops': 2,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'Unless the US Player immediately discards a \'3\' or greater Operations card, double USSR Influence in two countries in South America.',
     'remove_if_used_as_event': True,
 }
@@ -1344,7 +1344,7 @@ Tear_Down_This_Wall = {
     'stage': 'Late War',
     'card_index': 96,
     'ops': 3,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'Cancels/prevent Willy Brandt. Add 3 US Influence in East Germany. Then US may make a free Coup attempt or Realignment rolls in Europe using this card\'s Ops Value.',
     'remove_if_used_as_event': True,
 }
@@ -1357,7 +1357,7 @@ An_Evil_Empire = {
     'stage': 'Late War',
     'card_index': 97,
     'ops': 3,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'Cancels/Prevents Flower Power. US gains 1 VP.',
     'remove_if_used_as_event': True,
 }
@@ -1370,7 +1370,7 @@ Aldrich_Ames_Remix = {
     'stage': 'Late War',
     'card_index': 98,
     'ops': 3,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'US player exposes his hand to USSR player for remainder of turn. USSR then chooses one card from US hand, this card is discarded.',
     'remove_if_used_as_event': True,
 }
@@ -1382,7 +1382,7 @@ Pershing_II_Deployed = {
     'stage': 'Late War',
     'card_index': 99,
     'ops': 3,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'USSR gains 1 VP. Remove 1 US Influence from up to three countries in Western Europe.',
     'remove_if_used_as_event': True,
 }
@@ -1395,7 +1395,7 @@ Wargames = {
     'stage': 'Late War',
     'card_index': 100,
     'ops': 4,
-    'event_owner': 'NEUTRAL',
+    'owner': 'NEUTRAL',
     'event_text': 'If DEFCON Status 2, you may immediately end the game (without Final Scoring Phase) after giving opponent 6 VPs. How about a nice game of chess?',
     'remove_if_used_as_event': True,
 }
@@ -1408,7 +1408,7 @@ Solidarity = {
     'stage': 'Late War',
     'card_index': 101,
     'ops': 2,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'Playable as an event only if John Paul II Elected Pope is in effect. Add 3 US Influence in Poland.',
     'remove_if_used_as_event': True,
 }
@@ -1421,7 +1421,7 @@ Iran_Iraq_War = {
     'stage': 'Late War',
     'card_index': 102,
     'ops': 2,
-    'event_owner': 'NEUTRAL',
+    'owner': 'NEUTRAL',
     'event_text': 'Iran or Iraq invades the other (player\'s choice). Roll one die and subtract 1 for every opponent-controlled country adjacent to target of invasion. Player Victory on modified die roll of 4-6. Player adds 2 to Military Ops Track Effects of Victory: Player gains 2 VP and replaces opponent\'s Influence in target country with his own.',
     'remove_if_used_as_event': True,
 }
@@ -1436,7 +1436,7 @@ Yuri_and_Samantha = {
     'card_index': 109,
     'optional_card': True,
     'ops': 2,
-    'event_owner': 'USSR',
+    'owner': 'USSR',
     'event_text': 'USSR receives 1 VP for each US coup attempt made for the remainder of the current turn.',
     'remove_if_used_as_event': True,
 }
@@ -1451,7 +1451,7 @@ AWACS_Sale_to_Saudis = {
     'card_index': 110,
     'optional_card': True,
     'ops': 3,
-    'event_owner': 'US',
+    'owner': 'US',
     'event_text': 'US receives 2 Influence in Saudi Arabia. Muslim Revolution may no longer be played as an event.',
     'remove_if_used_as_event': True,
 }
