@@ -17,7 +17,7 @@ class CardInfo:
                      optional_card=False, ops=0,
                      event_text="", scoring_region="", may_be_held=True,
                      event_owner="NEUTRAL", remove_if_used_as_event=False,
-                     resolve_headline_first=False, can_headline_card=True,
+                     resolve_headline_first=False, can_headline=True,
                      **kwargs):
         self.name = name
         self.type = type
@@ -32,7 +32,7 @@ class CardInfo:
         self.scoring_region = scoring_region
         self.may_be_held = may_be_held
         self.resolve_headline_first = resolve_headline_first
-        self.can_headline_card = can_headline_card
+        self.can_headline = can_headline
 
         CardInfo.ALL[self.name] = self
 

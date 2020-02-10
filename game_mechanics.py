@@ -30,12 +30,6 @@ class Game:
         self.space_track = np.array([0, 0]) # 0 is start, 1 is earth satellite etc
         self.has_spaced = [False, False]
 
-        self.realignment_modifier = np.array([0, 0]) # ussr first
-        self.coup_modifier = np.array([0, 0]) # ussr first
-        self.vietnam_modifier = 0
-        self.ops_modifier = 0
-        self.nato_in_play = False
-
         self.map = GameMap()
         self.cards = GameCards()
         self.ui = UI(self)
@@ -47,8 +41,9 @@ class Game:
         self.draw_pile = []
         self.us_basket = []
         self.ussr_basket = []
+        self.headline_bin = []
 
-        self.stage_list = [self.map.build_standard, self.deal, self.put_start_USSR, self.put_start_US, self.put_start_extra, self.joint_choose_headline, self.resolve_headline]
+        self.stage_list = [self.map.build_standard, self.deal, self.put_start_USSR, self.put_start_US, self.put_start_extra, self.joint_choose_headline]
         self.ar6 = [self.select_card_and_action for i in range(6)]
         self.ar6.append(self.end_of_turn)
         self.ar7 = [self.select_card_and_action for i in range(7)]
@@ -61,7 +56,7 @@ class Game:
 
         '''Use only for testing, comment out otherwise.'''
         # self.us_basket.append(self.cards.early_war.pop(self.cards.early_war.index('Warsaw_Pact_Formed')))
-        self.us_basket.append(self.cards.early_war.pop(self.cards.early_war.index('Marshall_Plan')))
+        # self.us_basket.append(self.cards.early_war.pop(self.cards.early_war.index('Marshall_Plan')))
 
     '''
     self.current returns current game stage.
@@ -69,8 +64,6 @@ class Game:
     last possible event, and ends with the current event. We pop items off the
     list when they are resolved.
     '''
-    # 6 AR in t1-t3, 7 AR in t4-t10
-
     @property
     def current(self):
         return self.stage_list[-1]
@@ -199,6 +192,9 @@ class Game:
         USSR chooses first, then US, then display to both players the other's
         choice.
         '''
+        self.choose_headline(Side.USSR)
+        self.choose_headline(Side.US)
+        self.resolve_headline(type = Side.NEUTRAL)
         pass
 
     def choose_headline(self, side: Side):
@@ -227,16 +223,45 @@ class Game:
 
             if len(set(user_choice) - set(available_list_values)) == 0:
                 name = self.cards.index_card_mapping[int(user_choice[0])]
-                hand[hand.index(name)].event()
-                hand.pop(hand.index(name))
+                self.trigger_event(name)
+                self.headline_bin.append(hand.pop(hand.index(name)))
                 break
             else:
                 print('\nYour input cannot be accepted.')
 
 
 
-    def resolve_headline(self):
-        pass
+    def resolve_headline(self, type:Side = Side.NEUTRAL):
+
+        def trigger(self, side: Side):
+            print(f'\nUS selected {self.headline_bin[side].info.name} for headline.')
+            self.trigger_event(self.headline_bin[side].info.name)
+
+
+        if type == Side.NEUTRAL:
+            '''
+            Side.NEUTRAL : Joint resolution of headline
+            Side.US : Resolve US headline, then USSR headline
+            Side.USSR : Resolve USSR headline, then US headline
+            '''
+            if self.headline_bin[1] == 'Defectors':
+                return 'Defectors cancellation of headline phase.'
+            if self.headline_bin[0].info.ops > self.headline_bin[1].info.ops:
+                trigger(self, Side.USSR)
+                trigger(self, Side.US)
+            else:
+                trigger(self, Side.US)
+                trigger(self, Side.USSR)
+
+        if type == Side.US:
+            '''Show headline'''
+            trigger(self, Side.US)
+            trigger(self, Side.USSR)
+        elif type == Side.USSR:
+            trigger(self, Side.USSR)
+            trigger(self, Side.US)
+
+
 
     def select_card_and_action(self):
         '''
@@ -286,8 +311,9 @@ class Game:
         # can play. this stage is then triggered again at a later stage.
         pass
 
-    def trigger_event(self):
-        pass
+    def trigger_event(self, card_name: str):
+        '''Takes in a card_name and runs the associated card event function.'''
+        Game.card_function_mapping[card_name](self)
 
     def card_event(self):
         # can only be used if the event is yours
@@ -335,7 +361,7 @@ class Game:
         Adjusts for DEFCON status only.
         TODO: Does not currently check the player baskets for continuous effects.
         '''
-        filter = np.array([self.map.can_coup(name, side, self.defcon_track, self.nato_in_play) for name in self.map.ALL])
+        filter = np.array([self.map.can_coup(name, side, self.defcon_track) for name in self.map.ALL])
         all_countries = np.array([name for name in self.map.ALL])
         available_list = all_countries[filter]
 
@@ -527,9 +553,7 @@ class Game:
 
         '''Pre-headline setup'''
         if self.turn_track == 1 and self.ar_track == 1:
-            # Move the China card from the early war pile to USSR hand, China card 6th from last
             self.ussr_hand.append(self.cards.early_war.pop(self.cards.early_war.index('The_China_Card')))
-            # self.ussr_hand.append(self.cards.early_war.pop(self.cards.early_war.index('The_China_Card')))
             # self.ussr_hand.append(self.cards.early_war.pop(self.cards.early_war.index('Asia_Scoring'))) # for testing of specific cards
             self.draw_pile.extend(self.cards.early_war) # Put early war cards into the draw pile
             self.cards.early_war = []
@@ -640,13 +664,13 @@ class Game:
     '''
     def _Asia_Scoring(self):
         # TODO: ADD SHUTTLE DIPLOMACY AND FORMOSAN RESOLUTION
-        score(MapRegion.ASIA, 3, 7, 9)
+        self.score(MapRegion.ASIA, 3, 7, 9)
 
     def _Europe_Scoring(self):
-        score(MapRegion.EUROPE, 3, 7, 120)
+        self.score(MapRegion.EUROPE, 3, 7, 120)
 
     def _Middle_East_Scoring(self):
-        score(MapRegion.MIDDLE_EAST, 3, 5, 7)
+        self.score(MapRegion.MIDDLE_EAST, 3, 5, 7)
 
     def _Duck_and_Cover(self):
         pass
@@ -709,9 +733,12 @@ class Game:
 
     def _NATO(self):
         is_event_playable = True if 'Warsaw_Pact_Formed' in self.us_basket or 'Marshall_Plan' in self.us_basket else False
+        # remove card if used, discard if not used
         if is_event_playable:
-            self.nato_in_play = True
-        pass
+            self.us_basket.append('NATO')
+            return 1
+        else:
+            return 0
 
     def _Independent_Reds(self):
         pass
@@ -773,7 +800,7 @@ class Game:
         pass
 
     def _Central_America_Scoring(self):
-        score(MapRegion.CENTRAL_AMERICA, 1, 3, 5)
+        self.score(MapRegion.CENTRAL_AMERICA, 1, 3, 5)
 
     def _Southeast_Asia_Scoring(self):
         country_count = [0,0]
@@ -912,13 +939,13 @@ class Game:
         pass
 
     def _Africa_Scoring(self):
-        score(MapRegion.AFRICA, 1, 4, 6)
+        self.score(MapRegion.AFRICA, 1, 4, 6)
 
     def _One_Small_Step(self):
         pass
 
     def _South_America_Scoring(self):
-        score(MapRegion.SOUTH_AMERICA, 2, 5, 6)
+        self.score(MapRegion.SOUTH_AMERICA, 2, 5, 6)
 
     def _Che(self):
         pass

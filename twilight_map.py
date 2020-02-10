@@ -96,7 +96,7 @@ class GameMap:
         self['South_Africa'].set_influence(1, 0)
         return
 
-    def can_coup(self, name: str, side: Side, defcon_track: int, nato_in_play: bool):
+    def can_coup(self, name: str, side: Side, defcon_track: int):
         country = self[name]
         if country.info.superpower:
             return False
@@ -107,7 +107,7 @@ class GameMap:
         d2 = [n for n in CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST]]
         d2.extend(d3)
 
-        if nato_in_play and name in d4:
+        if 'NATO' in self.us_basket and name in d4:
             return False
         elif defcon_track == 4 and name in d4:
             return False
@@ -146,7 +146,7 @@ class GameMap:
             print(f'Coup failed with roll of {die_roll}')
 
 
-    def can_realignment(self, name: str, side: Side, defcon_track: int, nato_in_play: bool):
+    def can_realignment(self, name: str, side: Side, defcon_track: int):
         country = self[name]
         if country.info.superpower:
             return False
@@ -157,7 +157,7 @@ class GameMap:
         d2 = [n for n in CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST]]
         d2.extend(d3)
 
-        if nato_in_play and name in d4:
+        if 'NATO' in self.us_basket and name in d4:
             return False
         elif defcon_track == 4 and name in d4:
             return False
