@@ -25,7 +25,8 @@ quit        Exit the game.
     @staticmethod
     def ask_for_input(expected_number_of_arguments: int, rejection_msg: str):
         while True:
-            raw_input = input('> ').split(',', expected_number_of_arguments-1)
+            raw_input = input('> ').split(
+                ',', expected_number_of_arguments - 1)
             if raw_input[0].lower() == 'quit' or raw_input[0].lower() == 'exit' or raw_input[0].lower() == 'q':
                 return
             elif len(raw_input) == 0 or raw_input[0] == '?':
@@ -51,7 +52,8 @@ quit        Exit the game.
             if user_choice == None:
                 break
 
-            if len(user_choice) == 1: user_choice.append('')
+            if len(user_choice) == 1:
+                user_choice.append('')
 
             # parse the input
             if user_choice[0].lower() == 'new':
@@ -108,21 +110,21 @@ c dec       Returns the number of cards in the draw deck.
         elif comd == '?':
             print(UI.help_card)
         elif comd == 'opp':
-            print('Cards in opponent\'s hand: %d' % 1) # TODO make it based on state
+            print('Cards in opponent\'s hand: %d' %
+                  1)  # TODO make it based on state
             print('Unimplemented')
         elif comd == 'dis':
             print('Listing %d discarded cards.' % len(discard_pile))
             for c in discard_pile:
                 print(c)
         elif comd == 'rem':
-            print('Listing %d removed cards.'  % len(removed_pile))
+            print('Listing %d removed cards.' % len(removed_pile))
             for c in removed_pile:
                 print(c)
         elif comd == 'dec':
             print('Cards in draw pile: %d.' % len(draw_pile))
         else:
             print('Invalid command. Enter ? for help.')
-
 
     help_state = '''
 s <eu|as|me|af|na|sa>   Displays the scoring state and country data for the given region.

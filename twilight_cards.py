@@ -1,5 +1,6 @@
 from twilight_map import *
 
+
 class CardInfo:
     """
     Cards should be able to be used for:
@@ -14,11 +15,11 @@ class CardInfo:
     ALL = dict()
 
     def __init__(self, name="", type="", stage="", card_index=0,
-                     optional_card=False, ops=0,
-                     event_text="", scoring_region="", may_be_held=True,
-                     owner="NEUTRAL", remove_if_used_as_event=False,
-                     resolve_headline_first=False, can_headline=True,
-                     **kwargs):
+                 optional_card=False, ops=0,
+                 event_text="", scoring_region="", may_be_held=True,
+                 owner="NEUTRAL", remove_if_used_as_event=False,
+                 resolve_headline_first=False, can_headline=True,
+                 **kwargs):
         self.name = name
         self.type = type
         self.stage = stage
@@ -36,7 +37,6 @@ class CardInfo:
 
         CardInfo.ALL[self.name] = self
 
-
     def __repr__(self):
         if self.ops == 0:
             return self.name
@@ -52,10 +52,11 @@ class CardInfo:
         # do something else
         pass
 
+
 class GameCards:
     def __init__(self):
         self.ALL = dict()
-        self.index_card_mapping = dict() # Create mapping of (k,v) = (card_index, name)
+        self.index_card_mapping = dict()  # Create mapping of (k,v) = (card_index, name)
         self.early_war = []
         self.mid_war = []
         self.late_war = []
@@ -68,7 +69,8 @@ class GameCards:
                 self.mid_war.append(self.ALL[name])
             if self.ALL[name].info.stage == 'Late War':
                 self.late_war.append(self.ALL[name])
-            self.index_card_mapping[self.ALL[name].info.card_index] = self.ALL[name].info.name
+            self.index_card_mapping[self.ALL[name]
+                                    .info.card_index] = self.ALL[name].info.name
 
     def __getitem__(self, item):
         return self.ALL[item]
@@ -77,7 +79,7 @@ class GameCards:
 class Card(CardInfo):
     def __init__(self, name):
         self.info = CardInfo.ALL[name]
-        self.can_play = True # flipped means unavailable for use
+        self.can_play = True  # flipped means unavailable for use
 
     def __repr__(self):
         if self.info.ops == 0:
@@ -89,14 +91,9 @@ class Card(CardInfo):
         return self.info.name == other
 
 
-
-
-
 # --
 # -- EARLY WAR
 # --
-
-
 Asia_Scoring = {
     'name': 'Asia_Scoring',
     'type': 'Scoring',
@@ -372,7 +369,6 @@ Indo_Pakistani_War = {
 }
 
 
-
 Containment = {
     'name': 'Containment',
     'type': 'Event',
@@ -432,7 +428,6 @@ East_European_Unrest = {
 }
 
 
-
 Decolonization = {
     'name': 'Decolonization',
     'type': 'Event',
@@ -442,7 +437,6 @@ Decolonization = {
     'owner': 'USSR',
     'event_text': 'Add one USSR Influence in each of any four African and/or SE Asian countries.',
 }
-
 
 
 Red_Scare_Purge = {
@@ -456,7 +450,6 @@ Red_Scare_Purge = {
 }
 
 
-
 UN_Intervention = {
     'name': 'UN_Intervention',
     'type': 'Event',
@@ -467,7 +460,6 @@ UN_Intervention = {
     'can_headline': False,
     'event_text': 'Play this card simultaneously with a card containing your opponent\'s associated Event. The Event is cancelled, but you may use its Operations value to Conduct Operations. The cancelled event returns to the discard pile. May not be played during headline phase.',
 }
-
 
 
 De_Stalinization = {
@@ -491,7 +483,6 @@ Nuclear_Test_Ban = {
     'owner': 'NEUTRAL',
     'event_text': 'Player earns VPs equal to the current DEFCON level minus 2, then improve DEFCON two levels.',
 }
-
 
 
 Formosan_Resolution = {
@@ -518,7 +509,6 @@ Defectors = {
 }
 
 
-
 # -- OPTIONAL
 The_Cambridge_Five = {
     'name': 'The_Cambridge_Five',
@@ -532,7 +522,6 @@ The_Cambridge_Five = {
 }
 
 
-
 # -- OPTIONAL
 Special_Relationship = {
     'name': 'Special_Relationship',
@@ -544,7 +533,6 @@ Special_Relationship = {
     'owner': 'US',
     'event_text': 'If UK is US controlled but NATO is not in effect, US adds 1 Influence to any country adjacent to the UK. If UK is US controlled and NATO is in effect, US adds 2 Influence to any Western European country and gains 2 VPs.',
 }
-
 
 
 # -- OPTIONAL
@@ -576,7 +564,6 @@ Brush_War = {
     'owner': 'NEUTRAL',
     'event_text': 'Attack any country with a stability of 1 or 2. Roll a die and subtract 1 for every adjacent enemy controlled country. Success on 3-6. Player adds 3 to his Military Ops Track. Effects of Victory: Player gains 1 VP and replaces all opponent\'s Influence with his Influence.',
 }
-
 
 
 Central_America_Scoring = {
@@ -613,7 +600,6 @@ Arms_Race = {
 }
 
 
-
 Cuban_Missile_Crisis = {
     'name': 'Cuban_Missile_Crisis',
     'type': 'Event',
@@ -624,7 +610,6 @@ Cuban_Missile_Crisis = {
     'event_text': 'Set DEFCON to Level 2. Any further Coup attempt by your opponent this turn, anywhere on the board, will result in Global Thermonuclear War. Your opponent will lose the game. This event may be cancelled at any time if the USSR player removes two Influence from Cuba or the US player removes 2 Influence from either West Germany or Turkey.',
     'remove_if_used_as_event': True,
 }
-
 
 
 Nuclear_Subs = {
@@ -686,7 +671,6 @@ Summit = {
 }
 
 
-
 How_I_Learned_to_Stop_Worrying = {
     'name': 'How_I_Learned_to_Stop_Worrying',
     'type': 'Event',
@@ -708,7 +692,6 @@ Junta = {
     'owner': 'NEUTRAL',
     'event_text': 'Place 2 Influence in any one Central or South American country. Then you may make a free Coup attempt or Realignment roll in one of these regions (using this card\'s Operations Value).',
 }
-
 
 
 Kitchen_Debates = {
@@ -734,7 +717,6 @@ Missile_Envy = {
 }
 
 
-
 We_Will_Bury_You = {
     'name': 'We_Will_Bury_You',
     'type': 'Event',
@@ -745,7 +727,6 @@ We_Will_Bury_You = {
     'event_text': 'Unless UN Invervention is played as an Event on the US player\'s next round, USSR gains 3 VP prior to any US VP award. Degrade DEFCON one level.',
     'remove_if_used_as_event': True,
 }
-
 
 
 Brezhnev_Doctrine = {
@@ -783,7 +764,6 @@ South_African_Unrest = {
 }
 
 
-
 Allende = {
     'name': 'Allende',
     'type': 'Event',
@@ -794,7 +774,6 @@ Allende = {
     'event_text': 'USSR receives 2 Influence in Chile.',
     'remove_if_used_as_event': True,
 }
-
 
 
 Willy_Brandt = {
@@ -820,7 +799,6 @@ Muslim_Revolution = {
 }
 
 
-
 ABM_Treaty = {
     'name': 'ABM_Treaty',
     'type': 'Event',
@@ -830,7 +808,6 @@ ABM_Treaty = {
     'owner': 'NEUTRAL',
     'event_text': 'Improve DEFCON one level. Then player may Conduct Operations as if they played a 4 Ops card.',
 }
-
 
 
 Cultural_Revolution = {
@@ -880,7 +857,6 @@ OPEC = {
 }
 
 
-
 Lone_Gunman = {
     'name': 'Lone_Gunman',
     'type': 'Event',
@@ -902,7 +878,6 @@ Colonial_Rear_Guards = {
     'owner': 'US',
     'event_text': 'Add 1 US Influence in each of four different African and/or Southeast Asian countries.',
 }
-
 
 
 Panama_Canal_Returned = {
@@ -952,7 +927,6 @@ Grain_Sales_to_Soviets = {
 }
 
 
-
 John_Paul_II_Elected_Pope = {
     'name': 'John_Paul_II_Elected_Pope',
     'type': 'Event',
@@ -974,7 +948,6 @@ Latin_American_Death_Squads = {
     'owner': 'NEUTRAL',
     'event_text': 'All of the player\'s Coup attempts in Central and South America are +1 for the remainder of the turn, while all opponent\'s Coup attempts are -1 for the remainder of the turn.',
 }
-
 
 
 OAS_Founded = {
@@ -1024,7 +997,6 @@ Shuttle_Diplomacy = {
 }
 
 
-
 The_Voice_Of_America = {
     'name': 'The_Voice_Of_America',
     'type': 'Event',
@@ -1036,7 +1008,6 @@ The_Voice_Of_America = {
 }
 
 
-
 Liberation_Theology = {
     'name': 'Liberation_Theology',
     'type': 'Event',
@@ -1046,7 +1017,6 @@ Liberation_Theology = {
     'owner': 'USSR',
     'event_text': 'Add 3 USSR Influence in Central America, no more than 2 per country.',
 }
-
 
 
 Ussuri_River_Skirmish = {
@@ -1073,7 +1043,6 @@ Ask_Not_What_Your_Country_Can_Do_For_You = {
 }
 
 
-
 Alliance_for_Progress = {
     'name': 'Alliance_for_Progress',
     'type': 'Event',
@@ -1084,7 +1053,6 @@ Alliance_for_Progress = {
     'event_text': 'US gains 1 VP for each US controlled Battleground country in Central America and South America.',
     'remove_if_used_as_event': True,
 }
-
 
 
 Africa_Scoring = {
@@ -1098,7 +1066,6 @@ Africa_Scoring = {
 }
 
 
-
 One_Small_Step = {
     'name': 'One_Small_Step',
     'type': 'Event',
@@ -1110,8 +1077,6 @@ One_Small_Step = {
 }
 
 
-
-
 South_America_Scoring = {
     'name': 'South_America_Scoring',
     'type': 'Scoring',
@@ -1121,7 +1086,6 @@ South_America_Scoring = {
     'event_text': 'Both sides score: Presence: 2, Domination: 5, Control: 6, +1 per controlled Battleground Country in Region',
     'may_be_held': False,
 }
-
 
 
 # -- OPTIONAL
@@ -1137,8 +1101,6 @@ Che = {
 }
 
 
-
-
 # -- OPTIONAL
 Our_Man_In_Tehran = {
     'name': 'Our_Man_In_Tehran',
@@ -1151,9 +1113,6 @@ Our_Man_In_Tehran = {
     'event_text': 'If the US controls at least one Middle East country, the US player draws the top 5 cards from the draw pile. They may reveal and then discard any or all of these drawn cards without triggering the Event. Any remaining drawn cards are returned to the draw deck, and it is reshuffled.',
     'remove_if_used_as_event': True,
 }
-
-
-
 
 
 # --
@@ -1173,7 +1132,6 @@ Iranian_Hostage_Crisis = {
 }
 
 
-
 The_Iron_Lady = {
     'name': 'The_Iron_Lady',
     'type': 'Event',
@@ -1184,7 +1142,6 @@ The_Iron_Lady = {
     'event_text': 'US gains 1 VP. Add 1 USSR Influence in Argentina. Remove all USSR Influence from UK. Socialist Governments event no longer playable.',
     'remove_if_used_as_event': True,
 }
-
 
 
 Reagan_Bombs_Libya = {
@@ -1199,7 +1156,6 @@ Reagan_Bombs_Libya = {
 }
 
 
-
 Star_Wars = {
     'name': 'Star_Wars',
     'type': 'Event',
@@ -1210,7 +1166,6 @@ Star_Wars = {
     'event_text': 'If the US is ahead on the Space Race Track, play this card to search through the discard pile for a non-scoring card of your choice. Event occurs immediately.',
     'remove_if_used_as_event': True,
 }
-
 
 
 North_Sea_Oil = {
@@ -1225,7 +1180,6 @@ North_Sea_Oil = {
 }
 
 
-
 The_Reformer = {
     'name': 'The_Reformer',
     'type': 'Event',
@@ -1238,7 +1192,6 @@ The_Reformer = {
 }
 
 
-
 Marine_Barracks_Bombing = {
     'name': 'Marine_Barracks_Bombing',
     'type': 'Event',
@@ -1249,7 +1202,6 @@ Marine_Barracks_Bombing = {
     'event_text': 'Remove all US Influence in Lebanon plus remove 2 additional US Influence from anywhere in the Middle East.',
     'remove_if_used_as_event': True,
 }
-
 
 
 Soviets_Shoot_Down_KAL = {
@@ -1299,7 +1251,6 @@ Terrorism = {
 }
 
 
-
 Iran_Contra_Scandal = {
     'name': 'Iran_Contra_Scandal',
     'type': 'Event',
@@ -1310,7 +1261,6 @@ Iran_Contra_Scandal = {
     'event_text': 'All US Realignment rolls have a -1 die roll modifier for the remainder of the turn.',
     'remove_if_used_as_event': True,
 }
-
 
 
 Chernobyl = {
@@ -1337,7 +1287,6 @@ Latin_American_Debt_Crisis = {
 }
 
 
-
 Tear_Down_This_Wall = {
     'name': 'Tear_Down_This_Wall',
     'type': 'Event',
@@ -1350,7 +1299,6 @@ Tear_Down_This_Wall = {
 }
 
 
-
 An_Evil_Empire = {
     'name': 'An_Evil_Empire',
     'type': 'Event',
@@ -1361,7 +1309,6 @@ An_Evil_Empire = {
     'event_text': 'Cancels/Prevents Flower Power. US gains 1 VP.',
     'remove_if_used_as_event': True,
 }
-
 
 
 Aldrich_Ames_Remix = {
@@ -1388,7 +1335,6 @@ Pershing_II_Deployed = {
 }
 
 
-
 Wargames = {
     'name': 'Wargames',
     'type': 'Event',
@@ -1399,7 +1345,6 @@ Wargames = {
     'event_text': 'If DEFCON Status 2, you may immediately end the game (without Final Scoring Phase) after giving opponent 6 VPs. How about a nice game of chess?',
     'remove_if_used_as_event': True,
 }
-
 
 
 Solidarity = {
@@ -1414,7 +1359,6 @@ Solidarity = {
 }
 
 
-
 Iran_Iraq_War = {
     'name': 'Iran_Iraq_War',
     'type': 'Event',
@@ -1425,7 +1369,6 @@ Iran_Iraq_War = {
     'event_text': 'Iran or Iraq invades the other (player\'s choice). Roll one die and subtract 1 for every opponent-controlled country adjacent to target of invasion. Player Victory on modified die roll of 4-6. Player adds 2 to Military Ops Track Effects of Victory: Player gains 2 VP and replaces opponent\'s Influence in target country with his own.',
     'remove_if_used_as_event': True,
 }
-
 
 
 # -- OPTIONAL
@@ -1442,7 +1385,6 @@ Yuri_and_Samantha = {
 }
 
 
-
 # -- OPTIONAL
 AWACS_Sale_to_Saudis = {
     'name': 'AWACS_Sale_to_Saudis',
@@ -1455,9 +1397,6 @@ AWACS_Sale_to_Saudis = {
     'event_text': 'US receives 2 Influence in Saudi Arabia. Muslim Revolution may no longer be played as an event.',
     'remove_if_used_as_event': True,
 }
-
-
-
 
 
 Asia_Scoring = CardInfo(**Asia_Scoring)
@@ -1540,7 +1479,8 @@ Shuttle_Diplomacy = CardInfo(**Shuttle_Diplomacy)
 The_Voice_Of_America = CardInfo(**The_Voice_Of_America)
 Liberation_Theology = CardInfo(**Liberation_Theology)
 Ussuri_River_Skirmish = CardInfo(**Ussuri_River_Skirmish)
-Ask_Not_What_Your_Country_Can_Do_For_You = CardInfo(**Ask_Not_What_Your_Country_Can_Do_For_You)
+Ask_Not_What_Your_Country_Can_Do_For_You = CardInfo(
+    **Ask_Not_What_Your_Country_Can_Do_For_You)
 Alliance_for_Progress = CardInfo(**Alliance_for_Progress)
 Africa_Scoring = CardInfo(**Africa_Scoring)
 One_Small_Step = CardInfo(**One_Small_Step)

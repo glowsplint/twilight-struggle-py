@@ -1,6 +1,7 @@
 import random
 from twilight_enums import *
 
+
 class CountryInfo:
 
     ALL = dict()
@@ -20,7 +21,8 @@ class CountryInfo:
 
         CountryInfo.ALL[name] = self
         if region == 'Europe':
-            self.regions = [MapRegion.EUROPE, MapRegion.EASTERN_EUROPE, MapRegion.WESTERN_EUROPE]
+            self.regions = [MapRegion.EUROPE,
+                            MapRegion.EASTERN_EUROPE, MapRegion.WESTERN_EUROPE]
         elif region == 'Western Europe':
             self.regions = [MapRegion.EUROPE, MapRegion.WESTERN_EUROPE]
         elif region == 'Eastern Europe':
@@ -51,10 +53,12 @@ class GameMap:
 
     def __init__(self):
         self.ALL = dict()
-        self.index_country_mapping = dict() # Create mapping of (k,v) = (country_index, name)
+        # Create mapping of (k,v) = (country_index, name)
+        self.index_country_mapping = dict()
         for name in CountryInfo.ALL.keys():
             self.ALL[name] = Country(name)
-            self.index_country_mapping[self.ALL[name].info.country_index] = self.ALL[name].info.name
+            self.index_country_mapping[self.ALL[name]
+                                       .info.country_index] = self.ALL[name].info.name
 
     def __getitem__(self, item):
         return self.ALL[item]
@@ -117,7 +121,7 @@ class GameMap:
             return False
 
         return not (side == Side.US and country.ussr_influence == 0 or
-                side == Side.USSR and country.us_influence == 0)
+                    side == Side.USSR and country.us_influence == 0)
 
     def coup(self, game_instance, name: str, side: Side, effective_ops: int, defcon_track: int):
         '''
@@ -131,20 +135,22 @@ class GameMap:
         assert(self.can_coup(game_instance, name, side, defcon_track))
         country = self[name]
 
-        die_roll = random.randint(1,6)
+        die_roll = random.randint(1, 6)
         difference = die_roll + effective_ops - country.info.stability * 2
 
         if difference > 0:
             if side == Side.USSR:
                 # subtract from opposing first.. and then add to yours
-                country.change_influence(-min(difference, country.us_influence), max(0, difference - country.us_influence))
+                country.change_influence(-min(difference, country.us_influence),
+                                         max(0, difference - country.us_influence))
 
             if side == Side.US:
-                country.change_influence(max(0, difference - country.ussr_influence), -min(difference, country.ussr_influence))
-            print(f'Coup successful with roll of {die_roll}. Difference: {difference}')
+                country.change_influence(max(
+                    0, difference - country.ussr_influence), -min(difference, country.ussr_influence))
+            print(
+                f'Coup successful with roll of {die_roll}. Difference: {difference}')
         else:
             print(f'Coup failed with roll of {die_roll}')
-
 
     def can_realignment(self, game_instance, name: str, side: Side, defcon_track: int):
         country = self[name]
@@ -182,7 +188,7 @@ class GameMap:
         assert(self.can_realignment(game_instance, name, side, defcon_track))
         country = self[name]
 
-        modifier = 0 # net positive is in favour of US
+        modifier = 0  # net positive is in favour of US
         for adjacent_name in country.info.adjacent_countries:
             modifier += ((self[adjacent_name]).control == Side.US)
             modifier -= ((self[adjacent_name]).control == Side.USSR)
@@ -190,13 +196,16 @@ class GameMap:
             modifier += 1
         elif country.us_influence - country.ussr_influence < 0:
             modifier -= 1
-        us_roll, ussr_roll = random.randint(1,6), random.randint(1,6)
+        us_roll, ussr_roll = random.randint(1, 6), random.randint(1, 6)
         difference = us_roll - ussr_roll + modifier
         if difference > 0:
-            country.change_influence(0, -min(difference, country.ussr_influence))
+            country.change_influence(
+                0, -min(difference, country.ussr_influence))
         elif difference < 0:
-            country.change_influence(-min(-difference, country.us_influence), 0)
-        print(f'US rolled: {us_roll}, USSR rolled: {ussr_roll}, Modifer = {modifier}, Difference = {difference}')
+            country.change_influence(-min(-difference,
+                                          country.us_influence), 0)
+        print(
+            f'US rolled: {us_roll}, USSR rolled: {ussr_roll}, Modifer = {modifier}, Difference = {difference}')
 
     # assume that a specific card has already been selected before the running of this function
     def can_place_influence(self, name: str, side: Side, effective_ops: int):
@@ -216,12 +225,12 @@ class GameMap:
                 for country in countries_to_check:
                     if self[country].ussr_influence > 0:
                         return True
-                return False # returns false if none of the above are true
+                return False  # returns false if none of the above are true
             if side == Side.US:
                 for country in countries_to_check:
                     if self[country].us_influence > 0:
                         return True
-                return False # returns false if none of the above are true
+                return False  # returns false if none of the above are true
 
         def sufficient_ops(self, effective_ops: int):
             # if country is controlled by opposition, if ops > 1, return true, else false
@@ -230,7 +239,8 @@ class GameMap:
                     return True
                 elif effective_ops > 1:
                     return True
-            else: return False
+            else:
+                return False
 
         return has_influence_around(self, name, side) and sufficient_ops(self, effective_ops)
 
@@ -261,6 +271,7 @@ class GameMap:
     def change_influence(self, name: str, us_influence: int, ussr_influence: int):
         self[name].us_influence += us_influence
         self[name].ussr_influence += ussr_influence
+
 
 class Country:
 
@@ -310,10 +321,6 @@ class Country:
     def change_influence(self, us_influence: int, ussr_influence: int):
         self.us_influence += us_influence
         self.ussr_influence += ussr_influence
-
-
-
-
 
 
 USSR = {
@@ -1185,7 +1192,7 @@ Ecuador = {
 Peru = {
     'name': 'Peru',
     'country_index': 79,
-    'region' : 'South America',
+    'region': 'South America',
     'stability': 2,
     'adjacent_countries': ['Ecuador', 'Bolivia', 'Chile'],
     'us_influence': 0,
