@@ -7,6 +7,8 @@ from twilight_map import *
 from twilight_cards import GameCards
 from twilight_ui import *
 
+
+
 class Game:
 
     # this is the currently active game. One may refer to this as
@@ -30,6 +32,9 @@ class Game:
 
         self.realignment_modifier = np.array([0, 0]) # ussr first
         self.coup_modifier = np.array([0, 0]) # ussr first
+        self.vietnam_modifier = 0
+        self.ops_modifier = 0
+        self.nato_in_play = False
 
         self.map = GameMap()
         self.cards = GameCards()
@@ -40,12 +45,10 @@ class Game:
         self.removed_pile = []
         self.discard_pile = []
         self.draw_pile = []
-
         self.us_basket = []
         self.ussr_basket = []
 
         self.stage_list = [self.map.build_standard, self.deal, self.put_start_USSR, self.put_start_US, self.put_start_extra, self.joint_choose_headline, self.resolve_headline]
-
         self.ar6 = [self.select_card_and_action for i in range(6)]
         self.ar6.append(self.end_of_turn)
         self.ar7 = [self.select_card_and_action for i in range(7)]
@@ -55,6 +58,10 @@ class Game:
 
         # For new set the first created game to be the actual ongoing game.
         if Game.main is None: Game.main = self
+
+        '''Use only for testing, comment out otherwise.'''
+        # self.us_basket.append(self.cards.early_war.pop(self.cards.early_war.index('Warsaw_Pact_Formed')))
+        self.us_basket.append(self.cards.early_war.pop(self.cards.early_war.index('Marshall_Plan')))
 
     '''
     self.current returns current game stage.
@@ -67,6 +74,7 @@ class Game:
     @property
     def current(self):
         return self.stage_list[-1]
+
 
 
     '''
@@ -83,7 +91,6 @@ class Game:
         else:
             raise ValueError('Side argument invalid.')
 
-
     '''
     card_operation_add_influence is the generic stage where a side is given the opportunity to place influence.
     They are provided a list of all possible countries that they can place influence into, and
@@ -94,7 +101,6 @@ class Game:
     def card_operation_add_influence(self, side: Side, effective_ops: int):
 
         '''Generates the list of all possible countries that influence can be placed in.'''
-
         filter = np.array([self.map.can_place_influence(name, side, effective_ops) for name in self.map.ALL])
         all_countries = np.array([name for name in self.map.ALL])
         available_list = all_countries[filter]
@@ -132,7 +138,7 @@ class Game:
     See put_start_USSR below for an example of how to use this function.
     available_list is the list of names that can be manipulated by the effect.
     '''
-    def event_influence(self, side: Side, effective_ops: int, available_list: list, can_split: bool, positive: bool):
+    def event_influence(self, side: Side, effective_ops: int, available_list: list, can_split: bool, positive: bool, limit: int=None):
 
         available_list_values = [str(self.map[n].info.country_index) for n in available_list]
         guide_msg = f'You may modify {effective_ops} influence in these countries. Type in their country indices, separated by commas (no spaces).'
@@ -148,12 +154,11 @@ class Game:
             if user_choice == None:
                 break
 
-            if can_split:
-                additional_input_check = True
-            else:
-                additional_input_check = (len(set(user_choice)) == 1)
+            is_input_all_available = (len(set(user_choice) - set(available_list_values)) == 0)
+            is_input_singular = True if can_split else (len(set(user_choice)) == 1)
+            is_input_limited = True if limit == None else max(user_choice.count(x) for x in set(user_choice)) > limit
 
-            if len(set(user_choice) - set(available_list_values)) == 0 and additional_input_check:
+            if is_input_all_available and is_input_singular and is_input_limited:
                 for country_index in user_choice:
                     name = self.map.index_country_mapping[int(country_index)]
                     if side == Side.USSR:
@@ -236,12 +241,49 @@ class Game:
     def select_card_and_action(self):
         '''
         This function should lead to card_operation_realignment, card_operation_coup,
-        or card_operation_influence, or a space race function.
+        or card_operation_influence, or a space race function. It serves as a place
+        where all possible actions are revealed to the player.
         '''
+        def select_card(self):
+            # if side == Side.USSR:
+            #     hand = self.ussr_hand
+            # elif side == Side.US:
+            #     hand = self.us_hand
+            #
+            # guide_msg = f'You may play a card. Type in the card index.'
+            # rejection_msg = f'Please key in a single value.'
+            #
+            # while True:
+            #     available_list = hand
+            #     available_list_values = [str(self.cards[n].info.card_index) for n in available_list]
+            #
+            #     self.prompt_side(side)
+            #     print(guide_msg)
+            #     for available_name in available_list:
+            #         print(f'{self.cards[available_name].info.name}, {self.cards[available_name].info.card_index}')
+            #
+            #     user_choice = UI.ask_for_input(1, rejection_msg)
+            #     if user_choice == None:
+            #         break
+            #
+            #     if len(set(user_choice) - set(available_list_values)) == 0:
+            #         name = self.cards.index_card_mapping[int(user_choice[0])]
+            #         self.discard_pile.append(hand.pop(hand.index(name)))
+            #         break
+            #     else:
+            #         print('\nYour input cannot be accepted.')
+            pass
+
+            def select_action(self):
+                pass
+
         self.ar_track += 1
         pass
 
     def forced_to_missile_envy(self):
+        # check first if the player has as many scoring cards as turns
+        # if true, then player is given choice as to which scoring card they
+        # can play. this stage is then triggered again at a later stage.
         pass
 
     def trigger_event(self):
@@ -256,6 +298,8 @@ class Game:
         Generates the list of all possible countries that can be realigned.
         Adjusts for DEFCON status only.
         TODO: Does not currently check the player baskets for continuous effects.
+        TODO: Does not currently check for The_China_Card realignment bonus in Asia.
+        TODO: Does not currently check for Vietnam_Revolts in ussr_basket for realignment bonus in Asia
         '''
         current_effective_ops = effective_ops
         guide_msg = f'You may attempt realignment in these countries. Type in the target country index.'
@@ -291,7 +335,7 @@ class Game:
         Adjusts for DEFCON status only.
         TODO: Does not currently check the player baskets for continuous effects.
         '''
-        filter = np.array([self.map.can_coup(name, side, self.defcon_track) for name in self.map.ALL])
+        filter = np.array([self.map.can_coup(name, side, self.defcon_track, self.nato_in_play) for name in self.map.ALL])
         all_countries = np.array([name for name in self.map.ALL])
         available_list = all_countries[filter]
 
@@ -356,8 +400,9 @@ class Game:
 
     def quagmire_discard(self):
         '''
-        Player is given a list of suitable discards. Card has to be at least 2
-        effective ops.
+        In this stage, the player must discard a card if they are holding suitable
+        discards. Player is given a list of suitable discards. Card has to be at least
+        2 effective ops.
         '''
         pass
 
@@ -365,6 +410,7 @@ class Game:
         pass
 
     def norad_influence(self):
+        # this stage is triggered because norad is in us_basket
         pass
 
     def cuba_missile_remove(self):
@@ -484,7 +530,7 @@ class Game:
             # Move the China card from the early war pile to USSR hand, China card 6th from last
             self.ussr_hand.append(self.cards.early_war.pop(self.cards.early_war.index('The_China_Card')))
             # self.ussr_hand.append(self.cards.early_war.pop(self.cards.early_war.index('The_China_Card')))
-            self.ussr_hand.append(self.cards.early_war.pop(self.cards.early_war.index('Asia_Scoring'))) # for testing of specific cards
+            # self.ussr_hand.append(self.cards.early_war.pop(self.cards.early_war.index('Asia_Scoring'))) # for testing of specific cards
             self.draw_pile.extend(self.cards.early_war) # Put early war cards into the draw pile
             self.cards.early_war = []
             random.shuffle(self.draw_pile) # Shuffle the draw pile
@@ -530,14 +576,15 @@ class Game:
             self.ar_track = 1
 
         # 5. Final scoring (end T10)
+        # TODO: Add 1 VP for China Card holder
         def final_scoring(self):
             if self.turn_track == 10 and (self.ar_track in [15,16,17]):
-                ScoreAsia()
-                ScoreEurope()
-                ScoreMiddleEast()
-                ScoreCentralAmerica()
-                ScoreAfrica()
-                ScoreSouthAmerica()
+                self._Asia_Scoring()
+                self._Europe_Scoring()
+                self._Middle_East_Scoring()
+                self._Central_America_Scoring()
+                self._South_America_Scoring()
+                self._Africa_Scoring()
             print(f'Final scoring complete.')
             # EndGame()
 
@@ -588,16 +635,18 @@ class Game:
     '''
     Card functions will come here. We also create a card dictionary, which ties
     every card_name to their card_function. The card functions are named with an
-    underscore prefix.
+    underscore prefix. Every time a card's event is triggered, the dictionary
+    lookup will be used to access the function.
     '''
     def _Asia_Scoring(self):
-        pass
+        # TODO: ADD SHUTTLE DIPLOMACY AND FORMOSAN RESOLUTION
+        score(MapRegion.ASIA, 3, 7, 9)
 
     def _Europe_Scoring(self):
-        pass
+        score(MapRegion.EUROPE, 3, 7, 120)
 
     def _Middle_East_Scoring(self):
-        pass
+        score(MapRegion.MIDDLE_EAST, 3, 5, 7)
 
     def _Duck_and_Cover(self):
         pass
@@ -612,6 +661,8 @@ class Game:
         pass
 
     def _Fidel(self):
+        def RemoveAllOpponentInfluenceInCuba(_):
+            Cuba.set_influence(0, max(3, Cuba.ussr_influence))
         pass
 
     def _Vietnam_Revolts(self):
@@ -624,6 +675,8 @@ class Game:
         pass
 
     def _Romanian_Abdication(self):
+        def RemoveAllOpponentInfluenceInRomania(_):
+            Romania.set_influence(0, max(3, Romania.ussr_influence))
         pass
 
     def _Arab_Israeli_War(self):
@@ -633,12 +686,16 @@ class Game:
         pass
 
     def _Nasser(self):
+        def GainInfluenceInEgypt(_):
+            Egypt.adjust_influence(-math.ceil(Egypt.us_influence/2), 2)
         pass
 
     def _Warsaw_Pact_Formed(self):
         pass
 
     def _De_Gaulle_Leads_France(self):
+        def RemoveOpponentInfluenceInFrance(_):
+            France.adjust_influence(-2, 1)
         pass
 
     def _Captured_Nazi_Scientist(self):
@@ -651,6 +708,9 @@ class Game:
         pass
 
     def _NATO(self):
+        is_event_playable = True if 'Warsaw_Pact_Formed' in self.us_basket or 'Marshall_Plan' in self.us_basket else False
+        if is_event_playable:
+            self.nato_in_play = True
         pass
 
     def _Independent_Reds(self):
@@ -669,6 +729,8 @@ class Game:
         pass
 
     def _US_Japan_Mutual_Defense_Pact(self):
+        def GainInfluenceForControlInJapan(_):
+            Japan.set_influence(Japan.ussr_influence + 4, Japan.ussr_influence)
         pass
 
     def _Suez_Crisis(self):
@@ -711,10 +773,22 @@ class Game:
         pass
 
     def _Central_America_Scoring(self):
-        pass
+        score(MapRegion.CENTRAL_AMERICA, 1, 3, 5)
 
     def _Southeast_Asia_Scoring(self):
-        pass
+        country_count = [0,0]
+        for n in CountryInfo.REGION_ALL[MapRegion.SOUTHEAST_ASIA]:
+            x = Game.main.map[n]
+            country_count[Side.USSR] += (x.control == Side.USSR)
+            country_count[Side.US] += (x.control == Side.US)
+        swing = country_count[Side.USSR] - country_count[Side.US]
+
+        if Game.main.map['Thailand'].control == Side.USSR:
+            swing += 1
+        if Game.main.map['Thailand'].control == Side.US:
+            swing -= 1
+        self.change_vp(swing)
+        print(f'Southeast Asia scores for {swing} VP')
 
     def _Arms_Race(self):
         pass
@@ -747,6 +821,7 @@ class Game:
         pass
 
     def _Missile_Envy(self):
+        # if the other player is only holding scoring cards, this effect needs to be pushed
         pass
 
     def _We_Will_Bury_You(self):
@@ -837,13 +912,13 @@ class Game:
         pass
 
     def _Africa_Scoring(self):
-        pass
+        score(MapRegion.AFRICA, 1, 4, 6)
 
     def _One_Small_Step(self):
         pass
 
     def _South_America_Scoring(self):
-        pass
+        score(MapRegion.SOUTH_AMERICA, 2, 5, 6)
 
     def _Che(self):
         pass
@@ -1032,58 +1107,3 @@ class Game:
         'Yuri_and_Samantha': _Yuri_and_Samantha,
         'AWACS_Sale_to_Saudis': _AWACS_Sale_to_Saudis,
     }
-
-'''Utility functions'''
-def RemoveAllOpponentInfluenceInCuba(_):
-    Cuba.set_influence(0, max(3, Cuba.ussr_influence))
-
-def RemoveAllOpponentInfluenceInRomania(_):
-    Romania.set_influence(0, max(3, Romania.ussr_influence))
-
-def GainInfluenceInEgypt(_):
-    Egypt.adjust_influence(-math.ceil(Egypt.us_influence/2), 2)
-
-def RemoveOpponentInfluenceInFrance(_):
-    France.adjust_influence(-2, 1)
-
-def GainInfluenceForControlInJapan(_):
-    Japan.set_influence(Japan.ussr_influence + 4, Japan.ussr_influence)
-
-
-'''Scoring Mechanics'''
-# TO ADD SHUTTLE DIPLOMACY AND FORMOSAN RESOLUTION
-def ScoreAsia(game):
-    score(MapRegion.ASIA, 3, 7, 9)
-
-def ScoreEurope():
-    score(MapRegion.EUROPE, 3, 7, 120)
-
-# TO ADD SHUTTLE DIPLOMACY
-def ScoreMiddleEast():
-    score(MapRegion.MIDDLE_EAST, 3, 5, 7)
-
-def ScoreCentralAmerica():
-    score(MapRegion.CENTRAL_AMERICA, 1, 3, 5)
-
-def ScoreAfrica():
-    score(MapRegion.AFRICA, 1, 4, 6)
-
-def ScoreSouthAmerica():
-    score(MapRegion.SOUTH_AMERICA, 2, 5, 6)
-
-def ScoreSoutheastAsia():
-    country_count = [0,0]
-    for n in CountryInfo.REGION_ALL[MapRegion.SOUTHEAST_ASIA]:
-        x = Game.main.map[n]
-        country_count[Side.USSR] += (x.control == Side.USSR)
-        country_count[Side.US] += (x.control == Side.US)
-    swing = country_count[Side.USSR] - country_count[Side.US]
-
-    # thailand double VP
-    if Game.main.map['Thailand'].control == Side.USSR:
-        swing += 1
-    if Game.main.map['Thailand'].control == Side.US:
-        swing -= 1
-
-    Game.main.change_vp(swing)
-    print(f'Southeast Asia scores for {swing} VP')
