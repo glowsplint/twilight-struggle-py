@@ -119,7 +119,7 @@ class GameMap:
         return not (side == Side.US and country.ussr_influence == 0 or
                 side == Side.USSR and country.us_influence == 0)
 
-    def coup(self, name: str, side: Side, effective_ops: int, defcon_track: int):
+    def coup(self, game_instance, name: str, side: Side, effective_ops: int, defcon_track: int):
         '''
         TODO:
         1. Prevent coup if no opposing influence in the country. I would prefer to write this in a way that prevents this from happening altogether, as opposed to throwing up an error if this is tried.
@@ -128,7 +128,7 @@ class GameMap:
         4. Add military operations points.
         5. Reduce DEFCON status level if self.battleground = True
         '''
-        assert(self.can_coup(name, side, defcon_track))
+        assert(self.can_coup(game_instance, name, side, defcon_track))
         country = self[name]
 
         die_roll = random.randint(1,6)
@@ -173,13 +173,13 @@ class GameMap:
         else:
             return not (country.ussr_influence == 0 and country.us_influence == 0)
 
-    def realignment(self, name: str, side: Side, defcon_track: int):
+    def realignment(self, game_instance, name: str, side: Side, defcon_track: int):
         '''
         TODO:
         1. Prevent realignment under DEFCON restrictions.
         2. Prevent realignment if there is no influence at all in the country. (done in game.card_operation_coup)
         '''
-        assert(self.can_realignment(name, side, defcon_track))
+        assert(self.can_realignment(game_instance, name, side, defcon_track))
         country = self[name]
 
         modifier = 0 # net positive is in favour of US

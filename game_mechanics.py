@@ -92,14 +92,16 @@ class Game:
 
     This is the actual use of operations to place influence.
     '''
-    def card_operation_influence(self, side: Side, card: Card, effective_ops: int, hand):
+    def card_operation_influence(self, side: Side, card: Card, hand):
+
+        effective_ops = card.info.ops
 
         '''Generates the list of all possible countries that influence can be placed in.'''
         filter = np.array([self.map.can_place_influence(name, side, effective_ops) for name in self.map.ALL])
         all_countries = np.array([name for name in self.map.ALL])
         available_list = all_countries[filter]
         available_list_values = [str(self.map[n].info.country_index) for n in available_list]
-        guide_msg = f'You may modify {effective_ops} influence in these countries. Type in their country indices, separated by commas (no spaces).'
+        guide_msg = f'You may add {effective_ops} influence in these countries. Type in their country indices, separated by commas (no spaces).'
         rejection_msg = f'Please key in {effective_ops} comma-separated values.'
 
         while True:
@@ -125,13 +127,13 @@ class Game:
         elif side == card.info.owner.opp:
             card_treatment = self.trigger_event(card.info.name)
             if card_treatment == 'discard':
-                self.discard_pile.append(hand.pop(card))
+                self.discard_pile.append(hand.pop(hand.index(card)))
             elif card_treatment == 'remove':
-                self.removed_pile.append(hand.pop(card))
+                self.removed_pile.append(hand.pop(hand.index(card)))
             elif card_treatment == 'us_basket':
-                self.us_basket.append(hand.pop(card))
+                self.us_basket.append(hand.pop(hand.index(card)))
             elif card_treatment == 'ussr_basket':
-                self.ussr_basket.append(hand.pop(card))
+                self.ussr_basket.append(hand.pop(hand.index(card)))
 
 
     '''
@@ -238,7 +240,6 @@ class Game:
 
             if len(set(user_choice) - set(available_list_values)) == 0:
                 name = self.cards.index_card_mapping[int(user_choice[0])]
-                self.trigger_event(name)
                 self.headline_bin.append(hand.pop(hand.index(name)))
                 break
             else:
@@ -325,7 +326,7 @@ class Game:
 
                 if len(set(user_choice) - set(available_list_values)) == 0:
                     name = self.cards.index_card_mapping[int(user_choice[0])]
-                    return hand.pop(hand.index(name))
+                    return hand[hand.index(name)]
                 else:
                     print('\nYour input cannot be accepted.')
 
@@ -335,19 +336,22 @@ class Game:
         Assume you have selected a card.
         We want to know what options can be available to the player.
         '''
-        def can_coup_at_all(self):
-            filter = np.array([self.map.can_coup(self, name, side, self.defcon_track) for name in self.map.ALL])
-            return filter.sum() > 0
+        def can_play_event(self, side: Side, card: Card):
+            return True if card.info.owner == side else False
+
+        def can_resolve_event_first(self, side: Side, card: Card):
+            return True if card.info.owner == side.opp else False
+
+        def can_place_influence(self, side: Side, card: Card):
+            return False if card.info.ops == 0 else True
 
         def can_realign_at_all(self):
             filter = np.array([self.map.can_realignment(self, name, side, self.defcon_track) for name in self.map.ALL])
             return filter.sum() > 0
 
-        def can_resolve_event_first(self, side: Side, card: Card):
-            return True if card.info.owner == side.opp else False
-
-        def can_play_event(self, side: Side, card: Card):
-            return True if card.info.owner == side else False
+        def can_coup_at_all(self):
+            filter = np.array([self.map.can_coup(self, name, side, self.defcon_track) for name in self.map.ALL])
+            return filter.sum() > 0
 
         def can_space(self, side: Side, card: Card):
             # first check that player can still space
@@ -358,6 +362,8 @@ class Game:
                     return True
                 elif self.space_track[side.opp] < 2 and self.space_track[side] >= 2:
                     return True
+                else:
+                    return False
 
             # then check if the card ops fulfills space criterion
             def enough_ops(self, side: Side, card: Card):
@@ -369,6 +375,8 @@ class Game:
                     return True
                 elif card.info.ops >= 2:
                     return True
+                else:
+                    return False
 
             return available_space_turn(self, side) and enough_ops(self, side, card)
 
@@ -382,7 +390,9 @@ class Game:
         }
 
         def select_action(self, side: Side, card: Card, hand: list):
-            filter = [can_play_event(self, side, card), can_resolve_event_first(self, side, card), True, can_realign_at_all(self), can_coup_at_all(self), can_space(self, side, card)]
+            filter = np.array([can_play_event(self, side, card),
+            can_resolve_event_first(self, side, card), can_place_influence(self, side, card),
+            can_realign_at_all(self), can_coup_at_all(self), can_space(self, side, card)])
             all_actions = np.array(list(action.keys()))
             available_list = all_actions[filter]
             available_list_values = [str(action[n]) for n in available_list]
@@ -401,23 +411,19 @@ class Game:
                     break
 
                 if len(set(user_choice) - set(available_list_values)) == 0:
-                    function = action_function_mapping[int(user_choice[0])]
                     if int(user_choice[0]) == 0 or int(user_choice[0]) == 1:
-                        self.trigger_event(self, card.info.name)
+                        self.trigger_event(card.info.name)
                     elif int(user_choice[0]) == 2:
-                        self.card_operation_influence(self, side, card)
+                        self.card_operation_influence(side, card, hand)
                     elif int(user_choice[0]) == 3:
-                        self.card_operation_realignment(self, side, card)
+                        self.card_operation_realignment(side, card, hand)
                     elif int(user_choice[0]) == 4:
-                        self.card_operation_coup(self, side, card)
+                        self.card_operation_coup(side, card, hand)
                     elif int(user_choice[0]) == 5:
-                        self.space(side)
-
+                        self.space(side, card, hand)
                     break
                 else:
                     print('\nYour input cannot be accepted.')
-
-            pass
 
         select_action(self, side, card, hand)
         self.ar_track += 1
@@ -438,7 +444,7 @@ class Game:
         # can only be used if the event is yours
         pass
 
-    def card_operation_realignment(self, side: Side, card: Card):
+    def card_operation_realignment(self, side: Side, card: Card, hand):
         '''
         Generates the list of all possible countries that can be realigned.
         Adjusts for DEFCON status only.
@@ -467,14 +473,14 @@ class Game:
 
             if len(set(user_choice) - set(available_list_values)) == 0:
                 name = self.map.index_country_mapping[int(user_choice[0])]
-                self.map.realignment(name, side, self.defcon_track)
+                self.map.realignment(self, name, side, self.defcon_track)
                 current_effective_ops -= 1
             else:
                 print('\nYour input cannot be accepted.')
+        self.discard_pile.append(hand.pop(hand.index(card)))
 
 
-
-    def card_operation_coup(self, side: Side, card: Card):
+    def card_operation_coup(self, side: Side, card: Card, hand):
         '''
         Generates the list of all possible countries that can be couped.
         Adjusts for DEFCON status only.
@@ -501,11 +507,11 @@ class Game:
 
             if len(set(user_choice) - set(available_list_values)) == 0:
                 name = self.map.index_country_mapping[int(user_choice[0])]
-                self.map.coup(name, side, effective_ops, self.defcon_track)
+                self.map.coup(self, name, side, effective_ops, self.defcon_track)
                 break
             else:
                 print('\nYour input cannot be accepted.')
-
+        self.discard_pile.append(hand.pop(hand.index(card)))
 
     '''
     The player is given here an option to discard a card.
@@ -589,48 +595,51 @@ class Game:
             print('Game ended by thermonuclear war')
             # EndGame()
 
-    def space(self, side: Side):
-        if self.space_track[x] in [0,2,4,6]:
+    def space(self, side: Side, card: Card, hand):
+        if self.space_track[side] in [0,2,4,6]:
             modifier = 0
-        elif self.space_track[x] in [1,3,5]:
+        elif self.space_track[side] in [1,3,5]:
             modifier = -1
         else:
             modifier = 1
 
-        y = x.vp_mult # multiplier for VP - gives 1 for USSR and -1 for US
+        y = side.vp_mult # multiplier for VP - gives 1 for USSR and -1 for US
         roll = random.randint(1,6)
         if roll + modifier <= 3:
-            self.space_track[x] += 1
+            self.space_track[side] += 1
             print(f'Success with roll of {roll}.')
 
-            if self.space_track[x] == 1:
-                if self.space_track[x.opp] < 1:
+            if self.space_track[side] == 1:
+                if self.space_track[side.opp] < 1:
                     self.change_vp(2*y)
                 else:
                     self.change_vp(y)
 
-            elif self.space_track[x] == 3:
-                if self.space_track[x.opp] < 3:
+            elif self.space_track[side] == 3:
+                if self.space_track[side.opp] < 3:
                     self.change_vp(2*y)
 
-            elif self.space_track[x] == 5:
-                if self.space_track[x.opp] < 5:
+            elif self.space_track[side] == 5:
+                if self.space_track[side.opp] < 5:
                     self.change_vp(3*y)
                 else:
                     self.change_vp(y)
 
-            elif self.space_track[x] == 7:
-                if self.space_track[x.opp] < 7:
+            elif self.space_track[side] == 7:
+                if self.space_track[side.opp] < 7:
                     self.change_vp(4*y)
                 else:
                     self.change_vp(2*y)
 
-            elif self.space_track[x] == 8:
-                if self.space_track[x.opp] < 8:
+            elif self.space_track[side] == 8:
+                if self.space_track[side.opp] < 8:
                     self.change_vp(2*y)
 
         else:
             print(f'Failure with roll of {roll}.')
+
+        self.spaced_turns[side] += 1
+        self.discard_pile.append(hand.pop(hand.index(card)))
 
     def deal(self):
         def top_up_cards(self, n: int):
