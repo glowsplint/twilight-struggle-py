@@ -147,7 +147,7 @@ class GameMap:
         if country.info.battleground:
             game_instance.change_defcon(-1)
 
-        game_instance.milops_track[side] += effective_ops
+        game_instance.change_milops(side, effective_ops)
 
     def can_realignment(self, game_instance, name: str, side: Side):
         country = self[name]
