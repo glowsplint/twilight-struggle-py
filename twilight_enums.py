@@ -4,6 +4,7 @@ import enum
 # without concern about which is 0 and which is 1; also robust to
 # change any time.
 
+
 class Side(enum.IntEnum):
 
     USSR = 0
@@ -22,16 +23,31 @@ class Side(enum.IntEnum):
             raise NameError('Invalid string for Side.fromStr')
 
     @property
+    def toStr(s):
+        if s == Side.US:
+            return 'US'
+        elif s == Side.USSR:
+            return 'USSR'
+        else:
+            return 'NEUTRAL'
+
+    @property
     def opp(self):
-        if self == Side.USSR: return Side.US
-        elif self == Side.US: return Side.USSR
-        else: return Side.NEUTRAL
+        if self == Side.USSR:
+            return Side.US
+        elif self == Side.US:
+            return Side.USSR
+        else:
+            return Side.NEUTRAL
 
     @property
     def vp_mult(self):
-        if self == Side.USSR: return 1
-        elif self == Side.US: return -1
-        else: return 0
+        if self == Side.USSR:
+            return 1
+        elif self == Side.US:
+            return -1
+        else:
+            return 0
 
 
 class MapRegion(enum.IntEnum):

@@ -18,8 +18,6 @@ class Game:
     # the AI depending on how you do it.
     main = None
 
-    '''VP, AR, Milops, Space tracks'''
-
     def __init__(self):
         self.handicap = -2  # positive in favour of ussr
         self.vp_track = 0  # positive for ussr
@@ -27,6 +25,7 @@ class Game:
         self.ar_track = 1  # increment by 1 for each side's action round
         self.defcon_track = 5
         self.milops_track = np.array([0, 0])  # ussr first
+
         # 0 is start, 1 is earth satellite etc
         self.space_track = np.array([0, 0])
         self.spaced_turns = np.array([0, 0])
@@ -36,14 +35,14 @@ class Game:
         self.cards = GameCards()
         self.ui = UI(self)
 
-        self.us_hand = []
-        self.ussr_hand = []
+        self.hand = [[], []]  # ussr, us hands; list of 2 lists of Card objects
         self.removed_pile = []
         self.discard_pile = []
         self.draw_pile = []
-        self.us_basket = []
-        self.ussr_basket = []
-        self.headline_bin = []
+
+        # ussr, us hands; list of 2 lists of Card objects
+        self.basket = [[], []]
+        self.headline_bin = [[], []]  # the inner lists are placeholders
 
         self.stage_list = [self.map.build_standard, self.deal, self.put_start_USSR,
                            self.put_start_US, self.put_start_extra, self.joint_choose_headline]
@@ -57,10 +56,6 @@ class Game:
         # For new set the first created game to be the actual ongoing game.
         if Game.main is None:
             Game.main = self
-
-        '''Use only for testing, comment out otherwise.'''
-        # self.us_basket.append(self.cards.early_war.pop(self.cards.early_war.index('Warsaw_Pact_Formed')))
-        # self.us_basket.append(self.cards.early_war.pop(self.cards.early_war.index('Marshall_Plan')))
 
     '''
     self.current returns current game stage.
@@ -87,60 +82,6 @@ class Game:
             raise ValueError('Side argument invalid.')
 
     '''
-    card_operation_influence is the generic stage where a side is given the opportunity to place influence.
-    They are provided a list of all possible countries that they can place influence into, and
-    must choose from these. During this stage, the UI is waiting for a tuple of country indices.
-
-    This is the actual use of operations to place influence.
-    '''
-
-    def card_operation_influence(self, side: Side, card: Card, hand):
-
-        effective_ops = card.info.ops
-
-        '''Generates the list of all possible countries that influence can be placed in.'''
-        filter = np.array([self.map.can_place_influence(
-            name, side, effective_ops) for name in self.map.ALL])
-        all_countries = np.array([name for name in self.map.ALL])
-        available_list = all_countries[filter]
-        available_list_values = [
-            str(self.map[n].info.country_index) for n in available_list]
-        guide_msg = f'You may add {effective_ops} influence in these countries. Type in their country indices, separated by commas (no spaces).'
-        rejection_msg = f'Please key in {effective_ops} comma-separated values.'
-
-        while True:
-            self.prompt_side(side)
-            print(guide_msg)
-            for available_name in available_list:
-                print(
-                    f'{self.map[available_name].info.country_index}\t{self.map[available_name].info.name}')
-
-            user_choice = UI.ask_for_input(effective_ops, rejection_msg)
-            if user_choice == None:
-                break
-
-            if len(set(user_choice) - set(available_list_values)) == 0:
-                for country_index in user_choice:
-                    name = self.map.index_country_mapping[int(country_index)]
-                    self.map.place_influence(name, side, 1)
-                break
-            else:
-                print('\nYour input cannot be accepted.')
-
-        if side == card.info.owner:
-            self.discard_pile(hand.pop(card))
-        elif side == card.info.owner.opp:
-            card_treatment = self.trigger_event(card.info.name)
-            if card_treatment == 'discard':
-                self.discard_pile.append(hand.pop(hand.index(card)))
-            elif card_treatment == 'remove':
-                self.removed_pile.append(hand.pop(hand.index(card)))
-            elif card_treatment == 'us_basket':
-                self.us_basket.append(hand.pop(hand.index(card)))
-            elif card_treatment == 'ussr_basket':
-                self.ussr_basket.append(hand.pop(hand.index(card)))
-
-    '''
     event_influence is the generic stage where a side is given the opportunity to modify influence.
     Unlike card_operation_add_influence, this is mostly used for card events where the player has to choose
     which regions in which to directly insert influence.
@@ -151,23 +92,29 @@ class Game:
     can_split is True for cards where the influence adjustment can be split like VOA. False for cards like Junta.
     limit is the maximum influence adjustment that can be made to a single country. 2 for VOA, 1 for COMECON.
     positive is True for positive adjustments like Decolonization, False for VOA.
+    all is True for Warsaw Pact removal, and Muslim_Revolution.
     '''
 
-    def event_influence(self, side: Side, effective_ops: int, available_list: list, can_split: bool, positive: bool, limit: int = None):
+    def event_influence(self, side: Side, ops: int, available_list: list, can_split: bool, positive: bool, limit: int = None, all=False):
 
         available_list_values = [
             str(self.map[n].info.country_index) for n in available_list]
-        guide_msg = f'You may modify {effective_ops} influence in these countries. Type in their country indices, separated by commas (no spaces).'
-        rejection_msg = f'Please key in {effective_ops} comma-separated values.'
+        guide_msg = f'You may modify {ops} influence in these countries. Type in their country indices, separated by commas (no spaces).'
+        guide_msg_all = f'You may remove influence completely in these countries. Type in their country indices, separated by commas (no spaces).'
+        rejection_msg = f'Please key in {ops} comma-separated values.'
 
         while True:
             self.prompt_side(side)
-            print(guide_msg)
+
+            if all:
+                print(guide_msg_all)
+            else:
+                print(guide_msg)
             for available_name in available_list:
                 print(
                     f'{self.map[available_name].info.country_index}\t{self.map[available_name].info.name}')
 
-            user_choice = UI.ask_for_input(effective_ops, rejection_msg)
+            user_choice = UI.ask_for_input(ops, rejection_msg)
             if user_choice == None:
                 break
 
@@ -178,7 +125,13 @@ class Game:
             is_input_limited = True if limit == None else max(
                 user_choice.count(x) for x in set(user_choice)) > limit
 
-            if is_input_all_available and is_input_singular and is_input_limited:
+            if all:
+                if is_input_all_available:
+                    self.map.set_influence(
+                        name, 0, self.map[name].influence[Side.USSR])
+                    break
+
+            elif is_input_all_available and is_input_singular and is_input_limited:
                 for country_index in user_choice:
                     name = self.map.index_country_mapping[int(country_index)]
                     if side == Side.USSR:
@@ -228,10 +181,7 @@ class Game:
         self.resolve_headline(type=Side.NEUTRAL)
 
     def choose_headline(self, side: Side):
-        if side == Side.USSR:
-            hand = self.ussr_hand
-        elif side == Side.US:
-            hand = self.us_hand
+        hand = self.hand[side]
 
         guide_msg = f'You may headline any of these cards. Type in the card index.'
         rejection_msg = f'Please key in a single value.'
@@ -247,7 +197,7 @@ class Game:
             print(guide_msg)
             for available_name in available_list:
                 print(
-                    f'{self.cards[available_name].info.card_index}\t{self.cards[available_name].info.name}')
+                    f'{self.cards[available_name].info.card_index}\t{self.cards[available_name]}')
 
             user_choice = UI.ask_for_input(1, rejection_msg)
             if user_choice == None:
@@ -255,7 +205,7 @@ class Game:
 
             if len(set(user_choice) - set(available_list_values)) == 0:
                 name = self.cards.index_card_mapping[int(user_choice[0])]
-                self.headline_bin.append(hand.pop(hand.index(name)))
+                self.headline_bin[side] = hand.pop(hand.index(name))
                 break
             else:
                 print('\nYour input cannot be accepted.')
@@ -263,9 +213,8 @@ class Game:
     def resolve_headline(self, type: Side = Side.NEUTRAL):
 
         def trigger(self, side: Side):
-            player = 'US' if side == Side.US else 'USSR'
             print(
-                f'\n{player} selected {self.headline_bin[side].info.name} for headline.')
+                f'\n{side.toStr} selected {self.headline_bin[side].info.name} for headline.')
             card_treatment = self.trigger_event(
                 self.headline_bin[side].info.name)
             if card_treatment == 'discard':
@@ -273,9 +222,9 @@ class Game:
             elif card_treatment == 'remove':
                 self.removed_pile.append(self.headline_bin.pop(side))
             elif card_treatment == 'us_basket':
-                self.us_basket.append(self.headline_bin.pop(side))
+                self.basket[Side.US].append(self.headline_bin.pop(side))
             elif card_treatment == 'ussr_basket':
-                self.ussr_basket.append(self.headline_bin.pop(side))
+                self.basket[Side.USSR].append(self.headline_bin.pop(side))
 
         if type == Side.NEUTRAL:
             '''
@@ -283,24 +232,23 @@ class Game:
             Side.US : Resolve US headline, then USSR headline
             Side.USSR : Resolve USSR headline, then US headline
             '''
-            if self.headline_bin[1] == 'Defectors':
-                return 'Defectors cancellation of headline phase.'
-            if self.headline_bin[0].info.ops > self.headline_bin[1].info.ops:
+            if self.headline_bin[Side.US] == 'Defectors':
+                for card in self.headline_bin:
+                    self.discard_pile.append(self.headline_bin.pop())
+                print('Defectors cancellation of headline phase.')
+                return
+            # how about the case of Grain_Sales_to_Soviets into Five_Year_Plan into Defectors?
+            if self.headline_bin[Side.USSR].info.ops > self.headline_bin[Side.US].info.ops:
                 trigger(self, Side.USSR)
                 trigger(self, Side.US)
             else:
                 trigger(self, Side.US)
                 trigger(self, Side.USSR)
+        else:
+            trigger(self, type)
+            trigger(self, type.opp)
 
-        elif type == Side.US:
-            trigger(self, Side.US)
-            trigger(self, Side.USSR)
-
-        elif type == Side.USSR:
-            trigger(self, Side.USSR)
-            trigger(self, Side.US)
-
-        self.headline_bin.pop()
+        self.ar_track = 1
 
     def select_card_and_action(self):
         '''
@@ -315,10 +263,7 @@ class Game:
             return Side.USSR if self.ar_track % 2 == 1 else Side.US
 
         side = determine_side(self)
-        if side == Side.USSR:
-            hand = self.ussr_hand
-        elif side == Side.US:
-            hand = self.us_hand
+        hand = self.hand[side]
 
         def select_card(self, side: Side):
 
@@ -334,7 +279,7 @@ class Game:
                 print(guide_msg)
                 for available_name in available_list:
                     print(
-                        f'{self.cards[available_name].info.card_index}\t{self.cards[available_name].info.name}')
+                        f'{self.cards[available_name].info.card_index}\t{self.cards[available_name]}')
 
                 user_choice = UI.ask_for_input(1, rejection_msg)
                 if user_choice == None:
@@ -353,7 +298,8 @@ class Game:
         We want to know what options can be available to the player.
         '''
 
-        def can_play_event(self, side: Side, card: Card, hand):
+        def can_play_event(self, side: Side, card: Card):
+            hand = self.hand[side]
             if card == 'The_China_Card':
                 return False
             elif card == 'UN_Intervention':
@@ -371,16 +317,16 @@ class Game:
 
         def can_realign_at_all(self):
             filter = np.array([self.map.can_realignment(
-                self, name, side, self.defcon_track) for name in self.map.ALL])
+                self, name, side) for name in self.map.ALL])
             return filter.sum() > 0
 
         def can_coup_at_all(self):
             filter = np.array([self.map.can_coup(
-                self, name, side, self.defcon_track) for name in self.map.ALL])
+                self, name, side) for name in self.map.ALL])
             return filter.sum() > 0
 
         def can_space(self, side: Side, card: Card):
-            # first check that player can still space
+            # first check that player has an available space slot
             def available_space_turn(self, side: Side):
                 if self.spaced_turns[side] == 2:
                     return False
@@ -395,11 +341,11 @@ class Game:
             def enough_ops(self, side: Side, card: Card):
                 if self.space_track[side] == 8:
                     return False
-                if self.space_track[side] == 7 and card.info.ops == 4:
+                if self.space_track[side] == 7 and self.get_global_effective_ops(side, card.info.ops) == 4:
                     return True
-                elif self.space_track[side] >= 5 and card.info.ops >= 3:
+                elif self.space_track[side] >= 5 and self.get_global_effective_ops(side, card.info.ops) >= 3:
                     return True
-                elif card.info.ops >= 2:
+                elif self.get_global_effective_ops(side, card.info.ops) >= 2:
                     return True
                 else:
                     return False
@@ -415,77 +361,134 @@ class Game:
             'Space': 5,
         }
 
-        def select_action(self, side: Side, card: Card, hand: list):
-            filter = np.array([can_play_event(self, side, card, hand),
-                               can_resolve_event_first(
-                                   self, side, card), can_place_influence(self, side, card),
-                               can_realign_at_all(self), can_coup_at_all(self), can_space(self, side, card)])
-            all_actions = np.array(list(action.keys()))
-            available_list = all_actions[filter]
-            available_list_values = [str(action[n]) for n in available_list]
-            guide_msg = 'Choose an action and type in the corresponding value.'
-            rejection_msg = 'Please key in a single value.'
+        def select_action(self, side: Side, card: Card, is_event_resolved=False):
+            if card.info.type == 'Scoring':
+                self.trigger_event(card.info.name)
+                self.discard_pile.append(
+                    self.hand[side].pop(self.hand[side].index(card)))
+            else:
+                filter = np.array([can_play_event(self, side, card) and not is_event_resolved,
+                                   can_resolve_event_first(
+                                       self, side, card) and not is_event_resolved, can_place_influence(self, side, card),
+                                   can_realign_at_all(self), can_coup_at_all(self), can_space(self, side, card)])
+                all_actions = np.array(list(action.keys()))
+                available_list = all_actions[filter]
+                available_list_values = [str(action[n])
+                                         for n in available_list]
+                guide_msg = 'Choose an action and type in the corresponding value.'
+                rejection_msg = 'Please key in a single value.'
 
-            while True:
+                while True:
 
-                self.prompt_side(side)
-                print(guide_msg)
-                for available_name in available_list:
-                    print(f'{available_name}, {action[available_name]}')
+                    self.prompt_side(side)
+                    print(guide_msg)
+                    for available_name in available_list:
+                        print(f'{available_name}, {action[available_name]}')
 
-                user_choice = UI.ask_for_input(1, rejection_msg)
-                if user_choice == None:
-                    break
+                    user_choice = UI.ask_for_input(1, rejection_msg)
+                    if user_choice == None:
+                        break
 
-                if len(set(user_choice) - set(available_list_values)) == 0:
-                    if int(user_choice[0]) == 0 or int(user_choice[0]) == 1:
-                        self.trigger_event(card.info.name)
-                    elif int(user_choice[0]) == 2:
-                        self.card_operation_influence(side, card, hand)
-                    elif int(user_choice[0]) == 3:
-                        self.card_operation_realignment(side, card, hand)
-                    elif int(user_choice[0]) == 4:
-                        self.card_operation_coup(side, card, hand)
-                    elif int(user_choice[0]) == 5:
-                        self.space(side, card, hand)
-                    break
-                else:
-                    print('\nYour input cannot be accepted.')
+                    if len(set(user_choice) - set(available_list_values)) == 0:
+                        if int(user_choice[0]) == 0:
+                            self.trigger_event(card.info.name)
+                        elif int(user_choice[0]) == 1:
+                            self.trigger_event(card.info.name)
+                            select_action(self, side, card,
+                                          is_event_resolved=True)
+                        elif int(user_choice[0]) == 2:
+                            self.card_operation_influence(side, card)
+                        elif int(user_choice[0]) == 3:
+                            self.card_operation_realignment(side, card)
+                        elif int(user_choice[0]) == 4:
+                            self.card_operation_coup(side, card)
+                        elif int(user_choice[0]) == 5:
+                            self.space(side, card)
+                        break
+                    else:
+                        print('\nYour input cannot be accepted.')
 
-        select_action(self, side, card, hand)
+        select_action(self, side, card)
         self.ar_track += 1
         pass
 
-    def forced_to_missile_envy(self):
-        # check first if the player has as many scoring cards as turns
-        # if True, then player is given choice as to which scoring card they
-        # can play. this stage is then triggered again at a later stage.
-        pass
+    '''
+    card_operation_influence is the generic stage where a side is given the opportunity to place influence.
+    They are provided a list of all possible countries that they can place influence into, and
+    must choose from these. During this stage, the UI is waiting for a tuple of country indices.
 
-    def trigger_event(self, card_name: str) -> str:
-        '''Takes in a card_name and runs the associated card event function.
-        Returns the appropriate treatment of the card.'''
-        return Game.card_function_mapping[card_name](self)
+    This is the actual use of operations to place influence.
+    '''
 
-    def card_event(self):
-        # can only be used if the event is yours
-        pass
+    def card_operation_influence(self, side: Side, card: Card):
 
-    def card_operation_realignment(self, side: Side, card: Card, hand):
+        effective_ops = card.info.ops
+
+        '''Generates the list of all possible countries that influence can be placed in.'''
+        filter = np.array([self.map.can_place_influence(
+            name, side, effective_ops) for name in self.map.ALL])
+        all_countries = np.array([name for name in self.map.ALL])
+        available_list = all_countries[filter]
+        available_list_values = [
+            str(self.map[n].info.country_index) for n in available_list]
+        guide_msg = f'You may add {effective_ops} influence in these countries. Type in their country indices, separated by commas (no spaces).'
+        rejection_msg = f'Please key in {effective_ops} comma-separated values.'
+
+        while True:
+            self.prompt_side(side)
+            print(guide_msg)
+            for available_name in available_list:
+                print(
+                    f'{self.map[available_name].info.country_index}\t{self.map[available_name].info.name}')
+
+            user_choice = UI.ask_for_input(effective_ops, rejection_msg)
+            if user_choice == None:
+                break
+
+            if len(set(user_choice) - set(available_list_values)) == 0:
+                for country_index in user_choice:
+                    name = self.map.index_country_mapping[int(country_index)]
+                    self.map.place_influence(name, side, 1)
+                break
+            else:
+                print('\nYour input cannot be accepted.')
+
+        self.dispose_card(side, card)
+
+    def dispose_card(self, side: Side, card: Card, space=False):
+        hand = self.hand[side]
+        if card == 'The_China_Card':
+            self.move_china_card(side, card)
+        elif space:
+            self.discard_pile.append(hand.pop(hand.index(card)))
+        elif side != card.info.owner.opp:
+            self.discard_pile.append(hand.pop(hand.index(card)))
+        elif side == card.info.owner.opp:
+            card_treatment = self.trigger_event(card.info.name)
+            if card_treatment == 'discard':
+                self.discard_pile.append(hand.pop(hand.index(card)))
+            elif card_treatment == 'remove':
+                self.removed_pile.append(hand.pop(hand.index(card)))
+            elif card_treatment == 'us_basket':
+                self.basket[Side.US].append(hand.pop(hand.index(card)))
+            elif card_treatment == 'ussr_basket':
+                self.basket[Side.USSR].append(hand.pop(hand.index(card)))
+
+    def card_operation_realignment(self, side: Side, card: Card):
         '''
         Generates the list of all possible countries that can be realigned.
         Adjusts for DEFCON status only.
-        TODO: Does not currently check the player baskets for continuous effects.
         TODO: Does not currently check for The_China_Card realignment bonus in Asia.
         TODO: Does not currently check for Vietnam_Revolts in ussr_basket for realignment bonus in Asia
         '''
-        current_effective_ops = card.info.ops
+        current_effective_ops = self.get_global_effective_ops(
+            side, card.info.ops)
         guide_msg = f'You may attempt realignment in these countries. Type in the target country index.'
         rejection_msg = f'Please key in a single value.'
 
         while current_effective_ops > 0:
             filter = np.array([self.map.can_realignment(
-                self, name, side, self.defcon_track) for name in self.map.ALL])
+                self, name, side) for name in self.map.ALL])
             all_countries = np.array([name for name in self.map.ALL])
             available_list = all_countries[filter]
             available_list_values = [
@@ -503,24 +506,32 @@ class Game:
 
             if len(set(user_choice) - set(available_list_values)) == 0:
                 name = self.map.index_country_mapping[int(user_choice[0])]
-                self.map.realignment(self, name, side, self.defcon_track)
+                self.map.realignment(self, name, side)
                 current_effective_ops -= 1
             else:
                 print('\nYour input cannot be accepted.')
-        self.discard_pile.append(hand.pop(hand.index(card)))
 
-    def card_operation_coup(self, side: Side, card: Card, hand):
+        self.dispose_card(side, card)
+
+    def card_operation_coup(self, side: Side, card: Card, restricted_list: list = None):
         '''
         Generates the list of all possible countries that can be couped.
-        Adjusts for DEFCON status only.
-        TODO: Does not currently check the player baskets for continuous effects.
+        restricted_list should be a list of country_names.
+        TODO: Does not currently check the player baskets for China Card and Vietnam effects.
+        TODO: Latin American DS, Iran-contra
         '''
-        effective_ops = card.info.ops
+        current_effective_ops = self.get_global_effective_ops(
+            side, card.info.ops)
 
         filter = np.array([self.map.can_coup(
-            self, name, side, self.defcon_track) for name in self.map.ALL])
+            self, name, side) for name in self.map.ALL])
         all_countries = np.array([name for name in self.map.ALL])
         available_list = all_countries[filter]
+
+        if restricted_list != None:
+            available_list = list(np.intersect1d(
+                restricted_list, available_list))
+
         available_list_values = [
             str(self.map[n].info.country_index) for n in available_list]
         guide_msg = f'You may coup these countries. Type in the country index.'
@@ -539,35 +550,135 @@ class Game:
 
             if len(set(user_choice) - set(available_list_values)) == 0:
                 name = self.map.index_country_mapping[int(user_choice[0])]
-                self.map.coup(self, name, side, effective_ops,
-                              self.defcon_track)
+                self.map.coup(self, name, side, current_effective_ops)
                 break
             else:
                 print('\nYour input cannot be accepted.')
-        self.discard_pile.append(hand.pop(hand.index(card)))
+
+        self.dispose_card(side, card)
+
+    def forced_to_missile_envy(self):
+        # check first if the player has as many scoring cards as turns
+        # if True, then player is given choice as to which scoring card they
+        # can play. this stage is then triggered again at a later stage.
+        pass
+
+    def trigger_event(self, card_name: str) -> str:
+        '''
+        Wrapper for triggering an event.
+        Takes in a card_name and runs the associated card event function.
+        Returns the appropriate treatment of the card.
+        '''
+        return Game.card_function_mapping[card_name](self)
+
+    def move_china_card(self, side: Side, card: Card('The_China_Card')):
+        giver = self.hand[side]
+        receipient = self.hand[side.opp]
+        receipient.append(giver.pop(giver.index(card)))
+        receipient[-1].can_play = False
+
+    def get_global_effective_ops(self, side: Side, raw_ops: int):
+        modifier = 0
+        if side == Side.USSR and 'Brezhnev_Doctrine' in self.basket[side]:
+            modifier += 1
+        if side == Side.US and 'Containment' in self.basket[side]:
+            modifier += 1
+        if 'Red_Scare_Purge' in self.basket[side.opp]:
+            modifier -= 1
+        return min(max([raw_ops + modifier, 1]), 4)
 
     '''
-    The player is given here an option to discard a card.
+    The player is given here an option to discard a card (ONLY ONE).
     This would be be used for the Blockade discard, and also the space race buff.
-    Not originally intended for Ask Not..
     '''
 
     def may_discard_card(self, side: Side, blockade=False):
-
         guide_msg = f'You may discard a card. Type in the card index.'
         rejection_msg = f'Please key in a single value.'
 
         if blockade:
-            hand = self.us_hand
+            hand = self.hand[Side.US]
             available_list = [
-                card.info.name for card in hand if card.info.ops > 2]
-
+                'Do not discard a card. US loses all influence in West Germany.']
+            available_list.extend([
+                card.info.name for card in hand if self.get_global_effective_ops(side, card.info.ops) >= 3])
+            if len(available_list) == 0:
+                return 'did not discard'
         else:
-            if side == Side.USSR:
-                hand = self.ussr_hand
-            elif side == Side.US:
-                hand = self.us_hand
-            available_list = hand
+            available_list = self.hand[side]
+
+        if 'The_China_Card' in available_list:
+            available_list.pop(available_list.index('The_China_Card'))
+
+        available_list_values = ['0']
+        available_list_values.extend(
+            [str(self.cards[n].info.card_index) for n in available_list[blockade:]])
+
+        while True:
+            self.prompt_side(side)
+            print(guide_msg)
+            for (available_name, available_list_value) in zip(available_list, available_list_values):
+                print(
+                    f'{available_list_value}\t{available_name}')
+
+            user_choice = UI.ask_for_input(1, rejection_msg)
+            if user_choice == None:
+                break
+
+            if len(set(user_choice) - set(available_list_values)) == 0:
+                if int(user_choice[0]) == 0:
+                    return 'did not discard'
+                name = self.cards.index_card_mapping[int(user_choice[0])]
+                self.discard_pile.append(hand.pop(hand.index(name)))
+                break
+            else:
+                print('\nYour input cannot be accepted.')
+
+        self.discard_pile.append(
+            self.hand[side].pop(self.hand[side].index(card)))
+
+    def select_multiple(self, statements: list, side: Side):
+        '''
+        The player is given a choice of two options.
+        '''
+        guide_msg = f'You may discard a card. Type in the card index.'
+        rejection_msg = f'Please key in a single value.'
+
+        available_list = statements
+        available_list_values = [str(i) for i in range(len(statements))]
+
+        while True:
+            self.prompt_side(side)
+            print(guide_msg)
+            for i, available_name in enumerate(available_list):
+                print(f'{i}\t{available_name}')
+
+            user_choice = UI.ask_for_input(1, rejection_msg)
+            if user_choice == None:
+                break
+
+            print(available_list_values)
+            if len(set(user_choice) - set(available_list_values)) == 0:
+                return int(user_choice[0])
+            else:
+                print('\nYour input cannot be accepted.')
+
+    def select_take_8_rounds(self):
+        pass
+
+    def quagmire_discard(self):
+        '''
+        The player must discard a card if they are holding suitable discards.
+        Player is given a list of suitable discards. Card has to be at least
+        2 effective ops. If there are only scoring cards left..
+        '''
+        available_list = [
+            card.info.name for card in hand if self.get_global_effective_ops(side, card.info.ops) >= 2]
+
+        if 'The_China_Card' in available_list:
+            available_list.pop(available_list.index('The_China_Card'))
+        if len(available_list) == 0:
+            pass  # may only play scoring cards ```
 
         available_list_values = [
             str(self.cards[n].info.card_index) for n in available_list]
@@ -589,29 +700,17 @@ class Game:
                 break
             else:
                 print('\nYour input cannot be accepted.')
-
-    def select_binary(self):
-        pass
-
-    def select_take_8_rounds(self):
-        pass
-
-    def quagmire_discard(self):
-        '''
-        In this stage, the player must discard a card if they are holding suitable
-        discards. Player is given a list of suitable discards. Card has to be at least
-        2 effective ops.
-        '''
-        pass
+        return 'discard successful'
 
     def norad_influence(self):
-        # this stage is triggered because norad is in us_basket
-        pass
+        available_list = [*self.map.has_us_influence()]
+        self.event_influence(side, 1, available_list,
+                             can_split=True, positive=True, limit=1)
 
     def cuba_missile_remove(self):
         pass
 
-    def space(self, side: Side, card: Card, hand):
+    def space(self, side: Side, card: Card):
         if self.space_track[side] in [0, 2, 4, 6]:
             modifier = 0
         elif self.space_track[side] in [1, 3, 5]:
@@ -655,7 +754,7 @@ class Game:
             print(f'Failure with roll of {roll}.')
 
         self.spaced_turns[side] += 1
-        self.discard_pile.append(hand.pop(hand.index(card)))
+        self.dispose_card(side, card, space=True)
 
     # to add game terminate functionality EndGame()
 
@@ -667,22 +766,40 @@ class Game:
         if self.vp_track <= -20:
             print('US victory')
             # EndGame()
+        print(f'Current VP: {self.vp_track}')
 
     def change_defcon(self, n: int):
+        previous_defcon = self.defcon_track
         self.defcon_track += min(n, 5 - self.defcon_track)
         if self.defcon_track < 2:
             print('Game ended by thermonuclear war')
-            # EndGame()
+        if previous_defcon > 2 and self.defcon_track == 2 and self.ar_track != 0 and 'NORAD' in self.basket[Side.US]:
+            self.norad_influence()
+        if n > 0:
+            print(f'DEFCON level improved to {self.defcon_track}.')
+        else:
+            print(f'DEFCON level degraded to {self.defcon_track}.')
+
+        # EndGame()
+
+    def change_milops(self, side, n: int):
+        self.milops_track[side] += min(n, 5 - self.milops_track[side])
+
+    def headline(self):
+        # decide if it is going to be joint_choose_headline or separated
+        # modify top to use this function instead
+        pass
 
     def deal(self):
         def top_up_cards(self, n: int):
-            ussr_held = len(self.ussr_hand)
-            us_held = len(self.us_hand)
+            ussr_held = len(self.hand[Side.USSR])
+            us_held = len(self.hand[Side.US])
 
-            if 'The_China_Card' in self.ussr_hand:  # Ignore China Card if it is in either hand
-                ussr_held = len(self.ussr_hand) - 1
-            elif 'The_China_Card' in self.ussr_hand:
-                us_held = len(self.us_hand) - 1
+            # Ignore China Card if it is in either hand
+            if 'The_China_Card' in self.hand[Side.USSR]:
+                ussr_held = len(self.hand[Side.USSR]) - 1
+            elif 'The_China_Card' in self.hand[Side.US]:
+                us_held = len(self.hand[Side.US]) - 1
 
             # if turn 4, add mid war cards into draw pile and shuffle, same for turn 8 for late war cards
             if self.turn_track == 4:
@@ -703,26 +820,25 @@ class Game:
                         self.discard_pile = []
                         random.shuffle(self.draw_pile)
                 if ussr_held < n:
-                    self.ussr_hand.extend([self.draw_pile.pop()])
+                    self.hand[Side.USSR].extend([self.draw_pile.pop()])
                     ussr_held += 1
                     recreate_draw_pile()
                 if us_held < n:
-                    self.us_hand.extend([self.draw_pile.pop()])
+                    self.hand[Side.US].extend([self.draw_pile.pop()])
                     us_held += 1
                     recreate_draw_pile()
 
         '''Pre-headline setup'''
         if self.turn_track == 1 and self.ar_track == 1:
-            self.ussr_hand.append(self.cards.early_war.pop(
-                self.cards.early_war.index('The_China_Card')))
-            self.ussr_hand.append(self.cards.early_war.pop(
-                self.cards.early_war.index('Asia_Scoring')))  # for testing of specific cards
-            self.us_hand.append(self.cards.early_war.pop(self.cards.early_war.index(
-                'Europe_Scoring')))  # for testing of specific cards
-            # Put early war cards into the draw pile
+            # self.hand[Side.USSR].append(self.cards.early_war.pop(
+                # self.cards.early_war.index('Asia_Scoring')))  # for testing of specific cards
+            self.hand[Side.USSR].extend([self.cards.early_war.pop(0)
+                                         for i in range(18)])
+            self.hand[Side.US].extend([self.cards.early_war.pop(0)
+                                       for i in range(18)])
             self.draw_pile.extend(self.cards.early_war)
             self.cards.early_war = []
-            random.shuffle(self.draw_pile)  # Shuffle the draw pile
+            random.shuffle(self.draw_pile)
             top_up_cards(self, 8)
         else:
             if self.turn_track in [1, 2, 3]:
@@ -746,26 +862,26 @@ class Game:
             scoring_list = ['Asia_Scoring', 'Europe_Scoring', 'Middle_East_Scoring',
                             'Central_America_Scoring', 'Southeast_Asia_Scoring', 'Africa_Scoring', 'South_America_Scoring']
             scoring_cards = [self.cards[y] for y in scoring_list]
-            if any(True for x in scoring_cards if x in self.us_hand):
+            if any(True for x in scoring_cards if x in self.hand[Side.US]):
                 print('USSR Victory!')
                 # EndGame()
-            elif any(True for x in scoring_cards if x in self.ussr_hand):
+            elif any(True for x in scoring_cards if x in self.hand[Side.USSR]):
                 print('US Victory!')
                 # EndGame()
 
         # 3. Flip China Card
         def flip_china_card(self):
-            if 'The_China_Card' in self.ussr_hand:
-                self.ussr_hand[self.ussr_hand.index(
+            if 'The_China_Card' in self.hand[Side.USSR]:
+                self.hand[Side.USSR][self.hand[Side.USSR].index(
                     'The_China_Card')].can_play = True
-            elif 'The_China_Card' in self.us_hand:
-                self.us_hand[self.us_hand.index(
+            elif 'The_China_Card' in self.hand[Side.US]:
+                self.hand[Side.US][self.hand[Side.US].index(
                     'The_China_Card')].can_play = True
 
         # 4. Advance turn marker
         def advance_turn_marker(self):
             self.turn_track += 1
-            self.ar_track = 1
+            self.ar_track = 0  # headline phase
 
         # 5. Final scoring (end T10)
         # TODO: Add 1 VP for China Card holder
@@ -783,11 +899,8 @@ class Game:
         # 6. Increase DEFCON status
         # 7. Deal Cards -- written outside the next_turn function
         # 8. Headline Phase
-        def headline(self):
-            pass
 
         # 9. Action Rounds (advance round marker) -- action rounds are not considered between turns
-
         check_milops(self)
         check_for_scoring_cards(self)
         flip_china_card(self)
@@ -795,7 +908,7 @@ class Game:
         final_scoring(self)
         self.change_defcon(1)
         self.deal()  # turn marker advanced before dealing
-        headline(self)
+        self.headline()
 
     def score(self, region: MapRegion, presence_vps: int, domination_vps: int, control_vps: int):
         bg_count = [0, 0, 0]  # USSR, US, NEUTRAL
@@ -858,8 +971,8 @@ class Game:
         return 'discard'
 
     def _Duck_and_Cover(self):
-        self.defcon_track -= 1
-        self.change_vp(5 - self.defcon_track)
+        self.change_defcon(-1)
+        self.change_vp(-(5 - self.defcon_track))
         return 'discard'
 
     def _Five_Year_Plan(self):
@@ -873,23 +986,39 @@ class Game:
         event_influence()
 
     def _Fidel(self):
-        self.map['Cuba'].set_influence(0, max(3, Cuba.ussr_influence))
+        cuba = self.map['Cuba']
+        cuba.set_influence(0, max(3, cuba.influence[Side.USSR]))
         return 'remove'
 
     def _Vietnam_Revolts(self):
         pass
 
     def _Blockade(self):
-        self.may_discard_card(self, Side.US, blockade=True)
+        self.may_discard_card(Side.US, blockade=True)
         return 'remove'
 
     def _Korean_War(self):
-        pass
+        self._War('South_Korea', Side.USSR)
+        return 'remove'
 
     def _Romanian_Abdication(self):
         romania = self.map['Romania']
-        romania.set_influence(0, max(3, romania.ussr_influence))
+        romania.set_influence(0, max(3, romania.influence[Side.USSR]))
         return 'remove'
+
+    def _War(self, country_name: str, side: Side, lower: int = 4, win_vp: int = 2, win_milops: int = 2):
+        country = self.map[country_name]
+        roll = random.randint(1, 6)
+        modifier = sum([self.map[adjacent_country].control ==
+                        side.opp for adjacent_country in country.info.adjacent_countries])
+        if roll - modifier >= lower:
+            self.change_vp(win_vp * side.vp_mult)
+            self.change_milops(side, win_milops)
+            country.change_influence(
+                country.influence[side.opp], -country.influence[side.opp])
+            print(f'Success with roll of {roll}.')
+        else:
+            print(f'Failure with roll of {roll}.')
 
     def _Arab_Israeli_War(self):
         pass
@@ -903,15 +1032,28 @@ class Game:
 
     def _Nasser(self):
         egypt = self.map['Egypt']
-        egypt.adjust_influence(-math.ceil(egypt.us_influence / 2), 2)
+        egypt.change_influence(-math.ceil(egypt.influence[Side.US] / 2), 2)
         return 'remove'
 
     def _Warsaw_Pact_Formed(self):
+        statements = ['Remove all US influence from 4 countries in Eastern Europe',
+                      'Add 5 USSR Influence to any countries in Eastern Europe']
+        binary_outcome = self.select_multiple(statements, Side.USSR)
+        if binary_outcome == 0:
+            available_list = [
+                n for n in CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE]]
+            self.event_influence(Side.USSR, 0, available_list,
+                                 can_split=True, positive=False, limit=1, all=True)
+        elif binary_outcome == 1:
+            available_list = [
+                n for n in CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE]]
+            self.event_influence(Side.USSR, 5, available_list,
+                                 can_split=True, positive=True, limit=2)
 
         return 'us_basket'
 
     def _De_Gaulle_Leads_France(self):
-        self.map['France'].adjust_influence(-2, 1)
+        self.map['France'].change_influence(-2, 1)
         return 'remove'
 
     def _Captured_Nazi_Scientist(self):
@@ -924,7 +1066,8 @@ class Game:
         pass
 
     def _NATO(self):
-        is_event_playable = True if 'Warsaw_Pact_Formed' in self.us_basket or 'Marshall_Plan' in self.us_basket else False
+        is_event_playable = True if 'Warsaw_Pact_Formed' in self.basket[
+            Side.US] or 'Marshall_Plan' in self.basket[Side.US] else False
         if is_event_playable:
             return 'us_basket'
         else:
@@ -946,7 +1089,9 @@ class Game:
         pass
 
     def _US_Japan_Mutual_Defense_Pact(self):
-        Japan.set_influence(Japan.ussr_influence + 4, Japan.ussr_influence)
+        japan = self.map['Japan']
+        japan.set_influence(
+            japan.influence[Side.USSR] + 4, japan.influence[Side.USSR])
         pass
 
     def _Suez_Crisis(self):
@@ -1016,6 +1161,24 @@ class Game:
         pass
 
     def _Quagmire(self):
+        # need to insert and replace the US Action round with the quagmire_discard stage
+        '''This runs every US action round if quagmire is in ussr_basket.'''
+        if 'NORAD' in self.basket[Side.US]:
+            self.removed_pile.append(
+                self.basket[Side.US].pop(self.basket[Side.US].index('NORAD')))
+        discard = self.quagmire_discard()
+        if discard == 'discard successful':
+            roll = random.randint(1, 6)
+            if roll >= 4:
+                self.basket[Side.USSR].pop(
+                    self.basket[Side.USSR].index('Quagmire'))
+                print(f'Roll successful with roll of {roll}. Quagmire lifted.')
+            else:
+                print(f'Roll failed with roll of {roll}.')
+
+        # ```
+
+        return 'remove'
         pass
 
     def _Salt_Negotiations(self):

@@ -67,7 +67,7 @@ class GameMap:
         '''Returns list of names that have US influence, less superpowers..'''
         country_list = []
         for country in self.ALL.values():
-            if country.us_influence > 0 and country.info.superpower == False:
+            if country.influence[Side.US] > 0 and country.info.superpower == False:
                 country_list.append(country.info.name)
         return country_list
 
@@ -75,7 +75,7 @@ class GameMap:
         '''Returns list of names that have USSR influence, less superpowers..'''
         country_list = []
         for country in self.ALL.values():
-            if country.ussr_influence > 0 and country.info.superpower == False:
+            if country.influence[Side.USSR] > 0 and country.info.superpower == False:
                 country_list.append(country.info.name)
         return country_list
 
@@ -100,7 +100,7 @@ class GameMap:
         self['South_Africa'].set_influence(1, 0)
         return
 
-    def can_coup(self, game_instance, name: str, side: Side, defcon_track: int):
+    def can_coup(self, game_instance, name: str, side: Side):
         country = self[name]
         if country.info.superpower:
             return False
@@ -111,28 +111,20 @@ class GameMap:
         d2 = [n for n in CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST]]
         d2.extend(d3)
 
-        if 'NATO' in game_instance.us_basket and name in d4:
+        if 'NATO' in game_instance.basket[Side.US] and name in d4:
             return False
-        elif defcon_track == 4 and name in d4:
+        elif game_instance.defcon_track == 4 and name in d4:
             return False
-        elif defcon_track == 3 and name in d3:
+        elif game_instance.defcon_track == 3 and name in d3:
             return False
-        elif defcon_track == 2 and name in d2:
+        elif game_instance.defcon_track == 2 and name in d2:
             return False
 
-        return not (side == Side.US and country.ussr_influence == 0 or
-                    side == Side.USSR and country.us_influence == 0)
+        return not (side == Side.US and country.influence[Side.USSR] == 0 or
+                    side == Side.USSR and country.influence[Side.US] == 0)
 
-    def coup(self, game_instance, name: str, side: Side, effective_ops: int, defcon_track: int):
-        '''
-        TODO:
-        1. Prevent coup if no opposing influence in the country. I would prefer to write this in a way that prevents this from happening altogether, as opposed to throwing up an error if this is tried.
-        2. Prevent coup under DEFCON restrictions. Will write it in a style same as 1.
-        3. Prevent coup if there is no influence at all in the country. (done in game.map.can_coup)
-        4. Add military operations points.
-        5. Reduce DEFCON status level if self.battleground = True
-        '''
-        assert(self.can_coup(game_instance, name, side, defcon_track))
+    def coup(self, game_instance, name: str, side: Side, effective_ops: int):
+        assert(self.can_coup(game_instance, name, side))
         country = self[name]
 
         die_roll = random.randint(1, 6)
@@ -141,18 +133,23 @@ class GameMap:
         if difference > 0:
             if side == Side.USSR:
                 # subtract from opposing first.. and then add to yours
-                country.change_influence(-min(difference, country.us_influence),
-                                         max(0, difference - country.us_influence))
+                country.change_influence(-min(difference, country.influence[Side.US]),
+                                         max(0, difference - country.influence[Side.US]))
 
             if side == Side.US:
                 country.change_influence(max(
-                    0, difference - country.ussr_influence), -min(difference, country.ussr_influence))
+                    0, difference - country.influence[Side.USSR]), -min(difference, country.influence[Side.USSR]))
             print(
                 f'Coup successful with roll of {die_roll}. Difference: {difference}')
         else:
             print(f'Coup failed with roll of {die_roll}')
 
-    def can_realignment(self, game_instance, name: str, side: Side, defcon_track: int):
+        if country.info.battleground:
+            game_instance.change_defcon(-1)
+
+        game_instance.milops_track[side] += effective_ops
+
+    def can_realignment(self, game_instance, name: str, side: Side):
         country = self[name]
         if country.info.superpower:
             return False
@@ -163,13 +160,13 @@ class GameMap:
         d2 = [n for n in CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST]]
         d2.extend(d3)
 
-        if 'NATO' in game_instance.us_basket and name in d4:
+        if 'NATO' in game_instance.basket[Side.US] and name in d4:
             return False
-        elif defcon_track == 4 and name in d4:
+        elif game_instance.defcon_track == 4 and name in d4:
             return False
-        elif defcon_track == 3 and name in d3:
+        elif game_instance.defcon_track == 3 and name in d3:
             return False
-        elif defcon_track == 2 and name in d2:
+        elif game_instance.defcon_track == 2 and name in d2:
             return False
 
         if side == Side.USSR and country.ussr_influence_only:
@@ -177,33 +174,28 @@ class GameMap:
         elif side == Side.US and country.us_influence_only:
             return False
         else:
-            return not (country.ussr_influence == 0 and country.us_influence == 0)
+            return not (country.influence[Side.USSR] == 0 and country.influence[Side.US] == 0)
 
-    def realignment(self, game_instance, name: str, side: Side, defcon_track: int):
-        '''
-        TODO:
-        1. Prevent realignment under DEFCON restrictions.
-        2. Prevent realignment if there is no influence at all in the country. (done in game.card_operation_coup)
-        '''
-        assert(self.can_realignment(game_instance, name, side, defcon_track))
+    def realignment(self, game_instance, name: str, side: Side):
+        assert(self.can_realignment(game_instance, name, side))
         country = self[name]
 
         modifier = 0  # net positive is in favour of US
         for adjacent_name in country.info.adjacent_countries:
             modifier += ((self[adjacent_name]).control == Side.US)
             modifier -= ((self[adjacent_name]).control == Side.USSR)
-        if country.us_influence - country.ussr_influence > 0:
+        if country.influence[Side.US] - country.influence[Side.USSR] > 0:
             modifier += 1
-        elif country.us_influence - country.ussr_influence < 0:
+        elif country.influence[Side.US] - country.influence[Side.USSR] < 0:
             modifier -= 1
         us_roll, ussr_roll = random.randint(1, 6), random.randint(1, 6)
         difference = us_roll - ussr_roll + modifier
         if difference > 0:
             country.change_influence(
-                0, -min(difference, country.ussr_influence))
+                0, -min(difference, country.influence[Side.USSR]))
         elif difference < 0:
             country.change_influence(-min(-difference,
-                                          country.us_influence), 0)
+                                          country.influence[Side.US]), 0)
         print(
             f'US rolled: {us_roll}, USSR rolled: {ussr_roll}, Modifer = {modifier}, Difference = {difference}')
 
@@ -221,26 +213,17 @@ class GameMap:
 
             countries_to_check = self[name].info.adjacent_countries.copy()
             countries_to_check.append(name)
-            if side == Side.USSR:
-                for country in countries_to_check:
-                    if self[country].ussr_influence > 0:
-                        return True
-                return False  # returns false if none of the above are true
-            if side == Side.US:
-                for country in countries_to_check:
-                    if self[country].us_influence > 0:
-                        return True
-                return False  # returns false if none of the above are true
+            for country in countries_to_check:
+                if self[country].influence[side] > 0:
+                    return True
+            return False  # returns false if none of the above are true
 
         def sufficient_ops(self, effective_ops: int):
             # if country is controlled by opposition, if ops > 1, return true, else false
-            if effective_ops >= 1:
-                if country.control == Side.NEUTRAL or country.control == side:
-                    return True
-                elif effective_ops > 1:
-                    return True
+            if country.control == side.opp:
+                return True if effective_ops >= 2 else False
             else:
-                return False
+                return True
 
         return has_influence_around(self, name, side) and sufficient_ops(self, effective_ops)
 
@@ -269,37 +252,39 @@ class GameMap:
                 raise ValueError('side must be \'us\' or \'ussr\'!')
 
     def change_influence(self, name: str, us_influence: int, ussr_influence: int):
-        self[name].us_influence += us_influence
-        self[name].ussr_influence += ussr_influence
+        self[name].influence[Side.US] += us_influence
+        self[name].influence[Side.USSR] += ussr_influence
+
+    def set_influence(self, name: str, us_influence: int, ussr_influence: int):
+        self[name].influence[Side.US] = us_influence
+        self[name].influence[Side.USSR] = ussr_influence
 
 
 class Country:
 
     def __init__(self, name: str):
         self.info = CountryInfo.ALL[name]
-
-        self.us_influence = 0
-        self.ussr_influence = 0
+        self.influence = [0, 0]  # ussr, then us influence
 
     @property
     def control(self):
-        if self.us_influence - self.ussr_influence >= self.info.stability:
+        if self.influence[Side.US] - self.influence[Side.USSR] >= self.info.stability:
             return Side.US
-        elif self.ussr_influence - self.us_influence >= self.info.stability:
+        elif self.influence[Side.USSR] - self.influence[Side.US] >= self.info.stability:
             return Side.USSR
         else:
             return Side.NEUTRAL
 
     @property
     def us_influence_only(self):
-        if self.us_influence > 0 and self.ussr_influence == 0:
+        if self.influence[Side.US] > 0 and self.influence[Side.USSR] == 0:
             return True
         else:
             return False
 
     @property
     def ussr_influence_only(self):
-        if self.ussr_influence > 0 and self.us_influence == 0:
+        if self.influence[Side.USSR] > 0 and self.influence[Side.US] == 0:
             return True
         else:
             return False
@@ -308,19 +293,19 @@ class Country:
         if self.info.stability == 0:
             return f'Country({self.info.name}, Superpower = True, Adjacent = {self.info.adjacent_countries})'
         else:
-            return f'Country({self.info.name}, \nRegion \t\t= {self.info.regions}, \nStability \t= {self.info.stability}, \nBattleground \t= {self.info.battleground}, \nAdjacent \t= {self.info.adjacent_countries}, \nUS_influence \t= {self.us_influence}, {self.us_influence_only}\nUSSR_influence \t= {self.ussr_influence}, {self.ussr_influence_only}\nControl \t= {self.control}'
+            return f'Country({self.info.name}, \nRegion \t\t= {self.info.regions}, \nStability \t= {self.info.stability}, \nBattleground \t= {self.info.battleground}, \nAdjacent \t= {self.info.adjacent_countries}, \nUS_influence \t= {self.influence[Side.US]}, {self.us_influence_only}\nUSSR_influence \t= {self.influence[Side.USSR]}, {self.ussr_influence_only}\nControl \t= {self.control}'
 
     def set_influence(self, us_influence, ussr_influence):
-        self.us_influence = us_influence
-        self.ussr_influence = ussr_influence
+        self.influence[Side.US] = us_influence
+        self.influence[Side.USSR] = ussr_influence
 
     def reset_influence(self):
-        self.us_influence = 0
-        self.ussr_influence = 0
+        self.influence[Side.US] = 0
+        self.influence[Side.USSR] = 0
 
     def change_influence(self, us_influence: int, ussr_influence: int):
-        self.us_influence += us_influence
-        self.ussr_influence += ussr_influence
+        self.influence[Side.US] += us_influence
+        self.influence[Side.USSR] += ussr_influence
 
 
 USSR = {
