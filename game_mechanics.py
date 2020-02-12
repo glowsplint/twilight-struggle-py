@@ -1011,8 +1011,12 @@ class Game:
         if roll - modifier >= lower:
             self.change_vp(win_vp * side.vp_mult)
             self.change_milops(side, win_milops)
-            country.change_influence(
-                -country.influence[side.opp], country.influence[side.opp])
+            if side == Side.US:
+                country.change_influence(
+                    -country.influence[side.opp], country.influence[side.opp])
+            if side == Side.USSR:
+                country.change_influence(
+                    country.influence[side.opp], -country.influence[side.opp])
             print(f'Success with roll of {roll}.')
         else:
             print(f'Failure with roll of {roll}.')
@@ -1057,7 +1061,7 @@ class Game:
         return self.basket[Side.US]
 
     def _De_Gaulle_Leads_France(self, side):
-        self.map['France'].change_influence(1, -2)
+        self.map['France'].change_influence(1, -min(2, self.map['France'].influence[Side.US]))
         return self.removed_pile
 
     def _Captured_Nazi_Scientist(self, side):
@@ -1112,7 +1116,7 @@ class Game:
         eastern_europe = [
             n for n in CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE]]
         have_ussr_influence = [
-            self.map['country'].has_ussr_influence for country in eastern_europe]
+            self.map[country].has_ussr_influence for country in eastern_europe]
         available_list = [
             country_name for country_name in eastern_europe if self.map[country_name].has_ussr_influence]
 

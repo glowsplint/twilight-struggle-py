@@ -296,6 +296,13 @@ class Country:
             return True
         else:
             return False
+        
+    @property
+    def has_ussr_influence(self):
+        if self.influence[Side.USSR] > 0:
+            return True
+        else:
+            return False
 
     def __repr__(self):
         if self.info.stability == 0:
