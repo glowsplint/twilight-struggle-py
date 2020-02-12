@@ -23,16 +23,26 @@ quit        Exit the game.
         self.game = game_instance
 
     @staticmethod
-    def ask_for_input(expected_number_of_arguments: int, rejection_msg: str):
+    def ask_for_input(expected_number_of_arguments: int, rejection_msg: str, can_be_less=True):
         while True:
-            raw_input = input('> ').split(
-                ',', expected_number_of_arguments - 1)
-            if raw_input[0].lower() == 'quit' or raw_input[0].lower() == 'exit' or raw_input[0].lower() == 'q':
-                return
-            elif len(raw_input) == 0 or raw_input[0] == '?':
-                print(UI.help)
-            elif len(raw_input) == expected_number_of_arguments:
-                return raw_input
+            if can_be_less:
+                raw_input = input('> ').split(
+                    ',')
+                if raw_input[0].lower() == 'quit' or raw_input[0].lower() == 'exit' or raw_input[0].lower() == 'q':
+                    return
+                elif len(raw_input) == 0 or raw_input[0] == '?':
+                    print(UI.help)
+                elif len(raw_input) <= expected_number_of_arguments:
+                    return raw_input
+            else:
+                raw_input = input('> ').split(
+                    ',', expected_number_of_arguments - 1)
+                if raw_input[0].lower() == 'quit' or raw_input[0].lower() == 'exit' or raw_input[0].lower() == 'q':
+                    return
+                elif len(raw_input) == 0 or raw_input[0] == '?':
+                    print(UI.help)
+                elif len(raw_input) == expected_number_of_arguments:
+                    return raw_input
             print(rejection_msg)
 
     def run(self):

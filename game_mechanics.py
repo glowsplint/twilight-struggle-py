@@ -44,8 +44,9 @@ class Game:
         self.basket = [[], []]
         self.headline_bin = [[], []]  # the inner lists are placeholders
 
-        self.stage_list = [self.map.build_standard, self.deal, self.put_start_USSR,
-                           self.put_start_US, self.put_start_extra, self.joint_choose_headline]
+        self.stage_list = [self.map.build_standard,
+                           self.deal]  # , self.put_start_USSR,
+        # self.put_start_US, self.put_start_extra, self.joint_choose_headline]
 
         self.ar6 = [self.select_card_and_action for i in range(12)]
         self.ar6.append(self.end_of_turn)
@@ -107,7 +108,6 @@ class Game:
 
         while True:
             self.prompt_side(side)
-
             if all:
                 print(guide_msg_all)
             else:
@@ -116,24 +116,31 @@ class Game:
                 print(
                     f'{self.map[available_name].info.country_index}\t{self.map[available_name].info.name}')
 
-            user_choice = UI.ask_for_input(ops, rejection_msg)
+            user_choice = UI.ask_for_input(ops, rejection_msg, can_be_less=all)
             if user_choice == None:
                 break
 
             is_input_all_available = (
                 len(set(user_choice) - set(available_list_values)) == 0)
-            is_input_singular = True if can_split else (
+            is_input_not_singular = True if can_split else (
                 len(set(user_choice)) == 1)
-            is_input_limited = True if limit == None else max(
+            is_input_not_limited = True if limit == None else max(
                 user_choice.count(x) for x in set(user_choice)) >= limit
 
             if all:
                 if is_input_all_available:
-                    self.map.set_influence(
-                        name, 0, self.map[name].influence[Side.USSR])  # why is this hardcoded??
+                    for country_index in user_choice:
+                        name = self.map.index_country_mapping[int(
+                            country_index)]
+                        if ops == 4:
+                            self.map[name].set_influence(
+                                0, self.map[name].influence[Side.USSR])  # hardcoded for warsaw and muslim revolution
+                        elif ops == 1:
+                            self.map[name].set_influence(
+                                self.map[name].influence[Side.US], 0)  # hardcoded for truman
                     break
 
-            elif is_input_all_available and is_input_singular and is_input_limited:
+            elif is_input_all_available and is_input_not_singular and is_input_not_limited:
                 for country_index in user_choice:
                     name = self.map.index_country_mapping[int(country_index)]
                     if side == Side.USSR:
@@ -645,7 +652,6 @@ class Game:
             if user_choice == None:
                 break
 
-            print(available_list_values)
             if len(set(user_choice) - set(available_list_values)) == 0:
                 return int(user_choice[0])
             else:
@@ -1040,17 +1046,21 @@ class Game:
         return self.removed_pile
 
     def _Warsaw_Pact_Formed(self, side):
-        statements = ['Remove all US influence from 4 countries in Eastern Europe',
-                      'Add 5 USSR Influence to any countries in Eastern Europe']
-        binary_outcome = self.select_multiple(statements, Side.USSR)
+        # will not offer the first option if there is no US influence
+        eastern_europe = [
+            n for n in CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE]]
+        have_us_influence = [
+            self.map[country].has_us_influence for country in eastern_europe]
+        available_list = [
+            country_name for country_name in eastern_europe if self.map[country_name].has_us_influence]
+        if len(available_list) == 0:
+            binary_outcome = 1
+        else:
+            statements = ['Remove all US influence from 4 countries in Eastern Europe',
+                          'Add 5 USSR Influence to any countries in Eastern Europe']
+            binary_outcome = self.select_multiple(statements, Side.USSR)
         if binary_outcome == 0:
-            eastern_europe = [
-                n for n in CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE]]
-            have_us_influence = [
-                self.map['country'].has_us_influence for country in eastern_europe]
-            available_list = [
-                country_name for country_name in eastern_europe if self.map[country_name].has_us_influence]
-            self.event_influence(Side.USSR, 0, available_list,
+            self.event_influence(Side.USSR, 4, available_list,
                                  can_split=True, positive=False, limit=1, all=True)
         elif binary_outcome == 1:
             available_list = [
@@ -1061,7 +1071,7 @@ class Game:
         return self.basket[Side.US]
 
     def _De_Gaulle_Leads_France(self, side):
-        self.map['France'].change_influence(1, -min(2, self.map['France'].influence[Side.US]))
+        self.map['France'].change_influence(1, -2)
         return self.removed_pile
 
     def _Captured_Nazi_Scientist(self, side):

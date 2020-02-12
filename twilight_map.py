@@ -133,12 +133,12 @@ class GameMap:
         if difference > 0:
             if side == Side.USSR:
                 # subtract from opposing first.. and then add to yours
-                country.change_influence(-min(difference, country.influence[Side.US]),
-                                         max(0, difference - country.influence[Side.US]))
+                country.change_influence(max(
+                    0, difference - country.influence[Side.US]), -min(difference, country.influence[Side.US]))
 
             if side == Side.US:
-                country.change_influence(max(
-                    0, difference - country.influence[Side.USSR]), -min(difference, country.influence[Side.USSR]))
+                country.change_influence(-min(difference, country.influence[Side.USSR]), max(
+                    0, difference - country.influence[Side.USSR]))
             print(
                 f'Coup successful with roll of {die_roll}. Difference: {difference}')
         else:
@@ -191,11 +191,11 @@ class GameMap:
         us_roll, ussr_roll = random.randint(1, 6), random.randint(1, 6)
         difference = us_roll - ussr_roll + modifier
         if difference > 0:
-            country.change_influence(
-                0, -min(difference, country.influence[Side.USSR]))
+            country.change_influence(-min(difference,
+                                          country.influence[Side.USSR]), 0)
         elif difference < 0:
-            country.change_influence(-min(-difference,
-                                          country.influence[Side.US]), 0)
+            country.change_influence(
+                0, -min(-difference, country.influence[Side.US]))
         print(
             f'US rolled: {us_roll}, USSR rolled: {ussr_roll}, Modifer = {modifier}, Difference = {difference}')
 
@@ -231,34 +231,40 @@ class GameMap:
         if side == Side.USSR and self[name].control == Side.US:
             # here we deduct 2 from effective_ops, to place 1 influence in the country, and then call the function again
             if effective_ops >= 2:
-                self[name].change_influence(0, 1)
+                self[name].change_influence(1, 0)
             else:
                 raise ValueError('Not enough operations points!')
             if effective_ops - 2 > 0:
                 self.place_influence(name, side, effective_ops - 2)
         elif side == Side.US and self[name].control == Side.USSR:
             if effective_ops >= 2:
-                self[name].change_influence(1, 0)
+                self[name].change_influence(0, 1)
             else:
                 raise ValueError('Not enough operations points!')
             if effective_ops - 2 > 0:
                 self.place_influence(name, side, effective_ops - 2)
         else:
             if side == Side.US:
-                self[name].change_influence(effective_ops, 0)
-            elif side == Side.USSR:
                 self[name].change_influence(0, effective_ops)
+            elif side == Side.USSR:
+                self[name].change_influence(effective_ops, 0)
             else:
                 raise ValueError('side must be \'us\' or \'ussr\'!')
 
-    def change_influence(self, name: str, ussr_influence: int, us_influence: int):
-        self[name].change_influence(ussr_influence, us_influence)
+    # these functions have slightly different syntax from the Country ones, if you want to use them
+    # you should preferably call the country methods directly, but these can be more elegant
+    def change_influence(self, name: str, side: Side, influence: int):
+        if side == Side.USSR:
+            self[name].change_influence(influence, 0)
+        elif side == Side.US:
+            self[name].change_influence(0, influence)
 
-    def reset_influence(self, name: str, ussr_influence: int, us_influence: int):
-        self[name].reset_influence(ussr_influence, us_influence)
-
-    def set_influence(self, name: str, us_influence: int, ussr_influence: int):
-        self[name].set_influence(ussr_influence, us_influence)
+    def set_influence(self, name: str, side: Side, influence: int):
+        if side == Side.USSR:
+            self[name].set_influence(influence, self[name].influence[Side.US])
+        elif side == Side.US:
+            self[name].set_influence(
+                self[name].influence[Side.USSR], influence)
 
 
 class Country:
@@ -296,7 +302,7 @@ class Country:
             return True
         else:
             return False
-        
+
     @property
     def has_ussr_influence(self):
         if self.influence[Side.USSR] > 0:
@@ -321,6 +327,10 @@ class Country:
     def change_influence(self, ussr_influence: int, us_influence: int):
         self.influence[Side.US] += us_influence
         self.influence[Side.USSR] += ussr_influence
+        if self.influence[Side.US] < 0:
+            self.influence[Side.US] = 0
+        if self.influence[Side.USSR] < 0:
+            self.influence[Side.USSR] = 0
 
 
 USSR = {
