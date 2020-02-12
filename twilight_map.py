@@ -289,6 +289,13 @@ class Country:
         else:
             return False
 
+    @property
+    def has_us_influence(self):
+        if self.influence[Side.US] > 0:
+            return True
+        else:
+            return False
+
     def __repr__(self):
         if self.info.stability == 0:
             return f'Country({self.info.name}, Superpower = True, Adjacent = {self.info.adjacent_countries})'

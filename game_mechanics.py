@@ -46,6 +46,7 @@ class Game:
 
         self.stage_list = [self.map.build_standard, self.deal, self.put_start_USSR,
                            self.put_start_US, self.put_start_extra, self.joint_choose_headline]
+
         self.ar6 = [self.select_card_and_action for i in range(12)]
         self.ar6.append(self.end_of_turn)
         self.ar7 = [self.select_card_and_action for i in range(14)]
@@ -99,7 +100,8 @@ class Game:
 
         available_list_values = [
             str(self.map[n].info.country_index) for n in available_list]
-        guide_msg = f'You may modify {ops} influence in these countries. Type in their country indices, separated by commas (no spaces).'
+        verb = 'add' if positive else 'remove'
+        guide_msg = f'You may {verb} {ops} influence in these countries. Type in their country indices, separated by commas (no spaces).'
         guide_msg_all = f'You may remove influence completely in these countries. Type in their country indices, separated by commas (no spaces).'
         rejection_msg = f'Please key in {ops} comma-separated values.'
 
@@ -123,7 +125,7 @@ class Game:
             is_input_singular = True if can_split else (
                 len(set(user_choice)) == 1)
             is_input_limited = True if limit == None else max(
-                user_choice.count(x) for x in set(user_choice)) > limit
+                user_choice.count(x) for x in set(user_choice)) >= limit
 
             if all:
                 if is_input_all_available:
@@ -459,9 +461,7 @@ class Game:
         hand = self.hand[side]
         if card == 'The_China_Card':
             self.move_china_card(side, card)
-        elif space:
-            self.discard_pile.append(hand.pop(hand.index(card)))
-        elif side != card.info.owner.opp:
+        elif space or side != card.info.owner.opp:
             self.discard_pile.append(hand.pop(hand.index(card)))
         elif side == card.info.owner.opp:
             card_treatment = self.trigger_event(card.info.name)
@@ -639,7 +639,7 @@ class Game:
 
     def select_multiple(self, statements: list, side: Side):
         '''
-        The player is given a choice of two options.
+        The player is given a choice of options from statements.
         '''
         guide_msg = f'You may discard a card. Type in the card index.'
         rejection_msg = f'Please key in a single value.'
@@ -983,7 +983,12 @@ class Game:
         pass
 
     def _Socialist_Governments(self):
-        event_influence()
+        western_europe = [
+            n for n in CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE]]
+        available_list = [
+            self.map[country_name].info.name for country_name in western_europe if self.map[country_name].has_us_influence]
+        self.event_influence(Side.USSR, 3, available_list,
+                             can_split=True, positive=False, limit=2)
 
     def _Fidel(self):
         cuba = self.map['Cuba']
@@ -994,7 +999,10 @@ class Game:
         pass
 
     def _Blockade(self):
-        self.may_discard_card(Side.US, blockade=True)
+        result = self.may_discard_card(Side.US, blockade=True)
+        if result == 'did not discard':
+            west_germany = self.map['West_Germany']
+            west_germany.set_influence(0, west_germany.influence[Side.USSR])
         return 'remove'
 
     def _Korean_War(self):
