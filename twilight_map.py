@@ -80,24 +80,24 @@ class GameMap:
         return country_list
 
     def build_standard(self):
-        self['USSR'].set_influence(0, 999)
-        self['North_Korea'].set_influence(0, 3)
-        self['East_Germany'].set_influence(0, 3)
-        self['Finland'].set_influence(0, 1)
-        self['Syria'].set_influence(0, 1)
-        self['Iraq'].set_influence(0, 1)
+        self['USSR'].set_influence(999, 0)
+        self['North_Korea'].set_influence(3, 0)
+        self['East_Germany'].set_influence(3, 0)
+        self['Finland'].set_influence(1, 0)
+        self['Syria'].set_influence(1, 0)
+        self['Iraq'].set_influence(1, 0)
 
-        self['US'].set_influence(999, 0)
-        self['Australia'].set_influence(4, 0)
-        self['Philippines'].set_influence(1, 0)
-        self['Canada'].set_influence(2, 0)
-        self['UK'].set_influence(5, 0)
-        self['Panama'].set_influence(1, 0)
-        self['Israel'].set_influence(1, 0)
-        self['Iran'].set_influence(1, 0)
-        self['South_Korea'].set_influence(1, 0)
-        self['Japan'].set_influence(1, 0)
-        self['South_Africa'].set_influence(1, 0)
+        self['US'].set_influence(0, 999)
+        self['Australia'].set_influence(0, 4)
+        self['Philippines'].set_influence(0, 1)
+        self['Canada'].set_influence(0, 2)
+        self['UK'].set_influence(0, 5)
+        self['Panama'].set_influence(0, 1)
+        self['Israel'].set_influence(0, 1)
+        self['Iran'].set_influence(0, 1)
+        self['South_Korea'].set_influence(0, 1)
+        self['Japan'].set_influence(0, 1)
+        self['South_Africa'].set_influence(0, 1)
         return
 
     def can_coup(self, game_instance, name: str, side: Side):
@@ -251,13 +251,14 @@ class GameMap:
             else:
                 raise ValueError('side must be \'us\' or \'ussr\'!')
 
-    def change_influence(self, name: str, us_influence: int, ussr_influence: int):
-        self[name].influence[Side.US] += us_influence
-        self[name].influence[Side.USSR] += ussr_influence
+    def change_influence(self, name: str, ussr_influence: int, us_influence: int):
+        self[name].change_influence(ussr_influence, us_influence)
+
+    def reset_influence(self, name: str, ussr_influence: int, us_influence: int):
+        self[name].reset_influence(ussr_influence, us_influence)
 
     def set_influence(self, name: str, us_influence: int, ussr_influence: int):
-        self[name].influence[Side.US] = us_influence
-        self[name].influence[Side.USSR] = ussr_influence
+        self[name].set_influence(ussr_influence, us_influence)
 
 
 class Country:
@@ -300,9 +301,9 @@ class Country:
         if self.info.stability == 0:
             return f'Country({self.info.name}, Superpower = True, Adjacent = {self.info.adjacent_countries})'
         else:
-            return f'Country({self.info.name}, \nRegion \t\t= {self.info.regions}, \nStability \t= {self.info.stability}, \nBattleground \t= {self.info.battleground}, \nAdjacent \t= {self.info.adjacent_countries}, \nUS_influence \t= {self.influence[Side.US]}, {self.us_influence_only}\nUSSR_influence \t= {self.influence[Side.USSR]}, {self.ussr_influence_only}\nControl \t= {self.control}'
+            return f'Country({self.info.name}, \nUS_influence \t= {self.influence[Side.US]}, {self.us_influence_only}\nUSSR_influence \t= {self.influence[Side.USSR]}, {self.ussr_influence_only}\nControl \t= {self.control}'
 
-    def set_influence(self, us_influence, ussr_influence):
+    def set_influence(self, ussr_influence, us_influence):
         self.influence[Side.US] = us_influence
         self.influence[Side.USSR] = ussr_influence
 
@@ -310,7 +311,7 @@ class Country:
         self.influence[Side.US] = 0
         self.influence[Side.USSR] = 0
 
-    def change_influence(self, us_influence: int, ussr_influence: int):
+    def change_influence(self, ussr_influence: int, us_influence: int):
         self.influence[Side.US] += us_influence
         self.influence[Side.USSR] += ussr_influence
 
