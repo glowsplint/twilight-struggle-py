@@ -864,17 +864,21 @@ class Game:
                              'Yuri_and_Samantha', 'Iran_Contra_Scandal']
             either_clearing = ['Red_Scare_Purge',
                                'Cuban_Missile_Crisis', 'Salt_Negotiations', 'Latin_American_Death_Squads']
-           for item in ussr_clearing:
-               if item in self.basket[Side.USSR]:
-                   self.removed_pile.append(self.basket[Side.US].pop(self.basket[Side.US].index(item)))
+            for item in ussr_clearing:
+                if item in self.basket[Side.USSR]:
+                    self.removed_pile.append(self.basket[Side.US].pop(
+                        self.basket[Side.US].index(item)))
             for item in us_clearing:
                 if item in self.basket[Side.US]:
-                    self.removed_pile.append(self.basket[Side.US].pop(self.basket[Side.US].index(item)))
+                    self.removed_pile.append(self.basket[Side.US].pop(
+                        self.basket[Side.US].index(item)))
             for item in either_clearing:
                 if item in self.basket[Side.USSR]:
-                    self.removed_pile.append(self.basket[Side.USSR].pop(self.basket[Side.US].index(item)))
+                    self.removed_pile.append(self.basket[Side.USSR].pop(
+                        self.basket[Side.US].index(item)))
                 elif item in self.basket[Side.US]:
-                    self.removed_pile.append(self.basket[Side.US].pop(self.basket[Side.US].index(item)))
+                    self.removed_pile.append(self.basket[Side.US].pop(
+                        self.basket[Side.US].index(item)))
 
         # 1. Check milops
         def check_milops(self):
