@@ -278,7 +278,8 @@ class Game:
             rejection_msg = f'Please key in a single value.'
 
             while True:
-                available_list = [card.info.name for card in hand]
+                available_list = [
+                    card.info.name for card in hand if card.is_playable]
                 available_list_values = [
                     str(self.cards[n].info.card_index) for n in available_list]
 
@@ -323,9 +324,11 @@ class Game:
             elif card == 'Socialist_Governments':
                 return False if 'The_Iron_Lady' in self.basket[Side.US] else True
             elif card == 'OPEC':
-                return False if 'North_Sea_Oil' in self.basket[Side.US] else True
+                return False if 'North_Sea_Oil' in self.basket[Side.US] or 'North_Sea_Oil' in self.removed_pile else True
             elif card == 'The_Cambridge_Five':
                 return False if self.turn_track >= 8 else True
+            elif card == 'Willy_Brandt':
+                return False if 'Tear_Down_This_Wall' in self.basket[Side.US] else True
             elif card == 'Muslim_Revolution':
                 return False if 'AWACS_Sale_to_Saudis' in self.basket[Side.US] else True
             else:
@@ -383,6 +386,7 @@ class Game:
             'Space': 5,
         }
 
+        # is_event_resolved is used to check if the player previously selected 'resolve_event_first'
         def select_action(self, side: Side, card: Card, is_event_resolved=False):
             if card.info.type == 'Scoring':
                 self.trigger_event(side, card.info.name)
@@ -836,7 +840,7 @@ class Game:
         if self.turn_track == 1 and self.ar_track == 1:
             # self.hand[Side.USSR].append(self.cards.early_war.pop(
                 # self.cards.early_war.index('Asia_Scoring')))  # for testing of specific cards
-            self.hand[Side.USSR].extend([self.cards.early_war.pop(0)
+            self.hand[Side.USSR].extend([self.cards.early_war.pop(i)
                                          for i in range(18)])
             self.hand[Side.US].extend([self.cards.early_war.pop(0)
                                        for i in range(18)])
@@ -854,6 +858,24 @@ class Game:
     # need to make sure next_turn is only called after all extra rounds
     def end_of_turn(self):
         # played at the end of last US action round within turn
+        def clear_baskets(self):
+            us_clearing = ['Containment', 'Nuclear_Subs', 'Chernobyl']
+            ussr_clearing = ['Vietnam_Revolts', 'Brezhnev_Doctrine',
+                             'Yuri_and_Samantha', 'Iran_Contra_Scandal']
+            either_clearing = ['Red_Scare_Purge',
+                               'Cuban_Missile_Crisis', 'Salt_Negotiations', 'Latin_American_Death_Squads']
+           for item in ussr_clearing:
+               if item in self.basket[Side.USSR]:
+                   self.removed_pile.append(self.basket[Side.US].pop(self.basket[Side.US].index(item)))
+            for item in us_clearing:
+                if item in self.basket[Side.US]:
+                    self.removed_pile.append(self.basket[Side.US].pop(self.basket[Side.US].index(item)))
+            for item in either_clearing:
+                if item in self.basket[Side.USSR]:
+                    self.removed_pile.append(self.basket[Side.USSR].pop(self.basket[Side.US].index(item)))
+                elif item in self.basket[Side.US]:
+                    self.removed_pile.append(self.basket[Side.US].pop(self.basket[Side.US].index(item)))
+
         # 1. Check milops
         def check_milops(self):
             milops_diff = self.milops_track - self.defcon_track
@@ -1111,7 +1133,7 @@ class Game:
             self._War('Pakistan', side)
 
     def _Containment(self, side):
-        return self.removed_pile
+        return self.basket[Side.US]
 
     def _CIA_Created(self, side):
         pass
@@ -1270,6 +1292,7 @@ class Game:
         pass
 
     def _Willy_Brandt(self, side):
+        # interaction with nato not implemented
         pass
 
     def _Muslim_Revolution(self, side):
@@ -1405,6 +1428,11 @@ class Game:
         pass
 
     def _Tear_Down_This_Wall(self, side):
+        if 'Willy_Brandt' in self.basket[Side.USSR]:
+            self.removed_pile.append(self.basket[Side.USSR].pop(
+                self.basket[Side.USSR].index('Willy_Brandt')))
+        self.change_vp(1)
+        self.map['West_Germany'].change_influence(1, 0)
         pass
 
     def _An_Evil_Empire(self, side):
