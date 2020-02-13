@@ -335,7 +335,7 @@ class Game:
                 return True if card.info.owner != side.opp else False
 
         def can_resolve_event_first(self, side: Side, card: Card):
-            return True if card.info.owner == side.opp else False
+            return True if card.info.owner == side.opp else can_play_event(self, side, card)
 
         def can_place_influence(self, side: Side, card: Card):
             return False if card.info.ops == 0 else True
@@ -718,52 +718,59 @@ class Game:
     def cuba_missile_remove(self):
         pass
 
-    def space(self, side: Side, card: Card, event=False):
+    '''This is the action of spacing a card.'''
+    def space(self, side: Side, card: Card):
         if self.space_track[side] in [0, 2, 4, 6]:
             modifier = 0
         elif self.space_track[side] in [1, 3, 5]:
             modifier = -1
         else:
             modifier = 1
-
-        y = side.vp_mult  # multiplier for VP - gives 1 for USSR and -1 for US
         roll = random.randint(1, 6)
+        
         if roll + modifier <= 3:
-            self.space_track[side] += 1
+            self.change_space(side, 1)
             print(f'Success with roll of {roll}.')
-
-            if self.space_track[side] == 1:
-                if self.space_track[side.opp] < 1:
-                    self.change_vp(2 * y)
-                else:
-                    self.change_vp(y)
-
-            elif self.space_track[side] == 3:
-                if self.space_track[side.opp] < 3:
-                    self.change_vp(2 * y)
-
-            elif self.space_track[side] == 5:
-                if self.space_track[side.opp] < 5:
-                    self.change_vp(3 * y)
-                else:
-                    self.change_vp(y)
-
-            elif self.space_track[side] == 7:
-                if self.space_track[side.opp] < 7:
-                    self.change_vp(4 * y)
-                else:
-                    self.change_vp(2 * y)
-
-            elif self.space_track[side] == 8:
-                if self.space_track[side.opp] < 8:
-                    self.change_vp(2 * y)
-
         else:
             print(f'Failure with roll of {roll}.')
-
+        
         self.spaced_turns[side] += 1
-        self.dispose_card(side, card, space=True)
+        self.dispose_card(side, card, space=True)            
+            
+    '''This is a function used in space race events.'''
+    def change_space(self, side: Side, n: int):
 
+        y = side.vp_mult  # multiplier for VP - gives 1 for USSR and -1 for US
+        self.space_track[side] += n
+        
+        if self.space_track[side] == 1:
+            if self.space_track[side.opp] < 1:
+                self.change_vp(2 * y)
+            else:
+                self.change_vp(y)
+
+        elif self.space_track[side] == 3:
+            if self.space_track[side.opp] < 3:
+                self.change_vp(2 * y)
+
+        elif self.space_track[side] == 5:
+            if self.space_track[side.opp] < 5:
+                self.change_vp(3 * y)
+            else:
+                self.change_vp(y)
+
+        elif self.space_track[side] == 7:
+            if self.space_track[side.opp] < 7:
+                self.change_vp(4 * y)
+            else:
+                self.change_vp(2 * y)
+
+        elif self.space_track[side] == 8:
+            if self.space_track[side.opp] < 8:
+                self.change_vp(2 * y)
+
+                
+                
     # to add game terminate functionality EndGame()
 
     def change_vp(self, n: int):  # positive for ussr
@@ -1109,7 +1116,7 @@ class Game:
         return self.removed_pile
 
     def _Captured_Nazi_Scientist(self, side):
-        pass
+        self.change_space(side, 1)
 
     def _Truman_Doctrine(self, side):
         pass
@@ -1381,6 +1388,7 @@ class Game:
         return self.discard_pile
 
     def _One_Small_Step(self, side):
+        self.change_space(side, 2)
         pass
 
     def _South_America_Scoring(self, side):
