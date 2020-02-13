@@ -17,15 +17,7 @@ class Game:
     # which would be useful for non-committed actions and possibly
     # the AI depending on how you do it.
     main = None
-    action = {
-        'PlayEvent': 0,
-        'ResolveEventFirst': 1,
-        'PlaceInfluence': 2,
-        'Realignment': 3,
-        'Coup': 4,
-        'Space': 5,
-    }
-
+        
     def __init__(self):
         self.handicap = -2  # positive in favour of ussr
         self.vp_track = 0  # positive for ussr
@@ -41,7 +33,10 @@ class Game:
 
         self.map = GameMap()
         self.cards = GameCards()
-        self.ui = UI(self)
+        
+        # interfacing with the UI
+        self.state = 
+        
 
         self.hand = [[], []]  # ussr, us hands; list of 2 lists of Card objects
         self.removed_pile = []
