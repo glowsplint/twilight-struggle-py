@@ -325,7 +325,7 @@ class Game:
             return True if card.info.owner != side.opp else False
 
     def can_resolve_event_first(self, side: Side, card: Card):
-        return True if card.info.owner == side.opp else self.can_play_event(self, side, card)
+        return True if card.info.owner == side.opp else self.can_play_event(side, card)
 
     def can_place_influence(self, side: Side, card: Card):
         return False if card.info.ops == 0 else True
@@ -386,7 +386,6 @@ class Game:
         self.ar_track += 1
 
     # is_event_resolved is used to check if the player previously selected 'resolve_event_first'
-
     def select_action(self, side: Side, card: Card, is_event_resolved=False):
         if card.info.type == 'Scoring':
             self.trigger_event(side, card.info.name)
@@ -416,19 +415,6 @@ class Game:
                     break
 
                 if len(set(user_choice) - set(available_list_values)) == 0:
-                    if is_event_resolved:
-                        if int(user_choice[0]) == 2:
-                            self.card_operation_influence(
-                                side, card, is_event_resolved=True)
-                        elif int(user_choice[0]) == 3:
-                            self.card_operation_realignment(
-                                side, card, is_event_resolved=True)
-                        elif int(user_choice[0]) == 4:
-                            self.card_operation_coup(
-                                side, card, is_event_resolved=True)
-                        elif int(user_choice[0]) == 5:
-                            self.space(side, card)
-
                     if int(user_choice[0]) == 0:
                         self.trigger_event(side, card.info.name)
                     elif int(user_choice[0]) == 1:
@@ -436,11 +422,14 @@ class Game:
                         self.select_action(side, card,
                                            is_event_resolved=True)
                     elif int(user_choice[0]) == 2:
-                        self.card_operation_influence(side, card)
+                        self.card_operation_influence(
+                            side, card, is_event_resolved=is_event_resolved)
                     elif int(user_choice[0]) == 3:
-                        self.card_operation_realignment(side, card)
+                        self.card_operation_realignment(
+                            side, card, is_event_resolved=is_event_resolved)
                     elif int(user_choice[0]) == 4:
-                        self.card_operation_coup(side, card)
+                        self.card_operation_coup(
+                            side, card, is_event_resolved=is_event_resolved)
                     elif int(user_choice[0]) == 5:
                         self.space(side, card)
                     break
@@ -948,6 +937,7 @@ class Game:
         # 8. Headline Phase
 
         # 9. Action Rounds (advance round marker) -- action rounds are not considered between turns
+        clear_baskets(self)
         check_milops(self)
         check_for_scoring_cards(self)
         flip_china_card(self)
@@ -1087,8 +1077,10 @@ class Game:
         return self.discard_pile
 
     def _COMECON(self, side):
-        available_list = [
+        eastern_europe = [
             n for n in CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE]]
+        available_list = [
+            name for name in eastern_europe if self.map[name].control != Side.US]
         self.event_influence(Side.USSR, 4, available_list,
                              can_split=True, positive=True, limit=1)
         return self.removed_pile
