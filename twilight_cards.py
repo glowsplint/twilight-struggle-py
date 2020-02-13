@@ -1399,6 +1399,21 @@ AWACS_Sale_to_Saudis = {
 }
 
 
+Blank_4_Op_Card = {
+    'name': 'Blank_4_Op_Card',
+    'type': 'Template',
+    'stage': 'Template',
+    'card_index': 111,
+    'optional_card': False,
+    'ops': 4,
+    'owner': 'NEUTRAL',
+    'event_text': 'This is a blank card worth 4 operations points used when the Olympic Games sponsor\'s opposing player chooses to boycott the Event.',
+    'remove_if_used_as_event': False,
+}    
+
+
+
+
 Asia_Scoring = CardInfo(**Asia_Scoring)
 Europe_Scoring = CardInfo(**Europe_Scoring)
 Middle_East_Scoring = CardInfo(**Middle_East_Scoring)
@@ -1510,3 +1525,4 @@ Solidarity = CardInfo(**Solidarity)
 Iran_Iraq_War = CardInfo(**Iran_Iraq_War)
 Yuri_and_Samantha = CardInfo(**Yuri_and_Samantha)
 AWACS_Sale_to_Saudis = CardInfo(**AWACS_Sale_to_Saudis)
+Blank_4_Op_Card = CardInfo(**Blank_4_Op_Card)

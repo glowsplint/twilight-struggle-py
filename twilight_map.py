@@ -142,7 +142,7 @@ class GameMap:
             print(
                 f'Coup successful with roll of {die_roll}. Difference: {difference}')
         else:
-            print(f'Coup failed with roll of {die_roll}')
+            print(f'Coup failed with roll of {die_roll}.')
 
         if country.info.battleground:
             game_instance.change_defcon(-1)
