@@ -294,7 +294,7 @@ class Game:
             else:
                 print('\nYour input cannot be accepted.')
 
-    def can_play_event(self, side: Side, card: Card):
+    def can_play_event(self, side: Side, card: Card, resolve_check=False):
         hand = self.hand[side]
         if card == 'Blank_4_Op_Card':
             return False
@@ -322,10 +322,13 @@ class Game:
         elif card == 'Muslim_Revolution':
             return False if 'AWACS_Sale_to_Saudis' in self.basket[Side.US] else True
         else:
-            return True if card.info.owner != side.opp else False
+            if resolve_check:
+                return False if card.info.owner == Side.NEUTRAL else True
+            else:
+                return True if card.info.owner != side.opp else False
 
     def can_resolve_event_first(self, side: Side, card: Card):
-        return True if card.info.owner == side.opp else self.can_play_event(side, card)
+        return False if card.info.owner == side else self.can_play_event(side, card, resolve_check=True)
 
     def can_place_influence(self, side: Side, card: Card):
         return False if card.info.ops == 0 else True
@@ -415,10 +418,15 @@ class Game:
                     break
 
                 if len(set(user_choice) - set(available_list_values)) == 0:
+                    hand = self.hand[side]
                     if int(user_choice[0]) == 0:
-                        self.trigger_event(side, card.info.name)
+                        card_treatment = self.trigger_event(
+                            side, card.info.name)
+                        card_treatment.append(hand.pop(hand.index(card)))
                     elif int(user_choice[0]) == 1:
-                        self.trigger_event(side, card.info.name)
+                        card_treatment = self.trigger_event(
+                            side, card.info.name)
+                        card_treatment.append(hand.pop(hand.index(card)))
                         self.select_action(side, card,
                                            is_event_resolved=True)
                     elif int(user_choice[0]) == 2:
@@ -1030,7 +1038,7 @@ class Game:
 
     def _Fidel(self, side):
         cuba = self.map['Cuba']
-        cuba.set_influence(0, max(3, cuba.influence[Side.USSR]))
+        cuba.set_influence(max(3, cuba.influence[Side.USSR]), 0)
         return self.removed_pile
 
     def _Vietnam_Revolts(self, side):
@@ -1049,7 +1057,7 @@ class Game:
 
     def _Romanian_Abdication(self, side):
         romania = self.map['Romania']
-        romania.set_influence(0, max(3, romania.influence[Side.USSR]))
+        romania.set_influence(max(3, romania.influence[Side.USSR]), 0)
         return self.removed_pile
 
     def _War(self, country_name: str, side: Side, lower: int = 4, win_vp: int = 2, win_milops: int = 2):
@@ -1212,8 +1220,8 @@ class Game:
 
     def _US_Japan_Mutual_Defense_Pact(self, side):
         japan = self.map['Japan']
-        japan.set_influence(
-            japan.influence[Side.USSR] + 4, japan.influence[Side.USSR])
+        japan.set_influence(japan.influence[Side.USSR], max(
+            japan.influence[Side.USSR] + 4, japan.influence[Side.US]))
         return self.basket[Side.US]
         pass
 
