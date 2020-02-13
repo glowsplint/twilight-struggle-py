@@ -143,12 +143,12 @@ class Game:
                     for country_index in user_choice:
                         name = self.map.index_country_mapping[int(
                             country_index)]
-                        if ops == 4:
+                        if ops in [3,4]:
                             self.map[name].set_influence(
-                                0, self.map[name].influence[Side.USSR])  # hardcoded for warsaw and muslim revolution
+                                self.map[name].influence[Side.USSR], 0)  # hardcoded for warsaw and muslim revolution
                         elif ops == 1:
                             self.map[name].set_influence(
-                                self.map[name].influence[Side.US], 0)  # hardcoded for truman
+                                0, self.map[name].influence[Side.US])  # hardcoded for truman
                     break
 
             elif is_input_all_available and is_input_not_singular and is_input_not_limited:
@@ -1134,7 +1134,7 @@ class Game:
         available_list = [name for name in europe if (
             self.map[name].has_ussr_influence and self.map[name].control == Side.NEUTRAL)]
         self.event_influence(Side.US, 1, available_list,
-                             can_split=True, positive=True, all=True)
+                             can_split=True, positive=False, all=True)
         return self.removed_pile
 
     def _Olympic_Games(self, side):
@@ -1142,13 +1142,10 @@ class Game:
             'Participate and sponsor has modified die roll (+2).', 'Boycott: DEFCON level degrades by 1 and sponsor may conduct operations as if they played a 4 op card.']
         binary_outcome = self.select_multiple(side.opp, statements)
         if binary_outcome == 0:
-            sponsor_roll = random.randint(1, 6)
-            opp_roll = random.randint(1, 6)
-            if sponsor_roll + 2 - opp_roll > 0:
-                if side == Side.USSR:
-                    self.change_vp(2)
-                elif side == Side.US:
-                    self.change_vp(-2)
+            if random.uniform(0,1) < 13/16: # probability of eventer eventually winning
+                self.change_vp(2 * side.vp_mult)
+            else:
+                self.change_vp(-2 * side.vp_mult)
         elif binary_outcome == 1:
             self.change_defcon(-1)
             self.select_action(side, Card('Blank_4_Op_Card'))
@@ -1220,8 +1217,7 @@ class Game:
 
     def _US_Japan_Mutual_Defense_Pact(self, side):
         japan = self.map['Japan']
-        japan.set_influence(japan.influence[Side.USSR], max(
-            japan.influence[Side.USSR] + 4, japan.influence[Side.US]))
+        japan.set_influence(japan.influence[Side.USSR], max(japan.influence[Side.USSR] + 4, japan.influence[Side.US]))
         return self.basket[Side.US]
         pass
 

@@ -113,6 +113,8 @@ class GameMap:
 
         if 'NATO' in game_instance.basket[Side.US] and name in d4:
             return False
+        elif 'US_Japan_Mutual_Defense_Pact' in game_instance.basket[Side.US] and name == 'Japan':
+            return False
         elif game_instance.defcon_track == 4 and name in d4:
             return False
         elif game_instance.defcon_track == 3 and name in d3:
@@ -161,6 +163,8 @@ class GameMap:
         d2.extend(d3)
 
         if 'NATO' in game_instance.basket[Side.US] and name in d4:
+            return False
+        elif 'US_Japan_Mutual_Defense_Pact' in game_instance.basket[Side.US] and name == 'Japan':
             return False
         elif game_instance.defcon_track == 4 and name in d4:
             return False
