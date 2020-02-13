@@ -1402,7 +1402,7 @@ AWACS_Sale_to_Saudis = {
 Blank_4_Op_Card = {
     'name': 'Blank_4_Op_Card',
     'type': 'Template',
-    'stage': 'Early War',
+    'stage': 'Template',
     'card_index': 111,
     'optional_card': False,
     'ops': 4,
