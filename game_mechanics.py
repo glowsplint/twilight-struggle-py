@@ -45,8 +45,8 @@ class Game:
         self.headline_bin = [[], []]  # the inner lists are placeholders
 
         self.stage_list = [self.map.build_standard,
-                           self.deal]  # , self.put_start_USSR,
-        # self.put_start_US, self.put_start_extra, self.joint_choose_headline]
+                           self.deal, self.put_start_USSR,
+                           self.put_start_US, self.put_start_extra, self.joint_choose_headline]
 
         self.ar6 = [self.select_card_and_action for i in range(12)]
         self.ar6.append(self.end_of_turn)
@@ -104,7 +104,7 @@ class Game:
         verb = 'add' if positive else 'remove'
         guide_msg = f'You may {verb} {(late_war*EEU+1) * ops} influence in these countries. Type in their country indices, separated by commas (no spaces).'
         guide_msg_all = f'You may remove influence completely in {ops} of these countries. Type in their country indices, separated by commas (no spaces).'
-        limit_msg = 'You are limited to modifying {limit} influence per country.'
+        limit_msg = f'You are limited to modifying {limit} influence per country.'
         rejection_msg = f'Please key in {ops} comma-separated values.'
 
         while True:
@@ -578,7 +578,7 @@ class Game:
         '''
         Wrapper for triggering an event.
         Takes in a card_name and runs the associated card event function.
-        Returns the appropriate treatment of the card.
+        Returns the card_pile (list) the item should be appended to.
         '''
         return Game.card_function_mapping[card_name](self, side)
 
@@ -1124,8 +1124,13 @@ class Game:
         pass
 
     def _Marshall_Plan(self, side):
+        western_europe = [
+            n for n in CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE]]
+        available_list = [
+            country for country in western_europe if self.map[country].control != Side.USSR]
+        self.event_influence(Side.US, 7, available_list,
+                             can_split=True, positive=True, limit=1)
         return self.basket[Side.US]
-        pass
 
     def _Indo_Pakistani_War(self, side):
         statements = ['India',
@@ -1135,6 +1140,7 @@ class Game:
             self._War('India', side)
         elif binary_outcome == 1:
             self._War('Pakistan', side)
+        return self.discard_pile
 
     def _Containment(self, side):
         return self.basket[Side.US]
