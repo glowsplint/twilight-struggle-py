@@ -104,6 +104,7 @@ class Game:
         verb = 'add' if positive else 'remove'
         guide_msg = f'You may {verb} {(late_war*EEU+1) * ops} influence in these countries. Type in their country indices, separated by commas (no spaces).'
         guide_msg_all = f'You may remove influence completely in {ops} of these countries. Type in their country indices, separated by commas (no spaces).'
+        limit_msg = 'You are limited to modifying {limit} influence per country.'
         rejection_msg = f'Please key in {ops} comma-separated values.'
 
         while True:
@@ -112,6 +113,8 @@ class Game:
                 print(guide_msg_all)
             else:
                 print(guide_msg)
+            if limit != None:
+                print(limit_msg)
             for available_name in available_list:
                 print(
                     f'{self.map[available_name].info.country_index}\t{self.map[available_name].info.name}')
@@ -125,7 +128,7 @@ class Game:
             is_input_not_singular = True if can_split else (
                 len(set(user_choice)) == 1)
             is_input_not_limited = True if limit == None else max(
-                user_choice.count(x) for x in set(user_choice)) >= limit
+                user_choice.count(x) for x in set(user_choice)) <= limit
 
             if all:
                 if is_input_all_available:
@@ -153,8 +156,7 @@ class Game:
                             self.map[name].change_influence(0, 1)
                         else:
                             if EEU and late_war:
-                                self.map[name].change_influence(
-                                    -min(2, self.map[name].influence[side.opp]), 0)
+                                self.map[name].change_influence(-2, 0)
                             else:
                                 self.map[name].change_influence(-1, 0)
                 break
@@ -200,9 +202,8 @@ class Game:
         rejection_msg = f'Please key in a single value.'
 
         while True:
-            filter = np.array([card.info.can_headline for card in hand])
-            cards_in_hand = np.array([card.info.name for card in hand])
-            available_list = cards_in_hand[filter]
+            available_list = [
+                card.info.name for card in hand if card.info.can_headline]
             available_list_values = [
                 str(self.cards[n].info.card_index) for n in available_list]
 
@@ -312,6 +313,21 @@ class Game:
                 my_cards_owners = np.array([item.info.owner for item in hand])
                 enemy = np.array([side.opp for item in hand])
                 return (my_cards_owners == enemy).sum() != 0
+            elif card == 'NATO':
+                return True if 'Warsaw_Pact_Formed' in self.basket[
+                    Side.US] or 'Marshall_Plan' in self.basket[Side.US] else False
+            elif card == 'Solidarity':
+                return False if 'John_Paul_II_Elected_Pope' in self.basket[Side.US] else True
+            elif card == 'Arab_Israeli_War':
+                return False if 'Camp_David_Accords' in self.basket[Side.US] else True
+            elif card == 'Socialist_Governments':
+                return False if 'The_Iron_Lady' in self.basket[Side.US] else True
+            elif card == 'OPEC':
+                return False if 'North_Sea_Oil' in self.basket[Side.US] else True
+            elif card == 'The_Cambridge_Five':
+                return False if self.turn_track >= 8 else True
+            elif card == 'Muslim_Revolution':
+                return False if 'AWACS_Sale_to_Saudis' in self.basket[Side.US] else True
             else:
                 return True if card.info.owner != side.opp else False
 
@@ -431,10 +447,8 @@ class Game:
         effective_ops = card.info.ops
 
         '''Generates the list of all possible countries that influence can be placed in.'''
-        filter = np.array([self.map.can_place_influence(
-            name, side, effective_ops) for name in self.map.ALL])
-        all_countries = np.array([name for name in self.map.ALL])
-        available_list = all_countries[filter]
+        available_list = [name for name in self.map.ALL if self.map.can_place_influence(
+            name, side, effective_ops)]
         available_list_values = [
             str(self.map[n].info.country_index) for n in available_list]
         guide_msg = f'You may add {effective_ops} influence in these countries. Type in their country indices, separated by commas (no spaces).'
@@ -484,10 +498,8 @@ class Game:
         rejection_msg = f'Please key in a single value.'
 
         while current_effective_ops > 0:
-            filter = np.array([self.map.can_realignment(
-                self, name, side) for name in self.map.ALL])
-            all_countries = np.array([name for name in self.map.ALL])
-            available_list = all_countries[filter]
+            available_list = np.array(
+                [name for name in self.map.ALL if self.map.can_realignment(self, name, side)])
             available_list_values = [
                 str(self.map[n].info.country_index) for n in available_list]
 
@@ -513,17 +525,15 @@ class Game:
     def card_operation_coup(self, side: Side, card: Card, restricted_list: list = None):
         '''
         Generates the list of all possible countries that can be couped.
-        restricted_list should be a list of country_names.
+        restricted_list further restricts the available_list; it should be a list of country_names.
+        It is intended for cards like Junta, Che, Ortega
         TODO: Does not currently check the player baskets for China Card and Vietnam effects.
         TODO: Latin American DS, Iran-contra
         '''
         current_effective_ops = self.get_global_effective_ops(
             side, card.info.ops)
 
-        filter = np.array([self.map.can_coup(
-            self, name, side) for name in self.map.ALL])
-        all_countries = np.array([name for name in self.map.ALL])
-        available_list = all_countries[filter]
+        available_list = [name for name in self.map.ALL if self.map.can_coup]
 
         if restricted_list != None:
             available_list = list(np.intersect1d(
@@ -572,7 +582,7 @@ class Game:
         giver = self.hand[side]
         receipient = self.hand[side.opp]
         receipient.append(giver.pop(giver.index(card)))
-        receipient[-1].can_play = False
+        receipient[-1].is_playable = False
 
     def get_global_effective_ops(self, side: Side, raw_ops: int):
         modifier = 0
@@ -867,10 +877,10 @@ class Game:
         def flip_china_card(self):
             if 'The_China_Card' in self.hand[Side.USSR]:
                 self.hand[Side.USSR][self.hand[Side.USSR].index(
-                    'The_China_Card')].can_play = True
+                    'The_China_Card')].is_playable = True
             elif 'The_China_Card' in self.hand[Side.US]:
                 self.hand[Side.US][self.hand[Side.US].index(
-                    'The_China_Card')].can_play = True
+                    'The_China_Card')].is_playable = True
 
         # 4. Advance turn marker
         def advance_turn_marker(self):
@@ -1049,8 +1059,6 @@ class Game:
         # will not offer the first option if there is no US influence
         eastern_europe = [
             n for n in CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE]]
-        have_us_influence = [
-            self.map[country].has_us_influence for country in eastern_europe]
         available_list = [
             country_name for country_name in eastern_europe if self.map[country_name].has_us_influence]
         if len(available_list) == 0:
@@ -1084,17 +1092,13 @@ class Game:
         pass
 
     def _NATO(self, side):
-        is_event_playable = True if 'Warsaw_Pact_Formed' in self.basket[
-            Side.US] or 'Marshall_Plan' in self.basket[Side.US] else False
-        if is_event_playable:
-            return self.basket[Side.US]
-        else:
-            return self.discard_pile
+        return self.basket[Side.US] if can_play_event(self, side, 'NATO') else self.discard_pile
 
     def _Independent_Reds(self, side):
         pass
 
     def _Marshall_Plan(self, side):
+        return self.basket[Side.US]
         pass
 
     def _Indo_Pakistani_War(self, side):
@@ -1306,6 +1310,7 @@ class Game:
         pass
 
     def _John_Paul_II_Elected_Pope(self, side):
+        return self.basket[Side.US]
         pass
 
     def _Latin_American_Death_Squads(self, side):
@@ -1359,6 +1364,7 @@ class Game:
         pass
 
     def _The_Iron_Lady(self, side):
+        return self.basket[Side.US]
         pass
 
     def _Reagan_Bombs_Libya(self, side):
@@ -1368,6 +1374,7 @@ class Game:
         pass
 
     def _North_Sea_Oil(self, side):
+        return self.basket[Side.US]
         pass
 
     def _The_Reformer(self, side):
@@ -1422,6 +1429,7 @@ class Game:
         pass
 
     def _AWACS_Sale_to_Saudis(self, side):
+        return self.basket[Side.US]
         pass
 
     card_function_mapping = {

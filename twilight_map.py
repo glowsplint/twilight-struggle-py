@@ -314,7 +314,7 @@ class Country:
         if self.info.stability == 0:
             return f'Country({self.info.name}, Superpower = True, Adjacent = {self.info.adjacent_countries})'
         else:
-            return f'Country({self.info.name}, \nUS_influence \t= {self.influence[Side.US]}, {self.us_influence_only}\nUSSR_influence \t= {self.influence[Side.USSR]}, {self.ussr_influence_only}\nControl \t= {self.control}'
+            return f'Country({self.info.name}, \nUS_influence\t= {self.influence[Side.US]}, {self.us_influence_only}\nUSSR_influence\t= {self.influence[Side.USSR]}, {self.ussr_influence_only}\nControl \t= {self.control}'
 
     def set_influence(self, ussr_influence, us_influence):
         self.influence[Side.US] = us_influence

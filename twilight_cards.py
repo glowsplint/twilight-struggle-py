@@ -79,7 +79,7 @@ class GameCards:
 class Card(CardInfo):
     def __init__(self, name):
         self.info = CardInfo.ALL[name]
-        self.can_play = True  # flipped means unavailable for use
+        self.is_playable = True  # flipped means unavailable for use
 
     def __repr__(self):
         if self.info.ops == 0:
