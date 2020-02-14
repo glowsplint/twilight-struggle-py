@@ -129,8 +129,18 @@ class GameMap:
         assert(self.can_coup(game_instance, name, side))
         country = self[name]
 
+        modifier = 0
+        ca = list(CountryInfo.REGION_ALL[MapRegion.CENTRAL_AMERICA])
+        sa = list(CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA])
+
+        if name in ca or name in sa:
+            if 'Latin_American_Death_Squads' in game_instance.basket[side]:
+                modifier += 1
+            elif 'Latin_American_Death_Squads' in game_instance.basket[side.opp]:
+                modifier -= 1
+
         die_roll = random.randint(1, 6)
-        difference = die_roll + effective_ops - country.info.stability * 2
+        difference = die_roll + effective_ops + modifier - country.info.stability * 2
 
         if difference > 0:
             if side == Side.USSR:
@@ -146,8 +156,11 @@ class GameMap:
         else:
             print(f'Coup failed with roll of {die_roll}.')
 
-        if country.info.battleground:
+        if country.info.battleground and 'Nuclear_Subs' not in game_instance.basket[Side.US]:
             game_instance.change_defcon(-1)
+
+        if side == Side.US and 'Yuri_and_Samantha' in game_instance.basket[Side.USSR]:
+            game_instance.change_vp(1)
 
         game_instance.change_milops(side, effective_ops)
 
@@ -185,6 +198,9 @@ class GameMap:
         country = self[name]
 
         modifier = 0  # net positive is in favour of US
+        if 'Iran_Contra_Scandal' in game_instance.basket[Side.USSR]:
+            modifier -= 1
+
         for adjacent_name in country.info.adjacent_countries:
             modifier += ((self[adjacent_name]).control == Side.US)
             modifier -= ((self[adjacent_name]).control == Side.USSR)
