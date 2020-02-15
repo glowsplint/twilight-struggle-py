@@ -271,6 +271,7 @@ class Game:
                 print('\nYour input cannot be accepted.')
 
     def can_play_event(self, side: Side, card: Card, resolve_check=False):
+        # side parameter should be the player who plays the card
         hand = self.hand[side]
         if card == 'Blank_4_Op_Card':
             return False
@@ -282,30 +283,37 @@ class Game:
             return (my_cards_owners == enemy).sum() != 0
         elif card == 'Defectors':
             return False
+        elif card == 'Special_Relationship':
+            return True if self.map['UK'].control == Side.US else False
+        elif card == 'NATO':
+            return True if 'Warsaw_Pact_Formed' in self.basket[
+                Side.US] or 'Marshall_Plan' in self.basket[Side.US] else False
         elif card == 'Kitchen_Debates':
-            all =
             us_count = [1 for n in self.map.ALL if self.map[n].control ==
                         Side.US and self.map[n].info.battleground == True]
             ussr_count = [1 for n in self.map.ALL if self.map[n].control ==
                           Side.USSR and self.map[n].info.battleground == True]
             return True if us_count > ussr_count else False
-        elif card == 'NATO':
-            return True if 'Warsaw_Pact_Formed' in self.basket[
-                Side.US] or 'Marshall_Plan' in self.basket[Side.US] else False
-        elif card == 'Solidarity':
-            return False if 'John_Paul_II_Elected_Pope' in self.basket[Side.US] else True
         elif card == 'Arab_Israeli_War':
             return False if 'Camp_David_Accords' in self.basket[Side.US] else True
-        elif card == 'Socialist_Governments':
-            return False if 'The_Iron_Lady' in self.basket[Side.US] else True
-        elif card == 'OPEC':
-            return False if 'North_Sea_Oil' in self.basket[Side.US] or 'North_Sea_Oil' in self.removed_pile else True
         elif card == 'The_Cambridge_Five':
             return False if self.turn_track >= 8 else True
-        elif card == 'Willy_Brandt':
-            return False if 'Tear_Down_This_Wall' in self.basket[Side.US] else True
+        elif card == 'Socialist_Governments':
+            return False if 'The_Iron_Lady' in self.basket[Side.US] else True
+        elif card == 'One_Small_Step':
+            return True if self.space_track[side] < self.space_track[side.opp] else False
         elif card == 'Muslim_Revolution':
             return False if 'AWACS_Sale_to_Saudis' in self.basket[Side.US] else True
+        elif card == 'OPEC':
+            return False if 'North_Sea_Oil' in self.basket[Side.US] or 'North_Sea_Oil' in self.removed_pile else True
+        elif card == 'Willy_Brandt':
+            return False if 'Tear_Down_This_Wall' in self.basket[Side.US] else True
+        elif card == 'Solidarity':
+            return False if 'John_Paul_II_Elected_Pope' in self.basket[Side.US] else True
+        elif card == 'Star_Wars':
+            return True if self.space_track[Side.US] > self.space_track[Side.USSR] else False
+        elif card == 'Wargames':
+            return True if self.defcon_track == 2 else False
         else:
             if resolve_check:
                 return False if card.info.owner == Side.NEUTRAL else True
@@ -460,6 +468,15 @@ class Game:
             modifier -= 1
         return min(max([raw_ops + modifier, 1]), 4)
 
+    def calculate_nato_countries(self):
+        europe = list(CountryInfo.REGION_ALL[MapRegion.EUROPE])
+        if 'NATO' in self.basket[Side.US]:
+            if 'De_Gaulle_Leads_France' in self.basket[Side.USSR]:
+                europe.remove('France')
+            if 'Willy_Brandt' in self.basket[Side.USSR]:
+                europe.remove('West_Germany')
+        return europe
+
     def trigger_event(self, side, card_name: str) -> str:
         '''
         Wrapper for triggering an event.
@@ -467,6 +484,12 @@ class Game:
         Returns the card_pile (list) the item should be appended to.
         '''
         return Game.card_function_mapping[card_name](self, side)
+
+    def choose_random_card(self, side: Side):
+        # side parameter should be the side that we take a random card from
+        # used for Terrorism, Grain_Sales_to_Soviets, Five_Year_Plan
+        # returns a random card (which needs to be placed)
+        return self.hand[side].pop(random.randint(1, len(self.hand[side])))
 
     '''Here we have different stages for card uses. These include the use of influence, operations points for coup or realignment, and also on the space race.'''
 
@@ -688,7 +711,7 @@ class Game:
 
     '''The following stages tend to be for cards that are a little more specific.'''
 
-    def select_multiple(self, side: Side, statements: list):
+    def select_multiple(self, side: Side, statements: list, values: list = None):
         '''
         The player is given a choice of options from statements.
         '''
@@ -698,20 +721,36 @@ class Game:
         available_list = statements
         available_list_values = [str(i) for i in range(len(statements))]
 
-        while True:
-            self.prompt_side(side)
-            print(guide_msg)
-            for i, available_name in enumerate(available_list):
-                print(f'{i}\t{available_name}')
+        if values == None:
+            while True:
+                self.prompt_side(side)
+                print(guide_msg)
+                for i, available_name in enumerate(available_list):
+                    print(f'{i}\t{available_name}')
 
-            user_choice = UI.ask_for_input(1, rejection_msg)
-            if user_choice == None:
-                break
+                user_choice = UI.ask_for_input(1, rejection_msg)
+                if user_choice == None:
+                    break
 
-            if len(set(user_choice) - set(available_list_values)) == 0:
-                return int(user_choice[0])
-            else:
-                print('\nYour input cannot be accepted.')
+                if len(set(user_choice) - set(available_list_values)) == 0:
+                    return int(user_choice[0])
+                else:
+                    print('\nYour input cannot be accepted.')
+        else:
+            while True:
+                self.prompt_side(side)
+                print(guide_msg)
+                for (available_name, i) in zip(available_list, values):
+                    print(f'{i}\t{available_name}')
+
+                user_choice = UI.ask_for_input(1, rejection_msg)
+                if user_choice == None:
+                    break
+
+                if len(set(user_choice) - set(values)) == 0:
+                    return int(user_choice[0])
+                else:
+                    print('\nYour input cannot be accepted.')
 
     def may_discard_card(self, side: Side, blockade=False):
         '''
@@ -759,6 +798,25 @@ class Game:
                 break
             else:
                 print('\nYour input cannot be accepted.')
+
+    def pick_from_discarded(self, side: Side):
+        # used for Star_Wars and Salt_Negotiations
+        # not sure if the interpretation for Star_Wars is a 'may' or a 'must'
+        # returns the selected card which needs to be placed somewhere
+        hand = self.hand[Side.US]
+        available_list = ['Do not take a card.']
+        available_list_values = ['0']
+        available_list.extend(
+            card.info.name for card in self.discard_pile if card.info.type != 'Scoring')
+        available_list_values.extend(
+            [str(self.cards[n].info.card_index) for n in available_list[1:]])
+        choice = self.select_multiple(
+            side, available_list, values=available_list_values)
+        if choice == 0:
+            return None
+        else:
+            name = self.cards.index_card_mapping[choice]
+            return hand.pop(hand.index(name))
 
     def forced_to_missile_envy(self):
         # check first if the player has as many scoring cards as turns
@@ -1120,7 +1178,7 @@ class Game:
 
     def _De_Gaulle_Leads_France(self, side):
         self.map['France'].change_influence(1, -2)
-        return self.basket[Side.USSR]  # for NATO cancellation effect
+        return self.basket[Side.USSR]
 
     def _Captured_Nazi_Scientist(self, side):
         self.change_space(side, 1)
@@ -1278,14 +1336,28 @@ class Game:
         pass
 
     def _Special_Relationship(self, side):
-        pass
+        if self.can_play_event(Side.US, 'Special_Relationship'):
+            if 'NATO' in self.basket[Side.US]:
+                available_list = list(
+                    CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE])
+                self.event_influence(
+                    Side.US, 2, available_list, can_split=False, positive=True)
+                self.change_vp(-2)
+            else:
+                available_list = self.map['UK'].info.adjacent_countries.copy()
+                self.event_influence(
+                    Side.US, 1, available_list, can_split=False, positive=True)
+        return self.discard_pile
 
     def _NORAD(self, side):
         pass
 
     def _Brush_War(self, side):
         # check NATO
-        pass
+        all = [n for n in self.map.ALL]
+        available_list = [n for n in all if self.map[n].info.stability <=
+                          2 and n not in self.calculate_nato_countries()]
+        return available_list
 
     def _Central_America_Scoring(self, side):
         self.score(MapRegion.CENTRAL_AMERICA, 1, 3, 5)
@@ -1536,7 +1608,7 @@ class Game:
         return self.discard_pile
 
     def _One_Small_Step(self, side):
-        if self.space_track[side] < self.space_track[side.opp]:
+        if can_play_event(side, 'One_Small_Step'):
             self.change_space(side, 2)
         return self.discard_pile
 
@@ -1569,7 +1641,13 @@ class Game:
         return self.discard_pile
 
     def _Star_Wars(self, side):
-        pass
+        if self.can_play_event(side, 'Star_Wars'):
+            self.pick_from_discarded(side)
+            # return self.removed_pile
+            return 1
+        else:
+            # return self.discard_pile
+            return 0
 
     def _North_Sea_Oil(self, side):
         return self.basket[Side.US]
@@ -1633,6 +1711,8 @@ class Game:
         return self.removed_pile
 
     def _Wargames(self, side):
+        if self.can_play_event(side, 'Wargames'):
+            pass
         pass
 
     def _Solidarity(self, side):
