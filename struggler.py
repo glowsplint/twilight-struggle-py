@@ -9,8 +9,7 @@
 import numpy as np
 import random
 
-from twilight_map import *
-from game_mechanics import *
+from twilight_ui import *
 from twilight_cards import *
 
 
@@ -20,8 +19,7 @@ from twilight_cards import *
 
 
 # this is a temporary measure. It should go into UI.new()
-g = Game()
-g.ui.run()
+UI().run()
 
 
 # In[3]:

@@ -48,6 +48,9 @@ class CountryInfo:
         for r in self.regions:
             CountryInfo.REGION_ALL[r].add(name)
 
+    def __deepcopy__(self, memo):
+        return self
+
 
 class GameMap:
 
@@ -62,6 +65,12 @@ class GameMap:
 
     def __getitem__(self, item):
         return self.ALL[item]
+
+    '''Returns list of names that have influence from side, less superpowers..'''
+    def has_influence(self, side: Side):
+        return map(lambda item: item[0],
+                   filter(lambda item: item[1].has_influence(side) and not item[1].info.superpower,
+                      self.ALL.items()))
 
     def has_us_influence(self):
         '''Returns list of names that have US influence, less superpowers..'''
@@ -293,6 +302,7 @@ class Country:
         self.info = CountryInfo.ALL[name]
         self.influence = [0, 0]  # ussr, then us influence
 
+
     @property
     def control(self):
         if self.influence[Side.US] - self.influence[Side.USSR] >= self.info.stability:
@@ -304,31 +314,22 @@ class Country:
 
     @property
     def us_influence_only(self):
-        if self.influence[Side.US] > 0 and self.influence[Side.USSR] == 0:
-            return True
-        else:
-            return False
+        return self.influence[Side.US] > 0 and self.influence[Side.USSR] == 0
 
     @property
     def ussr_influence_only(self):
-        if self.influence[Side.USSR] > 0 and self.influence[Side.US] == 0:
-            return True
-        else:
-            return False
+        return self.influence[Side.USSR] > 0 and self.influence[Side.US] == 0
+
+    def has_influence(self, side):
+        return self.influence[side]
 
     @property
     def has_us_influence(self):
-        if self.influence[Side.US] > 0:
-            return True
-        else:
-            return False
+        return self.influence[Side.US] > 0
 
     @property
     def has_ussr_influence(self):
-        if self.influence[Side.USSR] > 0:
-            return True
-        else:
-            return False
+        return self.influence[Side.USSR] > 0
 
     def __repr__(self):
         if self.info.stability == 0:
@@ -351,6 +352,9 @@ class Country:
             self.influence[Side.US] = 0
         if self.influence[Side.USSR] < 0:
             self.influence[Side.USSR] = 0
+
+    def increment_influence(self, side):
+        self.influence[side] += 1
 
 
 USSR = {

@@ -46,6 +46,9 @@ class CardInfo:
     def __eq__(self, other):
         return self.name == other
 
+    def __deepcopy__(self, memo):
+        return self
+
     def trigger_event_first(self):
         # only possible if opponent event
         # self.use_for_event()
@@ -76,7 +79,7 @@ class GameCards:
         return self.ALL[item]
 
 
-class Card(CardInfo):
+class Card():
     def __init__(self, name):
         self.info = CardInfo.ALL[name]
         self.is_playable = True  # flipped means unavailable for use

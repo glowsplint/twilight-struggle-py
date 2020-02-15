@@ -1,5 +1,5 @@
 import enum
-from typing import Iterable
+from typing import Iterable, Callable
 # you can now refer to USSR and US as Side.USSR / Side.US / Side.NEUTRAL
 # without concern about which is 0 and which is 1; also robust to
 # change any time.
@@ -86,35 +86,16 @@ class MapRegion(enum.IntEnum):
             return MapRegion.SOUTHEAST_ASIA
         else:
             raise NameError('Invalid string for MapRegion.fromStr')
-            
-            
-class GameInput():
 
-    class Type(enum.IntEnum):
-        
-        #params are ignored
-        COMMIT = 0  
-        DICE_ROLL = 1
-        
-        # these should have a list of text options.
-        SELECT_CARD_ACTION = 5 #Realign, coup, space, event, etc.
-        SELECT_CARD_IN_HAND = 4
-        SELECT_COUNTRY = 8
+class InputType(enum.IntEnum):
 
-    def __init__(self, side: Side, state: GameInput.Type, params: List[str], prompt=""):
-        self.side = side
-        self.state = state
-        self.params = params
-        self.prompt = prompt
-        
-    # Following here are some factory methods for standard required inputs.
-    @staticmethod
-    def Commit(side: Side):
-        return GameInput(side, GameInput.Type.COMMIT, [], "Commit your actions?")
-    
-    @staticmethod
-    def DiceRoll(side: Side):
-        return GameInput(side, GameInput.Type.DICE_ROLL, [], "You must now roll the dice. Commit your actions?")
+    COMMIT = 0
+    DICE_ROLL = 1
+
+    # these should have a list of text options.
+    SELECT_CARD_ACTION = 2  # Realign, coup, space, event, etc.
+    SELECT_CARD_IN_HAND = 3
+    SELECT_COUNTRY = 4
     
 
 class CardAction(enum.IntEnum):

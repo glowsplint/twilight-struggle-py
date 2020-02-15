@@ -1,3 +1,7 @@
+from game_mechanics import *
+from functools import reduce
+from copy import deepcopy
+
 class UI:
 
     help = '''
@@ -18,9 +22,11 @@ quit        Exit the game.
 
     ussr_prompt = '----- USSR Player: -----'
     us_prompt = '----- US Player: -----'
+    commit_options = ["yes", "no"]
 
-    def __init__(self, game_instance):
-        self.game = game_instance
+    def __init__(self):
+        self.game_rollback = None
+        self.game = Game()
 
     @staticmethod
     def ask_for_input(expected_number_of_arguments: int, rejection_msg: str, can_be_less=True):
@@ -45,29 +51,64 @@ quit        Exit the game.
                     return raw_input
             print(rejection_msg)
 
+    @property
+    def input_state(self) -> Game.Input:
+        return self.game.input_state
+
+    @property
+    def awaiting_commit(self):
+        return not self.game.input_state.reps
+
+    def prompt(self):
+
+        if self.input_state.side == Side.USSR:
+            print(UI.ussr_prompt)
+        elif self.input_state.side == Side.US:
+            print(UI.us_prompt)
+
+        print(self.input_state.prompt)
+
+        # print the already selected options
+        first = True
+        for k, v in self.input_state.selection.items():
+            for i in range(v):
+                if first:
+                    print("You have selected", k, end="")
+                    first = False
+                else:
+                    print(",", k, end="")
+        if not first: print() # newline
+
+        if self.input_state.reps_unit:
+            print(f"Remaining {self.input_state.reps_unit}: {self.input_state.reps}")
+
+        if self.awaiting_commit:
+            print("Commit your actions? (Yes/No)")
+        else:
+            print(f"Options: {', '.join(sorted(self.input_state.available_options))}")
+
     def run(self):
 
         print('Initalising game..')
         while True:
 
-            if len(self.game.stage_list) > 0:
-                if self.game.stage_list[-1]() == None:
-                    self.game.stage_list.pop()
-                    continue
-            else:
-                print('End of game.')
-                break
-
-            user_choice = UI.ask_for_input(1)
-            if user_choice == None:
-                break
+            user_choice = input("> ").split(" ", 1)
 
             if len(user_choice) == 1:
                 user_choice.append('')
 
             # parse the input
-            if user_choice[0].lower() == 'new':
-                print('Unimplemented')
+            if len(user_choice) == 0 or user_choice[0] == "?":
+                print(UI.help)
+
+            elif user_choice[0] == "quit" or user_choice[0] == "exit":
+                break
+
+            elif user_choice[0].lower() == 'new':
+                print("Starting new game.")
+                self.game.start()
+                self.game_rollback = deepcopy(self.game)
+                self.prompt()
 
             elif user_choice[0].lower() == 'c':
                 UI.parse_card(user_choice[1])
@@ -76,33 +117,55 @@ quit        Exit the game.
                 UI.parse_state(user_choice[1])
 
             elif user_choice[0].lower() == 'm':
-                UI.parse_move(user_choice[1])
+                self.parse_move(user_choice[1])
 
             else:
                 print('Invalid command. Enter ? for help.')
 
-    @staticmethod
-    def parse_move(comd):
+    def parse_move(self, comd):
 
         if comd == '':
-            print('Listing all moves.')
-            print('Unimplemented')
+            self.prompt()
             # Here you want to call some function to get all possible moves.
             # Each move should be deterministically assigned an ID (so it
             # can be referenced later).
-        elif comd == 'commit':
-            print('Game state advancing.')
-            # this is where you tell the game engine to lock in the currently
-            # selected move.
-            print('Unimplemented')
         else:
-            print('Making move ID %s' % comd)
-            # check moves to find the corresponding ID. If it's not found print
-            # an error message.
-            # Then, tell the game engine to make a temp move.
-            # or for now, we can just actually make the move with no takeback
-            # which means the commit command won't do anything.
-            print('Unimplemented')
+            comd = comd.lower()
+
+            if self.awaiting_commit:
+                if "yes".startswith(comd):
+                    self.game_rollback = deepcopy(self.game)
+                    self.game.stage_complete()
+                    self.prompt()
+                elif "no".startswith(comd):
+                    self.game = self.game_rollback
+                    print("Actions undone.")
+                    self.prompt()
+                else:
+                    print("Invalid input.")
+                    self.prompt()
+
+            else:
+
+                # this counts how many strings in the options start with the input
+                matched = None
+                for opt in self.input_state.available_options:
+                    if opt.lower().startswith(comd):
+                        if matched:
+                            # there is more than one match
+                            print("Error: multiple matching options!")
+                            self.prompt()
+                            return
+                        matched = opt
+
+                if not matched:
+                    print("Error: no matching option!")
+                    self.prompt()
+                    return
+
+                print(f"Selected: {matched}.")
+                self.input_state.recv(matched)
+                self.prompt()
 
     help_card = '''
 c           Display a list of cards in the current player's hand.

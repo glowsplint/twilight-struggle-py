@@ -1,11 +1,12 @@
 import math
 import random
 import numpy as np
+from functools import partial
+
 
 from twilight_enums import *
 from twilight_map import *
 from twilight_cards import *
-from twilight_ui import *
 
 
 class Game:
@@ -17,13 +18,55 @@ class Game:
     # which would be useful for non-committed actions and possibly
     # the AI depending on how you do it.
     main = None
-        
+
+    class Input():
+
+        def __init__(self, side: Side, state: InputType, callback: Callable[[str], bool],
+                     options: Iterable[str], prompt: str = "",
+                     reps=1, reps_unit: str = "", max_per_option=-1):
+            self.side = side
+            self.state = state
+            self.callback = callback
+            self.prompt = prompt
+            self.reps = reps
+            self.reps_unit = reps_unit
+            self.max_per_option = reps if max_per_option == -1 else max_per_option
+            self.selection = {k: 0 for k in options}
+
+        # Following here are some factory methods for standard required inputs.
+        @staticmethod
+        def Commit(side: Side, callback: Callable[[str], bool]):
+            return Game.Input(side, InputType.COMMIT, callback,
+                             ["Yes", "No"], "Commit your actions?")
+
+        @staticmethod
+        def DiceRoll(side: Side, callback: Callable[[str], bool]):
+            return Game.Input(side, InputType.DICE_ROLL, callback,
+                             ["Yes", "No"],
+                             "Commit your actions and roll the dice?")
+
+        def recv(self, input_str):
+            if input_str not in self.available_options:
+                return False
+            if self.callback(input_str):
+                self.selection[input_str] += 1
+                return True
+            else:
+                return False
+
+        @property
+        def available_options(self):
+            return map(lambda item: item[0],
+                       filter(lambda item: item[1] < self.max_per_option,
+                              self.selection.items()))
+
+
     def __init__(self):
-        self.handicap = -2  # positive in favour of ussr
         self.vp_track = 0  # positive for ussr
-        self.turn_track = 1
-        self.ar_track = 1  # increment by 1 for each side's action round
-        self.defcon_track = 5
+        self.turn_track = 0
+        self.ar_track = 0
+        self.ar_side = None
+        self.defcon_track = 0
         self.milops_track = np.array([0, 0])  # ussr first
 
         # 0 is start, 1 is earth satellite etc
@@ -31,12 +74,11 @@ class Game:
         self.spaced_turns = np.array([0, 0])
         self.extra_turn = [False, False]
 
-        self.map = GameMap()
-        self.cards = GameCards()
-        
+        self.map = None
+        self.cards = None
+
         # interfacing with the UI
-        self.state = 
-        
+        self.input_state = None
 
         self.hand = [[], []]  # ussr, us hands; list of 2 lists of Card objects
         self.removed_pile = []
@@ -47,25 +89,71 @@ class Game:
         self.basket = [[], []]
         self.headline_bin = [[], []]  # the inner lists are placeholders
 
-        '''Initialise game here.'''
-        self.map.build_standard()
-        self.deal()
-
-        self.stage_list = [self.put_start_USSR,
-                           self.put_start_US, self.put_start_extra, self.joint_choose_headline]
-
-        self.ar6 = [self.select_card_and_action for i in range(12)]
-        self.ar6.append(self.end_of_turn)
-        self.ar7 = [self.select_card_and_action for i in range(14)]
-        self.ar7.append(self.end_of_turn)
-        self.stage_list.extend([*self.ar6 * 3, *self.ar7 * 4])
-        self.stage_list.reverse()
-
         # For new set the first created game to be the actual ongoing game.
         if Game.main is None:
             Game.main = self
 
-    '''prompt_side serves to print the headers ----- USSR/US turn -----.'''
+
+    '''
+    Starts a new game.
+
+    '''
+    def start(self, handicap=-2):
+
+        self.vp_track = 0  # positive for ussr
+        self.turn_track = 1
+        self.ar_track = 0
+        self.ar_side = Side.USSR
+        self.defcon_track = 5
+        self.milops_track = np.array([0, 0])  # ussr first
+        self.started = True
+
+        self.defcon_track = 0
+        self.milops_track = np.array([0, 0])  # ussr first
+
+        # 0 is start, 1 is earth satellite etc
+        self.space_track = np.array([0, 0])
+        self.spaced_turns = np.array([0, 0])
+        self.extra_turn = [False, False]
+
+        self.map = GameMap()
+        self.cards = GameCards()
+
+        self.handicap = handicap  # positive in favour of ussr
+
+        self.stage_list = [
+            self.put_start_USSR,
+            self.put_start_US,
+            self.put_start_extra,
+            self.joint_choose_headline
+        ]
+
+        ar6 = [self.select_card_and_action for i in range(12)]
+        ar6.append(self.end_of_turn)
+        ar7 = [self.select_card_and_action for i in range(14)]
+        ar7.append(self.end_of_turn)
+        self.stage_list.extend([*ar6 * 3, *ar7 * 4])
+        self.stage_list.reverse()
+
+        self.map.build_standard()
+        self.deal()
+
+        self.stage_list[-1]()
+
+    '''
+    self.current returns current game stage.
+    self.stage_list returns the full list of stages. The list starts with the
+    last possible event, and ends with the current event. We pop items off the
+    list when they are resolved.
+    '''
+    @property
+    def current(self):
+        return self.stage_list[-1]
+
+    '''
+    Here, we define a few utility functions used frequently in the code below.
+    prompt_side serves to print the headers ----- USSR/US turn -----.
+    '''
     @staticmethod
     def prompt_side(side: Side):
         print()
@@ -73,6 +161,7 @@ class Game:
             print(UI.ussr_prompt)
         elif side == Side.US:
             print(UI.us_prompt)
+
 
     '''Here are functions used to manipulate the various tracks.'''
 
@@ -142,27 +231,67 @@ class Game:
     Here, we have the game initialisation stages.
     '''
 
+    def stage_complete(self):
+        self.stage_list.pop()
+        self.stage_list[-1]()
+
+    '''
+    event_influence_callback is used when a side is given the opportunity to modify influence.
+    Unlike card_operation_add_influence, this is mostly used for card events where the player has to choose
+    which regions in which to directly insert influence.
+
+    Examples of cards that use this function are: VOA, Decolonization, OAS_Founded, Junta.
+    available_list is the list of names that can be manipulated by the effect.
+    can_split is True for cards where the influence adjustment can be split like VOA. False for cards like Junta.
+    limit is the maximum influence adjustment that can be made to a single country. 2 for VOA, 1 for COMECON.
+    positive is True for positive adjustments like Decolonization, False for VOA.
+    all is True for Warsaw Pact removal, Muslim_Revolution, Truman Doctrine.
+    '''
+    def event_influence_callback(self, side, name):
+        self.input_state.reps -= 1
+        self.map[name].increment_influence(side)
+        return True
+
     def put_start_USSR(self):
-        available_list = [
-            n for n in CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE]]
-        self.event_influence(Side.USSR, 6, available_list,
-                             can_split=True, positive=True)
+        self.input_state = Game.Input(
+            Side.USSR, InputType.SELECT_COUNTRY,
+            partial(self.event_influence_callback, Side.USSR),
+            CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE],
+            prompt="Place starting influence.",
+            reps=6,
+            reps_unit="influence"
+        )
 
     def put_start_US(self):
-        available_list = [
-            n for n in CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE]]
-        self.event_influence(Side.US, 7, available_list,
-                             can_split=True, positive=True)
+
+        self.input_state = Game.Input(
+            Side.US, InputType.SELECT_COUNTRY,
+            partial(self.event_influence_callback, Side.US),
+            CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE],
+            prompt="Place starting influence.",
+            reps=7,
+            reps_unit="influence"
+        )
 
     def put_start_extra(self):
+
+        if self.handicap == 0:
+            self.stage_complete()
+            return
+
         if self.handicap < 0:
-            available_list = [*self.map.has_us_influence()]
-            self.event_influence(Side.US, -self.handicap,
-                                 available_list, can_split=True, positive=True)
+            side = Side.US
         elif self.handicap > 0:
-            available_list = [*self.map.has_ussr_influence()]
-            self.event_influence(Side.USSR, self.handicap,
-                                 available_list, can_split=True, positive=True)
+            side = Side.USSR
+
+        self.input_state = Game.Input(
+            side, InputType.SELECT_COUNTRY,
+            partial(self.event_influence_callback, side),
+            self.map.has_influence(side),
+            prompt="Place additional starting influence.",
+            reps=side.vp_mult * self.handicap,
+            reps_unit="influence"
+        )
 
     def joint_choose_headline(self):
         '''
@@ -174,7 +303,20 @@ class Game:
         self.choose_headline(Side.US)
         self.resolve_headline(type=Side.NEUTRAL)
 
+    def select_headline(self, side: Side, name: str):
+        self.hand.remove(name)
+        self.headline_bin[side].append(self.cards[name])
+
     def choose_headline(self, side: Side):
+        self.input_state = Game.Input(
+            side, InputType.SELECT_CARD_IN_HAND,
+            partial(self.select_headline, side),
+            self.map.has_influence(side),
+            prompt="Select headline.",
+            reps=1
+        )
+
+    def choose_headline_old(self, side: Side):
         hand = self.hand[side]
 
         guide_msg = f'You may headline any of these cards. Type in the card index.'
@@ -813,62 +955,51 @@ class Game:
         # modify top to use this function instead
         pass
 
+
     def deal(self):
-        def top_up_cards(self, n: int):
-            ussr_held = len(self.hand[Side.USSR])
-            us_held = len(self.hand[Side.US])
 
-            # Ignore China Card if it is in either hand
-            if 'The_China_Card' in self.hand[Side.USSR]:
-                ussr_held = len(self.hand[Side.USSR]) - 1
-            elif 'The_China_Card' in self.hand[Side.US]:
-                us_held = len(self.hand[Side.US]) - 1
-
-            # if turn 4, add mid war cards into draw pile and shuffle, same for turn 8 for late war cards
-            if self.turn_track == 4:
-                self.draw_pile.extend(self.cards.mid_war)
-                self.cards.mid_war = []
-                random.shuffle(self.draw_pile)
-            if self.turn_track == 8:
-                self.draw_pile.extend(self.cards.late_war)
-                self.cards.late_war = []
-                random.shuffle(self.draw_pile)
-
-            # exhaust the draw pile
-            while ussr_held < n or us_held < n:
-                # if draw pile exhausted, shuffle the discard pile and put it as the new draw pile
-                def recreate_draw_pile():
-                    if self.draw_pile == []:
-                        self.draw_pile = self.discard_pile
-                        self.discard_pile = []
-                        random.shuffle(self.draw_pile)
-                if ussr_held < n:
-                    self.hand[Side.USSR].extend([self.draw_pile.pop()])
-                    ussr_held += 1
-                    recreate_draw_pile()
-                if us_held < n:
-                    self.hand[Side.US].extend([self.draw_pile.pop()])
-                    us_held += 1
-                    recreate_draw_pile()
-
-        '''Pre-headline setup'''
-        if self.turn_track == 1 and self.ar_track == 1:
+        # if turn 4, add mid war cards into draw pile and shuffle, same for turn 8 for late war cards
+        if self.turn_track == 1:
             # self.hand[Side.USSR].append(self.cards.early_war.pop(
-                # self.cards.early_war.index('Asia_Scoring')))  # for testing of specific cards
-            self.hand[Side.USSR].extend([self.cards.early_war.pop(i)
-                                         for i in range(18)])
-            self.hand[Side.US].extend([self.cards.early_war.pop(0)
-                                       for i in range(18)])
+            # self.cards.early_war.index('Asia_Scoring')))  # for testing of specific cards
             self.draw_pile.extend(self.cards.early_war)
             self.cards.early_war = []
             random.shuffle(self.draw_pile)
-            top_up_cards(self, 8)
-        else:
-            if self.turn_track in [1, 2, 3]:
-                top_up_cards(self, 8)
-            else:
-                top_up_cards(self, 9)
-        return
+        if self.turn_track == 4:
+            self.draw_pile.extend(self.cards.mid_war)
+            self.cards.mid_war = []
+            random.shuffle(self.draw_pile)
+        if self.turn_track == 8:
+            self.draw_pile.extend(self.cards.late_war)
+            self.cards.late_war = []
+            random.shuffle(self.draw_pile)
+
+        if 1 <= self.turn_track <= 3: handsize_target = [8, 8]
+        else: handsize_target = [9, 9]
+
+        # TODO: FOR TESTING ONLY
+        if self.turn_track == 1: handsize_target = [10, 10]
+
+        # Ignore China Card if it is in either hand
+        if 'The_China_Card' in self.hand[Side.USSR]:
+            handsize_target[Side.USSR] += 1
+        elif 'The_China_Card' in self.hand[Side.US]:
+            handsize_target[Side.US] += 1
+
+        next_side = Side.USSR
+        while not list(map(len, self.hand)) == handsize_target:
+            if len(self.hand[next_side]) == handsize_target[next_side]:
+                next_side = next_side.opp
+                continue
+
+            self.hand[next_side].append(self.draw_pile.pop())
+            next_side = next_side.opp
+
+            if not self.draw_pile:
+                # if draw pile exhausted, shuffle the discard pile and put it as the new draw pile
+                self.draw_pile = self.discard_pile
+                self.discard_pile = []
+                random.shuffle(self.draw_pile)
 
     # need to make sure next_turn is only called after all extra rounds
     def end_of_turn(self):
