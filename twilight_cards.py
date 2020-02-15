@@ -57,7 +57,9 @@ class CardInfo:
 
 
 class GameCards:
+
     def __init__(self):
+
         self.ALL = dict()
         self.index_card_mapping = dict()  # Create mapping of (k,v) = (card_index, name)
         self.early_war = []
@@ -67,13 +69,12 @@ class GameCards:
         for name in CardInfo.ALL.keys():
             self.ALL[name] = Card(name)
             if self.ALL[name].info.stage == 'Early War':
-                self.early_war.append(self.ALL[name])
+                self.early_war.append(name)
             if self.ALL[name].info.stage == 'Mid War':
-                self.mid_war.append(self.ALL[name])
+                self.mid_war.append(name)
             if self.ALL[name].info.stage == 'Late War':
-                self.late_war.append(self.ALL[name])
-            self.index_card_mapping[self.ALL[name]
-                                    .info.card_index] = self.ALL[name].info.name
+                self.late_war.append(name)
+            self.index_card_mapping[self.ALL[name].info.card_index] = name
 
     def __getitem__(self, item):
         return self.ALL[item]

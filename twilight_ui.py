@@ -134,8 +134,8 @@ quit        Exit the game.
 
             if self.awaiting_commit:
                 if "yes".startswith(comd):
-                    self.game_rollback = deepcopy(self.game)
                     self.game.stage_complete()
+                    self.game_rollback = deepcopy(self.game)
                     self.prompt()
                 elif "no".startswith(comd):
                     self.game = self.game_rollback

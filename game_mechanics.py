@@ -18,8 +18,9 @@ class Game:
     # which would be useful for non-committed actions and possibly
     # the AI depending on how you do it.
     main = None
+    ars_by_turn = [None, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7]
 
-    class Input():
+    class Input:
 
         def __init__(self, side: Side, state: InputType, callback: Callable[[str], bool],
                      options: Iterable[str], prompt: str = "",
@@ -60,7 +61,18 @@ class Game:
                        filter(lambda item: item[1] < self.max_per_option,
                               self.selection.items()))
 
+    class Output:
 
+        def __init__(self, turn, ar, ar_side=None, input=None, prompt=""):
+            self.turn = turn
+            self.ar = ar
+            self.ar_side = ar_side
+            self.prompt = prompt
+            if input:
+                self.in_prompt = input.prompt
+                self.in_selection = input.selection
+
+        
     def __init__(self):
         self.vp_track = 0  # positive for ussr
         self.turn_track = 0
@@ -79,6 +91,7 @@ class Game:
 
         # interfacing with the UI
         self.input_state = None
+        self.output_queue = [[], []]
 
         self.hand = [[], []]  # ussr, us hands; list of 2 lists of Card objects
         self.removed_pile = []
@@ -87,7 +100,7 @@ class Game:
 
         # ussr, us hands; list of 2 lists of Card objects
         self.basket = [[], []]
-        self.headline_bin = [[], []]  # the inner lists are placeholders
+        self.headline_bin = ["", ""]
 
         # For new set the first created game to be the actual ongoing game.
         if Game.main is None:
@@ -125,7 +138,7 @@ class Game:
             self.put_start_USSR,
             self.put_start_US,
             self.put_start_extra,
-            self.joint_choose_headline
+            self.process_headline
         ]
 
         ar6 = [self.select_card_and_action for i in range(12)]
@@ -162,6 +175,9 @@ class Game:
         elif side == Side.US:
             print(UI.us_prompt)
 
+    def output_both(self, out: Output):
+        self.output_queue[Side.USSR].append(out)
+        self.output_queue[Side.US].append(out)
 
     '''Here are functions used to manipulate the various tracks.'''
 
@@ -258,7 +274,7 @@ class Game:
             partial(self.event_influence_callback, Side.USSR),
             CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE],
             prompt="Place starting influence.",
-            reps=6,
+            reps=1, # TODO: FOR TESTING ONLY
             reps_unit="influence"
         )
 
@@ -269,7 +285,7 @@ class Game:
             partial(self.event_influence_callback, Side.US),
             CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE],
             prompt="Place starting influence.",
-            reps=7,
+            reps=1,
             reps_unit="influence"
         )
 
@@ -293,119 +309,83 @@ class Game:
             reps_unit="influence"
         )
 
-    def joint_choose_headline(self):
-        '''
-        Both players are to simultaneously choose their headline card.
-        USSR chooses first, then US, then display to both players the other's
-        choice.
-        '''
-        self.choose_headline(Side.USSR)
-        self.choose_headline(Side.US)
-        self.resolve_headline(type=Side.NEUTRAL)
-
     def select_headline(self, side: Side, name: str):
-        self.hand.remove(name)
-        self.headline_bin[side].append(self.cards[name])
+        self.input_state.reps -= 1
+        self.hand[side].remove(name)
+        self.headline_bin[side] = self.cards[name]
 
     def choose_headline(self, side: Side):
         self.input_state = Game.Input(
             side, InputType.SELECT_CARD_IN_HAND,
             partial(self.select_headline, side),
-            self.map.has_influence(side),
+            filter(lambda c: self.cards[c].info.can_headline, self.hand[side]),
             prompt="Select headline.",
             reps=1
         )
 
-    def choose_headline_old(self, side: Side):
-        hand = self.hand[side]
+    '''
+    Both players are to simultaneously choose their headline card.
+    USSR chooses first, then US, then display to both players the other's
+    choice.
+    '''
+    def process_headline(self):
+        self.stage_list.pop()
 
-        guide_msg = f'You may headline any of these cards. Type in the card index.'
-        rejection_msg = f'Please key in a single value.'
+        # must append triggers in backwards order
+        # TODO account for space race!
+        self.stage_list.append(self.resolve_headline)
+        self.stage_list.append(partial(self.choose_headline, Side.US))
+        self.stage_list.append(partial(self.choose_headline, Side.USSR))
 
-        while True:
-            available_list = [
-                card.info.name for card in hand if card.info.can_headline]
-            available_list_values = [
-                str(self.cards[n].info.card_index) for n in available_list]
-
-            self.prompt_side(side)
-            print(guide_msg)
-            for available_name in available_list:
-                print(
-                    f'{self.cards[available_name].info.card_index}\t{self.cards[available_name]}')
-
-            user_choice = UI.ask_for_input(1, rejection_msg)
-            if user_choice == None:
-                break
-
-            if len(set(user_choice) - set(available_list_values)) == 0:
-                name = self.cards.index_card_mapping[int(user_choice[0])]
-                self.headline_bin[side].append(hand.pop(hand.index(name)))
-                break
-            else:
-                print('\nYour input cannot be accepted.')
+        # continue
+        self.stage_list[-1]()
 
     def resolve_headline(self, type: Side = Side.NEUTRAL):
 
-        def trigger(self, side: Side):
-            print(
-                f'\n{side.toStr} selected {self.headline_bin[side][0].info.name} for headline.')
-            card_treatment = self.trigger_event(side,
-                                                self.headline_bin[side][0].info.name)
-            card_treatment.append(self.headline_bin[side].pop())
+        self.output_both(Game.Output(
+            self.turn_track, self.ar_track,
+            prompt=f"USSR selected {self.headline_bin[Side.USSR]} for headline."
+        ))
+        self.output_both(Game.Output(
+            self.turn_track, self.ar_track,
+            prompt=f"US selected {self.headline_bin[Side.US]} for headline."
+        ))
+
+        def trigger(side: Side):
+            card_treatment = self.trigger_event(side, self.headline_bin[side])
+            card_treatment.append(self.headline_bin[side])
+            self.headline_bin[side] = ""
+
+        '''
+        Side.NEUTRAL : Joint resolution of headline
+        Side.US : Resolve US headline, then USSR headline
+        Side.USSR : Resolve USSR headline, then US headline
+        '''
+        ussr_hl = self.headline_bin[Side.USSR]
+        us_hl = self.headline_bin[Side.US]
 
         if type == Side.NEUTRAL:
-            '''
-            Side.NEUTRAL : Joint resolution of headline
-            Side.US : Resolve US headline, then USSR headline
-            Side.USSR : Resolve USSR headline, then US headline
-            '''
-            if self.headline_bin[Side.US] == 'Defectors':
-                for card in self.headline_bin:
-                    self.discard_pile.append(self.headline_bin.pop())
-                print('Defectors cancellation of headline phase.')
-                return
-            # how about the case of Grain_Sales_to_Soviets into Five_Year_Plan into Defectors?
-            if self.headline_bin[Side.USSR][0].info.ops > self.headline_bin[Side.US][0].info.ops:
-                print('this is good')
-                trigger(self, Side.USSR)
-                trigger(self, Side.US)
+            if us_hl == "Defectors" or self.cards[us_hl].info.ops >= self.cards[ussr_hl].info.ops:
+                trigger(Side.US)
+                trigger(Side.USSR)
             else:
-                trigger(self, Side.US)
-                trigger(self, Side.USSR)
+                trigger(Side.USSR)
+                trigger(Side.US)
         else:
-            trigger(self, type)
-            trigger(self, type.opp)
+            trigger(type)
+            trigger(type.opp)
 
-        self.ar_track = 1
+        self.ar_complete()
 
-    def select_card(self, side: Side):
-
-        guide_msg = f'You may play a card. Type in the card index.'
-        rejection_msg = f'Please key in a single value.'
-        hand = self.hand[side]
-
-        while True:
-            available_list = [
-                card.info.name for card in hand if card.is_playable]
-            available_list_values = [
-                str(self.cards[n].info.card_index) for n in available_list]
-
-            self.prompt_side(side)
-            print(guide_msg)
-            for available_name in available_list:
-                print(
-                    f'{self.cards[available_name].info.card_index}\t{self.cards[available_name]}')
-
-            user_choice = UI.ask_for_input(1, rejection_msg)
-            if user_choice == None:
-                break
-
-            if len(set(user_choice) - set(available_list_values)) == 0:
-                name = self.cards.index_card_mapping[int(user_choice[0])]
-                return hand[hand.index(name)]
-            else:
-                print('\nYour input cannot be accepted.')
+    def ar_complete(self):
+        if self.ar_track == 0:
+            self.ar_track = 1
+            self.ar_side = Side.USSR
+        elif self.ar_track == Game.ars_by_turn[self.turn_track]:
+            # TODO do next turn
+        else:
+            if self.ar_side == Side.US: self.ar_track += 1
+            self.ar_side = self.ar_side.opp
 
     def can_play_event(self, side: Side, card: Card, resolve_check=False):
         hand = self.hand[side]
@@ -491,6 +471,53 @@ class Game:
                 return False
 
         return available_space_turn(self, side) and enough_ops(self, side, card)
+
+    def select_card_and_action(self):
+        '''
+        This function should lead to card_operation_realignment, card_operation_coup,
+        or card_operation_influence, or a space race function. It serves as a place
+        where all possible actions are revealed to the player.
+        '''
+        # figure out who is the phasing player
+
+        def determine_side(self):
+            # TODO: account for extra turns
+            return Side.USSR if self.ar_track % 2 == 1 else Side.US
+
+        side = determine_side(self)
+        hand = self.hand[side]
+        card = self.select_card(side)
+        self.select_action(side, card)
+        self.ar_track += 1
+
+    def select_card(self, side: Side):
+
+        guide_msg = f'You may play a card. Type in the card index.'
+        rejection_msg = f'Please key in a single value.'
+        hand = self.hand[side]
+
+        while True:
+            available_list = [
+                card.info.name for card in hand if card.is_playable]
+            available_list_values = [
+                str(self.cards[n].info.card_index) for n in available_list]
+
+            self.prompt_side(side)
+            print(guide_msg)
+            for available_name in available_list:
+                print(
+                    f'{self.cards[available_name].info.card_index}\t{self.cards[available_name]}')
+
+            user_choice = UI.ask_for_input(1, rejection_msg)
+            if user_choice == None:
+                break
+
+            if len(set(user_choice) - set(available_list_values)) == 0:
+                name = self.cards.index_card_mapping[int(user_choice[0])]
+                return hand[hand.index(name)]
+            else:
+                print('\nYour input cannot be accepted.')
+
 
     # is_event_resolved is used to check if the player previously selected 'resolve_event_first'
     def select_action(self, side: Side, card: Card, is_event_resolved=False):
@@ -1396,7 +1423,10 @@ class Game:
 
     def _Defectors(self, side):
         # checks to see if headline bin is empty i.e. in action round
-        if side == Side.USSR and not any(self.headline_bin):
+        if self.headline_bin[Side.USSR]: # check if there's a headline
+            self.discard_pile.append(self.headline_bin[Side.USSR])
+            self.headline_bin[Side.USSR] = ""
+        if side == Side.USSR and self.ar_track > 0:
             self.change_vp(1)
         return self.discard_pile
 

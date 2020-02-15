@@ -96,7 +96,6 @@ class InputType(enum.IntEnum):
     SELECT_CARD_ACTION = 2  # Realign, coup, space, event, etc.
     SELECT_CARD_IN_HAND = 3
     SELECT_COUNTRY = 4
-    
 
 class CardAction(enum.IntEnum):
 
@@ -106,5 +105,3 @@ class CardAction(enum.IntEnum):
     REALIGNMENT = 3
     COUP = 4
     SPACE = 5
-    
-    
