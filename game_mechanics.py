@@ -1,7 +1,7 @@
 import math
 import random
 import numpy as np
-from functools import partial
+from functools import reduce, partial
 
 
 from twilight_enums import *
@@ -79,11 +79,11 @@ class Game:
         self.ar_track = 0
         self.ar_side = None
         self.defcon_track = 0
-        self.milops_track = np.array([0, 0])  # ussr first
+        self.milops_track = [0, 0]  # ussr first
 
         # 0 is start, 1 is earth satellite etc
-        self.space_track = np.array([0, 0])
-        self.spaced_turns = np.array([0, 0])
+        self.space_track = [0, 0]
+        self.spaced_turns = [0, 0]
         self.extra_turn = [False, False]
 
         self.map = None
@@ -118,15 +118,12 @@ class Game:
         self.ar_track = 0
         self.ar_side = Side.USSR
         self.defcon_track = 5
-        self.milops_track = np.array([0, 0])  # ussr first
+        self.milops_track = [0, 0]  # ussr first
         self.started = True
 
-        self.defcon_track = 0
-        self.milops_track = np.array([0, 0])  # ussr first
-
         # 0 is start, 1 is earth satellite etc
-        self.space_track = np.array([0, 0])
-        self.spaced_turns = np.array([0, 0])
+        self.space_track = [0, 0]
+        self.spaced_turns = [0, 0]
         self.extra_turn = [False, False]
 
         self.map = GameMap()
@@ -285,7 +282,7 @@ class Game:
             partial(self.event_influence_callback, Side.US),
             CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE],
             prompt="Place starting influence.",
-            reps=1,
+            reps=1,  # TODO: FOR TESTING ONLY
             reps_unit="influence"
         )
 
@@ -309,18 +306,18 @@ class Game:
             reps_unit="influence"
         )
 
-    def select_headline(self, side: Side, name: str):
+    def headline_callback(self, side: Side, name: str):
         self.input_state.reps -= 1
         self.hand[side].remove(name)
-        self.headline_bin[side] = self.cards[name]
+        self.headline_bin[side] = name
+        return True
 
     def choose_headline(self, side: Side):
         self.input_state = Game.Input(
             side, InputType.SELECT_CARD_IN_HAND,
-            partial(self.select_headline, side),
+            partial(self.headline_callback, side),
             filter(lambda c: self.cards[c].info.can_headline, self.hand[side]),
-            prompt="Select headline.",
-            reps=1
+            prompt="Select headline."
         )
 
     '''
@@ -352,9 +349,10 @@ class Game:
         ))
 
         def trigger(side: Side):
-            card_treatment = self.trigger_event(side, self.headline_bin[side])
-            card_treatment.append(self.headline_bin[side])
-            self.headline_bin[side] = ""
+            if self.headline_bin[side]:
+                card_treatment = self.trigger_event(side, self.headline_bin[side])
+                card_treatment.append(self.headline_bin[side])
+                self.headline_bin[side] = ""
 
         '''
         Side.NEUTRAL : Joint resolution of headline
@@ -383,9 +381,11 @@ class Game:
             self.ar_side = Side.USSR
         elif self.ar_track == Game.ars_by_turn[self.turn_track]:
             # TODO do next turn
+            self.end_of_turn()
         else:
             if self.ar_side == Side.US: self.ar_track += 1
             self.ar_side = self.ar_side.opp
+        self.stage_complete()
 
     def can_play_event(self, side: Side, card: Card, resolve_check=False):
         hand = self.hand[side]
@@ -394,18 +394,11 @@ class Game:
         elif card == 'The_China_Card':
             return False
         elif card == 'UN_Intervention':
-            my_cards_owners = np.array([item.info.owner for item in hand])
-            enemy = np.array([side.opp for item in hand])
-            return (my_cards_owners == enemy).sum() != 0
-        elif card == 'Defectors':
-            return False
-        elif card == 'Kitchen_Debates':
-            all =
-            us_count = [1 for n in self.map.ALL if self.map[n].control ==
-                        Side.US and self.map[n].info.battleground == True]
-            ussr_count = [1 for n in self.map.ALL if self.map[n].control ==
-                          Side.USSR and self.map[n].info.battleground == True]
-            return True if us_count > ussr_count else False
+            eligible_count = reduce(
+                lambda x,y: x+y,
+                map(lambda c: self.cards[c].info.owner == side.opp, hand),
+                initial=0)
+            return eligible_count != 0
         elif card == 'NATO':
             return True if 'Warsaw_Pact_Formed' in self.basket[
                 Side.US] or 'Marshall_Plan' in self.basket[Side.US] else False
@@ -436,14 +429,16 @@ class Game:
         return False if card.info.ops == 0 else True
 
     def can_realign_at_all(self, side: Side):
-        filter = np.array([self.map.can_realignment(
-            self, name, side) for name in self.map.ALL])
-        return filter.sum() > 0
+        return reduce(
+            lambda x, y: x + y,
+            map(lambda n: self.map.can_realignment(self, n, side), self.map.ALL),
+            initial=0) > 0
 
     def can_coup_at_all(self, side: Side):
-        filter = np.array([self.map.can_coup(
-            self, name, side) for name in self.map.ALL])
-        return filter.sum() > 0
+        return reduce(
+            lambda x, y: x + y,
+            map(lambda n: self.map.can_coup(self, n, side), self.map.ALL),
+            initial=0) > 0
 
     def can_space(self, side: Side, card: Card):
         # first check that player has an available space slot
@@ -472,108 +467,77 @@ class Game:
 
         return available_space_turn(self, side) and enough_ops(self, side, card)
 
-    def select_card_and_action(self):
-        '''
-        This function should lead to card_operation_realignment, card_operation_coup,
-        or card_operation_influence, or a space race function. It serves as a place
-        where all possible actions are revealed to the player.
-        '''
-        # figure out who is the phasing player
+    '''
+    This function should lead to card_operation_realignment, card_operation_coup,
+    or card_operation_influence, or a space race function. It serves as a place
+    where all possible actions are revealed to the player.
+    '''
+    def select_card_and_action(self, side: Side=Side.NEUTRAL):
 
-        def determine_side(self):
-            # TODO: account for extra turns
-            return Side.USSR if self.ar_track % 2 == 1 else Side.US
+        if side == Side.NEUTRAL: side = self.ar_side
 
-        side = determine_side(self)
+        self.input_state = Game.Input(
+            side, InputType.SELECT_CARD_IN_HAND,
+            partial(self.card_callback, side),
+            filter(lambda c: self.cards[c].is_playable, self.hand[side]),
+            prompt="Select a card in hand to play."
+        )
+
+    def card_callback(self, side: Side, card_name: str, is_event_resolved=False):
+
+        card = self.cards[card_name]
+        bool_arr = [
+            not is_event_resolved and self.can_play_event(side, card),
+            not is_event_resolved and self.can_resolve_event_first(side, card),
+            self.can_place_influence(side, card),
+            self.can_realign_at_all(side),
+            self.can_coup_at_all(side),
+            self.can_space(side, card)
+        ]
+
+        self.input_state = Game.Input(
+            side, InputType.SELECT_CARD_IN_HAND,
+            partial(self.action_callback, side, card_name),
+            map(lambda i, b: CardAction(i).name, enumerate(bool_arr)),
+            prompt=f"Select an action for {card_name}."
+        )
+        return True
+
+    def action_callback(self, side: Side, card_name: str, action_name: str, is_event_resolved=False):
+        self.input_state.reps -= 1
+        self.stage_list.insert(
+            -1,
+            partial(self.resolve_card_action, side, card_name, action_name, is_event_resolved=is_event_resolved)
+        )
+        return True
+
+    def resolve_card_action(self, side: Side, card_name: str, action_name: str, is_event_resolved=False):
+        action = CardAction[action_name]
+        card = self.cards[card_name]
         hand = self.hand[side]
-        card = self.select_card(side)
-        self.select_action(side, card)
-        self.ar_track += 1
+        if action == CardAction.PLAY_EVENT:
+            card_treatment = self.trigger_event(
+                side, card.info.name)
+            card_treatment.append(hand.pop(hand.index(card)))
+        elif action == CardAction.RESOLVE_EVENT_FIRST:
+            card_treatment = self.trigger_event(
+                side, card.info.name)
+            card_treatment.append(hand.pop(hand.index(card)))
 
-    def select_card(self, side: Side):
+            #TODO:
+            self.card_callback(side, card_name, is_event_resolved=is_event_resolved)
 
-        guide_msg = f'You may play a card. Type in the card index.'
-        rejection_msg = f'Please key in a single value.'
-        hand = self.hand[side]
-
-        while True:
-            available_list = [
-                card.info.name for card in hand if card.is_playable]
-            available_list_values = [
-                str(self.cards[n].info.card_index) for n in available_list]
-
-            self.prompt_side(side)
-            print(guide_msg)
-            for available_name in available_list:
-                print(
-                    f'{self.cards[available_name].info.card_index}\t{self.cards[available_name]}')
-
-            user_choice = UI.ask_for_input(1, rejection_msg)
-            if user_choice == None:
-                break
-
-            if len(set(user_choice) - set(available_list_values)) == 0:
-                name = self.cards.index_card_mapping[int(user_choice[0])]
-                return hand[hand.index(name)]
-            else:
-                print('\nYour input cannot be accepted.')
-
-
-    # is_event_resolved is used to check if the player previously selected 'resolve_event_first'
-    def select_action(self, side: Side, card: Card, is_event_resolved=False):
-        if card.info.type == 'Scoring':
-            self.trigger_event(side, card.info.name)
-            self.discard_pile.append(
-                self.hand[side].pop(self.hand[side].index(card)))
-        else:
-            filter = np.array([self.can_play_event(side, card) and not is_event_resolved,
-                               self.can_resolve_event_first(
-                                   side, card) and not is_event_resolved, self.can_place_influence(side, card),
-                               self.can_realign_at_all(side), self.can_coup_at_all(side), self.can_space(side, card)])
-            all_actions = np.array(list(Game.action.keys()))
-            available_list = all_actions[filter]
-            available_list_values = [str(Game.action[n])
-                                     for n in available_list]
-            guide_msg = 'Choose an action and type in the corresponding value.'
-            rejection_msg = 'Please key in a single value.'
-
-            while True:
-
-                self.prompt_side(side)
-                print(guide_msg)
-                for available_name in available_list:
-                    print(f'{available_name}, {Game.action[available_name]}')
-
-                user_choice = UI.ask_for_input(1, rejection_msg)
-                if user_choice == None:
-                    break
-
-                if len(set(user_choice) - set(available_list_values)) == 0:
-                    hand = self.hand[side]
-                    if int(user_choice[0]) == 0:
-                        card_treatment = self.trigger_event(
-                            side, card.info.name)
-                        card_treatment.append(hand.pop(hand.index(card)))
-                    elif int(user_choice[0]) == 1:
-                        card_treatment = self.trigger_event(
-                            side, card.info.name)
-                        card_treatment.append(hand.pop(hand.index(card)))
-                        self.select_action(side, card,
-                                           is_event_resolved=True)
-                    elif int(user_choice[0]) == 2:
-                        self.card_operation_influence(
-                            side, card, is_event_resolved=is_event_resolved)
-                    elif int(user_choice[0]) == 3:
-                        self.card_operation_realignment(
-                            side, card, is_event_resolved=is_event_resolved)
-                    elif int(user_choice[0]) == 4:
-                        self.card_operation_coup(
-                            side, card, is_event_resolved=is_event_resolved)
-                    elif int(user_choice[0]) == 5:
-                        self.space(side, card)
-                    break
-                else:
-                    print('\nYour input cannot be accepted.')
+        elif action == CardAction.INFLUENCE:
+            self.card_operation_influence(
+                side, card, is_event_resolved=is_event_resolved)
+        elif action == CardAction.REALIGNMENT:
+            self.card_operation_realignment(
+                side, card, is_event_resolved=is_event_resolved)
+        elif action == CardAction.COUP:
+            self.card_operation_coup(
+                side, card, is_event_resolved=is_event_resolved)
+        elif action == CardAction.SPACE:
+            self.space(side, card)
 
     def select_card_and_action(self):
         '''
@@ -1056,9 +1020,13 @@ class Game:
 
         # 1. Check milops
         def check_milops(self):
-            milops_diff = self.milops_track - self.defcon_track
-            milops_vp_change = np.where(milops_diff < 0, milops_diff, 0)
-            swing = milops_vp_change[0] - milops_vp_change[1]
+            milops_vp_change = map(
+                lambda x,y: x - self.defcon_track if x < self.defcon_track else 0,
+                self.milops_track
+            )
+            swing = 0
+            for s in [Side.USSR, Side.US]:
+                swing += s.vp_mult * milops_vp_change[s]
             self.change_vp(swing)
 
         # 2. Check for held scoring card

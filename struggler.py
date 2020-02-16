@@ -3,27 +3,7 @@
 
 # ### Twilight Struggle
 
-# In[1]:
-
-
-import numpy as np
-import random
-
 from twilight_ui import *
-from twilight_cards import *
-
-
-# ### Game Instance
-
-# In[2]:
-
-
-# this is a temporary measure. It should go into UI.new()
 UI().run()
 
-
-# In[3]:
-
-
-g.ussr_hand
 

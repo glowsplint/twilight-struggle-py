@@ -1,5 +1,4 @@
 from game_mechanics import *
-from functools import reduce
 from copy import deepcopy
 
 class UI:
