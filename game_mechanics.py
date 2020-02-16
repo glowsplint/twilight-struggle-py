@@ -1,9 +1,9 @@
 import math
 import random
+
 from functools import reduce, partial
 from itertools import chain
 from typing import Sequence
-
 
 from twilight_enums import *
 from twilight_map import *
@@ -40,8 +40,8 @@ class Game:
         @staticmethod
         def DiceRoll(side: Side, callback: Callable[[str], bool]):
             return Game.Input(side, InputType.DICE_ROLL, callback,
-                             ["Yes", "No"],
-                             "Commit your actions and roll the dice?")
+                              ["Yes", "No"],
+                              "Commit your actions and roll the dice?")
 
         def recv(self, input_str):
             if input_str not in self.available_options:
@@ -82,7 +82,6 @@ class Game:
                 self.in_prompt = input.prompt
                 self.in_selection = input.selection
 
-        
     def __init__(self):
         self.vp_track = 0  # positive for ussr
         self.turn_track = 0
@@ -116,11 +115,11 @@ class Game:
         if Game.main is None:
             Game.main = self
 
-
     '''
     Starts a new game.
 
     '''
+
     def start(self, handicap=-2):
 
         self.vp_track = 0  # positive for ussr
@@ -279,10 +278,11 @@ class Game:
         '''
         self.input_state = Game.Input(
             Side.USSR, InputType.SELECT_COUNTRY,
-            partial(self.event_influence_callback, Country.increment_influence, Side.USSR),
+            partial(self.event_influence_callback,
+                    Country.increment_influence, Side.USSR),
             CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE],
             prompt="Place starting influence.",
-            reps=1, # TODO: FOR TESTING ONLY
+            reps=1,  # TODO: FOR TESTING ONLY
             reps_unit="influence"
         )
 
@@ -292,7 +292,8 @@ class Game:
         '''
         self.input_state = Game.Input(
             Side.US, InputType.SELECT_COUNTRY,
-            partial(self.event_influence_callback, Country.increment_influence, Side.US),
+            partial(self.event_influence_callback,
+                    Country.increment_influence, Side.US),
             CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE],
             prompt="Place starting influence.",
             reps=1,  # TODO: FOR TESTING ONLY
@@ -315,7 +316,8 @@ class Game:
 
         self.input_state = Game.Input(
             side, InputType.SELECT_COUNTRY,
-            partial(self.event_influence_callback, Country.increment_influence, side),
+            partial(self.event_influence_callback,
+                    Country.increment_influence, side),
             self.map.has_influence(side),
             prompt="Place additional starting influence.",
             reps=side.vp_mult * self.handicap,
@@ -393,8 +395,10 @@ class Game:
         '''
         card_name = self.headline_bin[side]
         if card_name:
-            self.stage_list.append(partial(self.dispose_card, side, card_name, event=True))
-            self.stage_list.append(partial(self.trigger_event, side, card_name))
+            self.stage_list.append(
+                partial(self.dispose_card, side, card_name, event=True))
+            self.stage_list.append(
+                partial(self.trigger_event, side, card_name))
             self.headline_bin[side] = ""
         self.stage_complete()
 
@@ -407,7 +411,8 @@ class Game:
                 self.ar_track = 1
                 self.ar_side = Side.USSR
             else:
-                if self.ar_side == Side.US: self.ar_track += 1
+                if self.ar_side == Side.US:
+                    self.ar_track += 1
                 self.ar_side = self.ar_side.opp
 
             self.stage_list.append(self.ar_complete)
@@ -439,7 +444,7 @@ class Game:
             return False
         elif card_name == 'UN_Intervention':
             eligible_count = reduce(
-                lambda x,y: x+y,
+                lambda x, y: x + y,
                 map(lambda c: self.cards[c].info.owner == side.opp, hand),
                 0)
             return eligible_count != 0
@@ -512,7 +517,8 @@ class Game:
         '''
         return reduce(
             lambda x, y: x + y,
-            map(lambda n: self.map.can_realignment(self, n, side), CountryInfo.ALL),
+            map(lambda n: self.map.can_realignment(
+                self, n, side), CountryInfo.ALL),
             0) > 0
 
     def can_coup_at_all(self, side: Side):
@@ -557,8 +563,7 @@ class Game:
 
         return available_space_turn(self, side) and enough_ops(self, side, card_name)
 
-
-    def select_card_and_action(self, side: Side=Side.NEUTRAL):
+    def select_card_and_action(self, side: Side = Side.NEUTRAL):
         '''
         Stage for a single player to choose a card in hand to play.
 
@@ -568,7 +573,8 @@ class Game:
             Side of the choosing player.
         '''
 
-        if side == Side.NEUTRAL: side = self.ar_side
+        if side == Side.NEUTRAL:
+            side = self.ar_side
 
         self.input_state = Game.Input(
             side, InputType.SELECT_CARD_IN_HAND,
@@ -581,7 +587,8 @@ class Game:
         if self.cards[card_name].info.type == 'Scoring':
             self.input_state.reps -= 1
             self.stage_list.append(
-                partial(self.resolve_card_action, side, card_name, CardAction.PLAY_EVENT.name)
+                partial(self.resolve_card_action, side,
+                        card_name, CardAction.PLAY_EVENT.name)
             )
         else:
             self.select_action(side, card_name, False)
@@ -594,7 +601,7 @@ class Game:
         )
         return True
 
-    def select_action(self, side: Side, card_name: str, is_event_resolved: bool=False):
+    def select_action(self, side: Side, card_name: str, is_event_resolved: bool = False):
         '''
         Stage where the player has already chosen a card and now chooses an action to do with the card.
         Checks are made to ensure that the actions made available to the player are feasible actions,
@@ -616,7 +623,8 @@ class Game:
         '''
         bool_arr = [
             not is_event_resolved and self.can_play_event(side, card_name),
-            not is_event_resolved and self.can_resolve_event_first(side, card_name),
+            not is_event_resolved and self.can_resolve_event_first(
+                side, card_name),
             self.can_place_influence(side, card_name),
             self.can_realign_at_all(side),
             self.can_coup_at_all(side),
@@ -643,14 +651,19 @@ class Game:
 
         if action == CardAction.PLAY_EVENT:
 
-            self.stage_list.append(partial(self.dispose_card, side, card_name, event=True))
-            self.stage_list.append(partial(self.trigger_event, side, card_name))
+            self.stage_list.append(
+                partial(self.dispose_card, side, card_name, event=True))
+            self.stage_list.append(
+                partial(self.trigger_event, side, card_name))
 
         elif action == CardAction.RESOLVE_EVENT_FIRST:
 
-            self.stage_list.append(partial(self.dispose_card, side, card_name, event=True))
-            self.stage_list.append(partial(self.select_action, side, card_name, is_event_resolved=True))
-            self.stage_list.append(partial(self.trigger_event, side, card_name))
+            self.stage_list.append(
+                partial(self.dispose_card, side, card_name, event=True))
+            self.stage_list.append(
+                partial(self.select_action, side, card_name, is_event_resolved=True))
+            self.stage_list.append(
+                partial(self.trigger_event, side, card_name))
 
         elif action == CardAction.SPACE:
 
@@ -659,28 +672,37 @@ class Game:
 
         elif action == CardAction.INFLUENCE:
 
-            self.stage_list.append(partial(self.dispose_card, side, card_name, event=opp_event))
+            self.stage_list.append(
+                partial(self.dispose_card, side, card_name, event=opp_event))
             if opp_event:
-                self.stage_list.append(partial(self.trigger_event, side, card_name))
-            self.stage_list.append(partial(self.card_operation_influence, side, card_name))
+                self.stage_list.append(
+                    partial(self.trigger_event, side, card_name))
+            self.stage_list.append(
+                partial(self.card_operation_influence, side, card_name))
 
         elif action == CardAction.REALIGNMENT:
 
-            self.stage_list.append(partial(self.dispose_card, side, card_name, event=opp_event))
+            self.stage_list.append(
+                partial(self.dispose_card, side, card_name, event=opp_event))
             if opp_event:
-                self.stage_list.append(partial(self.trigger_event, side, card_name))
-            self.stage_list.append(partial(self.card_operation_realignment, side, card_name))
+                self.stage_list.append(
+                    partial(self.trigger_event, side, card_name))
+            self.stage_list.append(
+                partial(self.card_operation_realignment, side, card_name))
 
         elif action == CardAction.COUP:
 
-            self.stage_list.append(partial(self.dispose_card, side, card_name, event=opp_event))
+            self.stage_list.append(
+                partial(self.dispose_card, side, card_name, event=opp_event))
             if opp_event:
-                self.stage_list.append(partial(self.trigger_event, side, card_name))
-            self.stage_list.append(partial(self.card_operation_coup, side, card_name))
+                self.stage_list.append(
+                    partial(self.trigger_event, side, card_name))
+            self.stage_list.append(
+                partial(self.card_operation_coup, side, card_name))
 
         self.stage_complete()
 
-    #Utility functions used in stages
+    # Utility functions used in stages
 
     def dispose_card(self, side, card_name: str, event=False):
         '''
@@ -707,7 +729,6 @@ class Game:
         self.stage_complete()
 
     def move_china_card(self, side: Side):
-
         '''
         Moves and flips the China Card after it has been used.
 
@@ -832,7 +853,8 @@ class Game:
         self.input_state = Game.Input(
             side, InputType.SELECT_COUNTRY,
             partial(self.ops_influence_callback, side),
-            filter(lambda n: self.map.can_place_influence(n, side, effective_ops), CountryInfo.ALL),
+            filter(lambda n: self.map.can_place_influence(
+                n, side, effective_ops), CountryInfo.ALL),
             prompt=f"Place operations from {card_name} as influence.",
             reps=effective_ops,
             reps_unit="operations"
@@ -865,7 +887,8 @@ class Game:
         self.input_state = Game.Input(
             side, InputType.SELECT_COUNTRY,
             partial(self.realignment_callback, side),
-            filter(lambda n: self.map.can_realignment(self, n, side), self.map.ALL),
+            filter(lambda n: self.map.can_realignment(
+                self, n, side), self.map.ALL),
             prompt=f"Select a country for realignment using operations from {card_name}.",
             reps=effective_ops,
             reps_unit="operations"
@@ -880,8 +903,7 @@ class Game:
         self.map.coup(self, name, side, effective_ops, random.randint(1, 6))
         return True
 
-
-    def card_operation_coup(self, side: Side, card_name: str, restricted_list: Sequence[str]=None):
+    def card_operation_coup(self, side: Side, card_name: str, restricted_list: Sequence[str] = None):
         '''
         Stage when a player is given the opportunity to coup. Provides a list
         of countries which can be couped and waits for player input.
@@ -903,12 +925,14 @@ class Game:
         card = self.cards[card_name]
         effective_ops = self.get_global_effective_ops(
             side, card.info.ops)
-        if restricted_list is None: restricted_list = CountryInfo.ALL
+        if restricted_list is None:
+            restricted_list = CountryInfo.ALL
 
         self.input_state = Game.Input(
             side, InputType.SELECT_COUNTRY,
             partial(self.coup_callback, side, effective_ops),
-            filter(lambda n: self.map.can_coup(self, n, side) and n in restricted_list, CountryInfo.ALL),
+            filter(lambda n: self.map.can_coup(self, n, side)
+                   and n in restricted_list, CountryInfo.ALL),
             prompt=f"Select a country to coup using operations from {card_name}.",
         )
 
@@ -940,7 +964,7 @@ class Game:
 
         self.spaced_turns[side] += 1
 
-        self.stage_complete() #TODO the die roll in the UI
+        self.stage_complete()  # TODO the die roll in the UI
 
     def event_influence_callback(self, country_function, side, name):
         '''
@@ -1251,7 +1275,8 @@ class Game:
     def norad_influence(self):
         self.input_state = Game.Input(
             Side.US, InputType.SELECT_COUNTRY,
-            partial(self.event_influence_callback, Country.increment_influence, Side.US),
+            partial(self.event_influence_callback,
+                    Country.increment_influence, Side.US),
             self.map.has_us_influence,
             prompt="Place NORAD influence.",
             reps=1,
@@ -1265,7 +1290,6 @@ class Game:
         # decide if it is going to be joint_choose_headline or separated
         # modify top to use this function instead
         pass
-
 
     def deal(self):
 
@@ -1285,11 +1309,14 @@ class Game:
             self.cards.late_war = []
             random.shuffle(self.draw_pile)
 
-        if 1 <= self.turn_track <= 3: handsize_target = [8, 8]
-        else: handsize_target = [9, 9]
+        if 1 <= self.turn_track <= 3:
+            handsize_target = [8, 8]
+        else:
+            handsize_target = [9, 9]
 
         # TODO: FOR TESTING ONLY
-        if self.turn_track == 1: handsize_target = [10, 10]
+        if self.turn_track == 1:
+            handsize_target = [10, 10]
 
         # Ignore China Card if it is in either hand
         if 'The_China_Card' in self.hand[Side.USSR]:
@@ -1341,7 +1368,7 @@ class Game:
         # 1. Check milops
         def check_milops(self):
             milops_vp_change = map(
-                lambda x,y: x - self.defcon_track if x < self.defcon_track else 0,
+                lambda x, y: x - self.defcon_track if x < self.defcon_track else 0,
                 self.milops_track
             )
             swing = 0
@@ -1402,7 +1429,6 @@ class Game:
         self.change_defcon(1)
         self.deal()  # turn marker advanced before dealing
         self.process_headline()
-
 
     def score(self, region: MapRegion, presence_vps: int, domination_vps: int, control_vps: int):
         bg_count = [0, 0, 0]  # USSR, US, NEUTRAL
@@ -1472,8 +1498,10 @@ class Game:
     def _Socialist_Governments(self, side):
         self.input_state = Game.Input(
             Side.USSR, InputType.SELECT_COUNTRY,
-            partial(self.event_influence_callback, Country.decrement_influence, Side.US),
-            filter(lambda n: self.map[n].has_us_influence, CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE]),
+            partial(self.event_influence_callback,
+                    Country.decrement_influence, Side.US),
+            filter(lambda n: self.map[n].has_us_influence,
+                   CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE]),
             prompt="Place influence from Socialist Governments.",
             reps=3,
             reps_unit="influence",
@@ -1486,7 +1514,7 @@ class Game:
         self.stage_complete()
 
     def _Vietnam_Revolts(self, side):
-        #TODO
+        # TODO
         self.stage_complete()
 
     def _Blockade(self, side):
@@ -1533,8 +1561,10 @@ class Game:
     def _COMECON(self, side):
         self.input_state = Game.Input(
             Side.USSR, InputType.SELECT_COUNTRY,
-            partial(self.event_influence_callback, Country.increment_influence, Side.USSR),
-            filter(lambda n: self.map[n].control != Side.US, CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE]),
+            partial(self.event_influence_callback,
+                    Country.increment_influence, Side.USSR),
+            filter(lambda n: self.map[n].control != Side.US,
+                   CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE]),
             prompt="Place influence from COMECON.",
             reps=4,
             reps_unit="influence",
@@ -1570,7 +1600,8 @@ class Game:
 
     def _De_Gaulle_Leads_France(self, side):
         self.map['France'].change_influence(1, -2)
-        self.basket[Side.USSR].append('De Gaulle Leads France')  # for NATO cancellation effect
+        # for NATO cancellation effect
+        self.basket[Side.USSR].append('De Gaulle Leads France')
         self.stage_complete()
 
     def _Captured_Nazi_Scientist(self, side):
@@ -1580,7 +1611,8 @@ class Game:
     def _Truman_Doctrine(self, side):
         self.input_state = Game.Input(
             Side.US, InputType.SELECT_COUNTRY,
-            partial(self.event_influence_callback, Country.remove_influence, Side.USSR),
+            partial(self.event_influence_callback,
+                    Country.remove_influence, Side.USSR),
             filter(
                 lambda n: self.map[n].control == Side.NEUTRAL and self.map[n].has_ussr_influence,
                 CountryInfo.REGION_ALL[MapRegion.EUROPE]
@@ -1591,7 +1623,8 @@ class Game:
 
     def _Olympic_Games(self, side):
         statements = [
-            'Participate and sponsor has modified die roll (+2).', 'Boycott: DEFCON level degrades by 1 and sponsor may conduct operations as if they played a 4 op card.']
+            'Participate and sponsor has modified die roll (+2).',
+            'Boycott: DEFCON level degrades by 1 and sponsor may conduct operations as if they played a 4 op card.']
         binary_outcome = self.select_multiple(side.opp, statements)
         if binary_outcome == 0:
             # probability of eventer eventually winning
@@ -1647,8 +1680,10 @@ class Game:
 
         self.input_state = Game.Input(
             Side.US, InputType.SELECT_COUNTRY,
-            partial(self.event_influence_callback, Country.increment_influence, Side.US),
-            filter(lambda n: self.map[n].control != Side.USSR, CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE]),
+            partial(self.event_influence_callback,
+                    Country.increment_influence, Side.US),
+            filter(lambda n: self.map[n].control != Side.USSR,
+                   CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE]),
             prompt="Place influence from Marshall Plan.",
             reps=7,
             reps_unit="influence",
@@ -1684,7 +1719,8 @@ class Game:
 
         self.input_state = Game.Input(
             Side.USSR, InputType.SELECT_COUNTRY,
-            partial(self.event_influence_callback, Country.decrement_influence, Side.USSR),
+            partial(self.event_influence_callback,
+                    Country.decrement_influence, Side.USSR),
             filter(lambda n: self.map[n].has_us_influence, suez),
             prompt="Remove US influence using Suez Crisis.",
             reps=4,
@@ -1694,26 +1730,31 @@ class Game:
 
     def _East_European_Unrest(self, side):
 
-        if 8 <= self.turn_track <= 10: dec = 2
-        else: dec = 1
+        if 8 <= self.turn_track <= 10:
+            dec = 2
+        else:
+            dec = 1
 
         self.input_state = Game.Input(
             Side.US, InputType.SELECT_COUNTRY,
-            partial(self.event_influence_callback, partial(Country.decrement_influence, amt=dec), Side.USSR),
-            filter(lambda n: self.map[n].has_ussr_influence, CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE]),
+            partial(self.event_influence_callback, partial(
+                Country.decrement_influence, amt=dec), Side.USSR),
+            filter(lambda n: self.map[n].has_ussr_influence,
+                   CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE]),
             prompt="Remove USSR influence using East European Unrest.",
             reps=3,
             reps_unit="influence",
             max_per_option=1
         )
 
-
     def _Decolonization(self, side):
 
         self.input_state = Game.Input(
             Side.USSR, InputType.SELECT_COUNTRY,
-            partial(self.event_influence_callback, Country.increment_influence, Side.USSR),
-            chain(CountryInfo.REGION_ALL[MapRegion.SOUTHEAST_ASIA], CountryInfo.REGION_ALL[MapRegion.AFRICA]),
+            partial(self.event_influence_callback,
+                    Country.increment_influence, Side.USSR),
+            chain(CountryInfo.REGION_ALL[MapRegion.SOUTHEAST_ASIA],
+                  CountryInfo.REGION_ALL[MapRegion.AFRICA]),
             prompt="Place influence using Decolonization.",
             reps=4,
             reps_unit="influence",
@@ -1751,7 +1792,7 @@ class Game:
 
     def _Defectors(self, side):
         # checks to see if headline bin is empty i.e. in action round
-        if self.headline_bin[Side.USSR]: # check if there's a headline
+        if self.headline_bin[Side.USSR]:  # check if there's a headline
             self.discard_pile.append(self.headline_bin[Side.USSR])
             self.headline_bin[Side.USSR] = ""
         if side == Side.USSR and self.ar_track > 0:
@@ -1773,7 +1814,8 @@ class Game:
 
             self.input_state = Game.Input(
                 Side.US, InputType.SELECT_COUNTRY,
-                partial(self.event_influence_callback, partial(Country.increment_influence, amt=incr), Side.US),
+                partial(self.event_influence_callback, partial(
+                    Country.increment_influence, amt=incr), Side.US),
                 available_list,
                 prompt=f"Place {incr} influence in a single country using Special Relationship.",
                 reps=1,
@@ -1920,7 +1962,8 @@ class Game:
               'Libya', 'Saudi_Arabia', 'Syria', 'Jordan']
         self.input_state = Game.Input(
             Side.USSR, InputType.SELECT_COUNTRY,
-            partial(self.event_influence_callback, Country.remove_influence, Side.US),
+            partial(self.event_influence_callback,
+                    Country.remove_influence, Side.US),
             filter(lambda n: self.map[n].has_us_influence, mr),
             prompt="Muslim Revolution: Select countries in which to remove all US influence.",
             reps=2,
@@ -1954,8 +1997,10 @@ class Game:
     def _Colonial_Rear_Guards(self, side):
         self.input_state = Game.Input(
             Side.US, InputType.SELECT_COUNTRY,
-            partial(self.event_influence_callback, Country.increment_influence, Side.US),
-            chain(CountryInfo.REGION_ALL[MapRegion.SOUTHEAST_ASIA], CountryInfo.REGION_ALL[MapRegion.AFRICA]),
+            partial(self.event_influence_callback,
+                    Country.increment_influence, Side.US),
+            chain(CountryInfo.REGION_ALL[MapRegion.SOUTHEAST_ASIA],
+                  CountryInfo.REGION_ALL[MapRegion.AFRICA]),
             prompt="Place influence using Colonial Real Guards.",
             reps=4,
             reps_unit="influence",
@@ -1978,8 +2023,10 @@ class Game:
     def _Puppet_Governments(self, side):
         self.input_state = Game.Input(
             Side.US, InputType.SELECT_COUNTRY,
-            partial(self.event_influence_callback, Country.increment_influence, Side.US),
-            filter(lambda n: not self.map[n].has_us_influenc and not self.map[n].has_ussr_influence, CountryInfo.ALL),
+            partial(self.event_influence_callback,
+                    Country.increment_influence, Side.US),
+            filter(
+                lambda n: not self.map[n].has_us_influenc and not self.map[n].has_ussr_influence, CountryInfo.ALL),
             prompt="Place influence using Puppet Governments.",
             reps=3,
             reps_unit="influence",
@@ -1999,14 +2046,15 @@ class Game:
     def _OAS_Founded(self, side):
         self.input_state = Game.Input(
             Side.US, InputType.SELECT_COUNTRY,
-            partial(self.event_influence_callback, Country.increment_influence, Side.US),
-            chain(CountryInfo.REGION_ALL[MapRegion.CENTRAL_AMERICA], CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA]),
+            partial(self.event_influence_callback,
+                    Country.increment_influence, Side.US),
+            chain(CountryInfo.REGION_ALL[MapRegion.CENTRAL_AMERICA],
+                  CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA]),
             prompt="Place influence using OAS_Founded.",
             reps=2,
             reps_unit="influence",
             max_per_option=1
         )
-
 
     def _Nixon_Plays_The_China_Card(self, side):
         pass
@@ -2022,7 +2070,8 @@ class Game:
     def _The_Voice_Of_America(self, side):
         self.input_state = Game.Input(
             Side.US, InputType.SELECT_COUNTRY,
-            partial(self.event_influence_callback, Country.decrement_influence, Side.USSR),
+            partial(self.event_influence_callback,
+                    Country.decrement_influence, Side.USSR),
             filter(
                 lambda n: n not in CountryInfo.REGION_ALL[MapRegion.EUROPE] and self.map[n].has_ussr_influence,
                 CountryInfo.ALL
@@ -2036,7 +2085,8 @@ class Game:
     def _Liberation_Theology(self, side):
         self.input_state = Game.Input(
             Side.USSR, InputType.SELECT_COUNTRY,
-            partial(self.event_influence_callback, Country.increment_influence, Side.USSR),
+            partial(self.event_influence_callback,
+                    Country.increment_influence, Side.USSR),
             CountryInfo.REGION_ALL[MapRegion.CENTRAL_AMERICA],
             prompt="Place influence using Liberation Theology.",
             reps=3,
@@ -2114,13 +2164,14 @@ class Game:
         self.map.set_influence('Lebanon', Side.US, 0)
         self.input_state = Game.Input(
             Side.USSR, InputType.SELECT_COUNTRY,
-            partial(self.event_influence_callback, Country.decrement_influence, Side.US),
-            filter(lambda n: self.map[n].has_us_influence, CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST]),
+            partial(self.event_influence_callback,
+                    Country.decrement_influence, Side.US),
+            filter(lambda n: self.map[n].has_us_influence,
+                   CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST]),
             prompt="Remove US influence using Marine_Barracks_Bombing.",
             reps=2,
             reps_unit="influence",
         )
-
 
     def _Soviets_Shoot_Down_KAL(self, side):
         pass
@@ -2166,8 +2217,10 @@ class Game:
         self.change_vp(Side.USSR.vp_mult)
         self.input_state = Game.Input(
             Side.USSR, InputType.SELECT_COUNTRY,
-            partial(self.event_influence_callback, Country.decrement_influence, Side.US),
-            filter(lambda n: self.map[n].has_us_influence, CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE]),
+            partial(self.event_influence_callback,
+                    Country.decrement_influence, Side.US),
+            filter(lambda n: self.map[n].has_us_influence,
+                   CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE]),
             prompt="Remove US influence using Pershing II Deployed.",
             reps=3,
             reps_unit="influence",

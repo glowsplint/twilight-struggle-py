@@ -66,11 +66,11 @@ class GameMap:
     def __getitem__(self, item):
         return self.ALL[item]
 
-    '''Returns list of names that have influence from side, less superpowers..'''
     def has_influence(self, side: Side):
+        '''Returns list of names that have influence from side, less superpowers..'''
         return map(lambda item: item[0],
                    filter(lambda item: item[1].has_influence(side) and not item[1].info.superpower,
-                      self.ALL.items()))
+                          self.ALL.items()))
 
     def has_us_influence(self):
         '''Returns list of names that have US influence, less superpowers..'''
@@ -89,6 +89,9 @@ class GameMap:
         return country_list
 
     def build_standard(self):
+        '''
+        Sets the appropriate amount of influence in each country.
+        '''
         self['USSR'].set_influence(999, 0)
         self['North_Korea'].set_influence(3, 0)
         self['East_Germany'].set_influence(3, 0)
@@ -109,6 +112,9 @@ class GameMap:
         self['South_Africa'].set_influence(0, 1)
 
     def build_late_war(self):
+        '''
+        Sets the appropriate amount of influence in each country for the Late War scenario.
+        '''
         self['Canada'].set_influence(0, 0)
         self['UK'].set_influence(0, 5)
         self['Norway'].set_influence(0, 4)
@@ -194,7 +200,19 @@ class GameMap:
         self['Brazil'].set_influence(0, 0)
         self['Venezuela'].set_influence(0, 2)
 
-    def can_coup(self, game_instance, name: str, side: Side):
+    def can_coup(self, game_instance, name: str, side: Side) -> bool:
+        '''
+        Checks if the country can be couped by a given side.
+
+        Parameters
+        ----------
+        game_instance : Game object
+            The game object the country resides within.
+        name : str
+            String representation of the country we are checking.
+        side : Side
+            Player side which we are checking. Can be Side.US or Side.USSR.
+        '''
         country = self[name]
         if country.info.superpower:
             return False
@@ -220,6 +238,22 @@ class GameMap:
                     side == Side.USSR and country.influence[Side.US] == 0)
 
     def coup(self, game_instance, name: str, side: Side, effective_ops: int, die_roll: int):
+        '''
+        The result of a given side couping in a country, with a die_roll provided.
+
+        Parameters
+        ----------
+        game_instance : Game object
+            The game object the country resides within.
+        name : str
+            String representation of the country we are checking.
+        side : Side
+            Player side which we are checking. Can be Side.US or Side.USSR.
+        effective_ops : int
+            The number of effective operations used in the coup.
+        die_roll: int
+            The die roll of the coup. Should be bounded within [1,6].
+        '''
         assert(self.can_coup(game_instance, name, side))
         country = self[name]
 
@@ -257,7 +291,19 @@ class GameMap:
 
         game_instance.change_milops(side, effective_ops)
 
-    def can_realignment(self, game_instance, name: str, side: Side):
+    def can_realignment(self, game_instance, name: str, side: Side) -> bool:
+        '''
+        Checks if the country can be realigned by a given side.
+
+        Parameters
+        ----------
+        game_instance : Game object
+            The game object the country resides within.
+        name : str
+            String representation of the country we are checking.
+        side : Side
+            Player side which we are checking. Can be Side.US or Side.USSR.
+        '''
         country = self[name]
         if country.info.superpower:
             return False
@@ -286,7 +332,21 @@ class GameMap:
         else:
             return not (country.influence[Side.USSR] == 0 and country.influence[Side.US] == 0)
 
-    def realignment(self, game_instance, name: str, side: Side):
+    def realignment(self, game_instance, name: str, side: Side, us_roll: int, ussr_roll: int):
+        '''
+        The result of a given side using realignment in a country, with both dice rolls provided.
+
+        Parameters
+        ----------
+        game_instance : Game object
+            The game object the country resides within.
+        name : str
+            String representation of the country we are checking.
+        side : Side
+            Player side which we are checking. Can be Side.US or Side.USSR.
+        us_roll, us_roll: ints
+            The respective dice rolls of the realignment. Should be bounded within [1,6].
+        '''
         assert(self.can_realignment(game_instance, name, side))
         country = self[name]
 
@@ -301,7 +361,7 @@ class GameMap:
             modifier += 1
         elif country.influence[Side.US] - country.influence[Side.USSR] < 0:
             modifier -= 1
-        us_roll, ussr_roll = random.randint(1, 6), random.randint(1, 6)
+
         difference = us_roll - ussr_roll + modifier
         if difference > 0:
             country.change_influence(-min(difference,
@@ -312,12 +372,24 @@ class GameMap:
         print(
             f'US rolled: {us_roll}, USSR rolled: {ussr_roll}, Modifer = {modifier}, Difference = {difference}')
 
-    # assume that a specific card has already been selected before the running of this function
-    def can_place_influence(self, name: str, side: Side, effective_ops: int):
-        # Here we run two different checks in order:
-        # 1. In any of the adjacent countries and itself, is there existing influence of the same side?
-        # 2. If this country is controlled by the opposite power, is effective_ops at least 2?
-        # 2a. Also checks if the card being used has at least 1 effective operation point (so scoring cards can't be used for influence)
+    def can_place_influence(self, name: str, side: Side, effective_ops: int) -> bool:
+        '''
+        Checks if influence can be placed in a country, according to:
+        1. Is there influence in the country itself, or any of its adjacent countries?
+        2. If this country is controlled by the opposite power, is effective_ops at least 2?
+        3. Does the card being used has at least 1 effective operation point? (so scoring cards can't be used for influence)
+
+        Parameters
+        ----------
+        game_instance : Game object
+            The game object the country resides within.
+        name : str
+            String representation of the country we are checking.
+        side : Side
+            Player side which we are checking. Can be Side.US or Side.USSR.
+        effective_ops : int
+            The number of effective operations used in the coup.
+        '''
         country = self[name]
 
         def has_influence_around(self, name: str, side: Side):
@@ -342,7 +414,8 @@ class GameMap:
 
     def place_influence(self, name: str, side: Side, effective_ops: int):
         if side == Side.USSR and self[name].control == Side.US:
-            # here we deduct 2 from effective_ops, to place 1 influence in the country, and then call the function again
+            # here we deduct 2 from effective_ops, to place 1 influence in the country,
+            # and then recursively call the function again
             if effective_ops >= 2:
                 self[name].change_influence(1, 0)
             else:
@@ -364,8 +437,11 @@ class GameMap:
             else:
                 raise ValueError('side must be \'us\' or \'ussr\'!')
 
-    # these functions have slightly different syntax from the Country ones, if you want to use them
-    # you should preferably call the country methods directly, but these can be more elegant
+    '''
+    These functions have slightly different syntax from the Country ones, if you want to use them
+    you should preferably call the country methods directly, but these can be more elegant.
+    '''
+
     def change_influence(self, name: str, side: Side, influence: int):
         if side == Side.USSR:
             self[name].change_influence(influence, 0)
@@ -385,7 +461,6 @@ class Country:
     def __init__(self, name: str):
         self.info = CountryInfo.ALL[name]
         self.influence = [0, 0]  # ussr, then us influence
-
 
     @property
     def control(self):
@@ -438,7 +513,8 @@ class Country:
             self.influence[Side.USSR] = 0
 
     def remove_influence(self, side):
-        if self.influence[side] == 0: return False
+        if self.influence[side] == 0:
+            return False
         self.influence[side] = 0
         return True
 
@@ -447,7 +523,8 @@ class Country:
         return True
 
     def decrement_influence(self, side, amt=1):
-        if self.influence[side] == 0: return False
+        if self.influence[side] == 0:
+            return False
         self.influence[side] = max(self.influence[side] - amt, 0)
         return True
 

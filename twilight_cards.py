@@ -49,12 +49,6 @@ class CardInfo:
     def __deepcopy__(self, memo):
         return self
 
-    def trigger_event_first(self):
-        # only possible if opponent event
-        # self.use_for_event()
-        # do something else
-        pass
-
 
 class GameCards:
 
@@ -83,7 +77,7 @@ class GameCards:
 class Card():
     def __init__(self, name):
         self.info = CardInfo.ALL[name]
-        self.is_playable = True  # flipped means unavailable for use
+        self.is_playable = True
 
     def __repr__(self):
         if self.info.ops == 0:
@@ -1413,9 +1407,7 @@ Blank_4_Op_Card = {
     'owner': 'NEUTRAL',
     'event_text': 'This is a blank card worth 4 operations points used when the Olympic Games sponsor\'s opposing player chooses to boycott the Event.',
     'remove_if_used_as_event': False,
-}    
-
-
+}
 
 
 Asia_Scoring = CardInfo(**Asia_Scoring)
