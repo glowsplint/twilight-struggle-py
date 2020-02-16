@@ -110,10 +110,10 @@ quit        Exit the game.
                 self.prompt()
 
             elif user_choice[0].lower() == 'c':
-                UI.parse_card(user_choice[1])
+                self.parse_card(user_choice[1])
 
             elif user_choice[0].lower() == 's':
-                UI.parse_state(user_choice[1])
+                self.parse_state(user_choice[1])
 
             elif user_choice[0].lower() == 'm':
                 self.parse_move(user_choice[1])
@@ -173,39 +173,36 @@ c dis       Display a list of cards in the discard pile
 c rem       Display a list of removed cards.
 c dec       Returns the number of cards in the draw deck.
 '''
-    @staticmethod
-    def parse_card(comd):
+    def parse_card(self, comd):
 
         if comd == '':
-            print('Listing cards in hand.')
-            print('Unimplemented')
+            print(f'Listing {len(self.game.hand[self.input_state.side])} cards in hand.')
+            for c in self.game.hand[self.input_state.side]:
+                print(c)
         elif comd == '?':
             print(UI.help_card)
         elif comd == 'opp':
-            print('Cards in opponent\'s hand: %d' %
-                  1)  # TODO make it based on state
-            print('Unimplemented')
+            print(f'Cards in opponent hand: {len(self.game.hand[self.input_state.side.opp])}')
         elif comd == 'dis':
-            print('Listing %d discarded cards.' % len(discard_pile))
-            for c in discard_pile:
+            print(f'Listing {len(self.game.discard_pile)} discarded cards.')
+            for c in self.game.discard_pile:
                 print(c)
         elif comd == 'rem':
-            print('Listing %d removed cards.' % len(removed_pile))
-            for c in removed_pile:
+            print(f'Listing {len(self.game.removed_pile)} removed cards.')
+            for c in self.game.removed_pile:
                 print(c)
         elif comd == 'dec':
-            print('Cards in draw pile: %d.' % len(draw_pile))
+            print(f'Cards in draw pile: {len(self.game.draw_pile)}.')
         else:
             print('Invalid command. Enter ? for help.')
 
     help_state = '''
 s <eu|as|me|af|na|sa>   Displays the scoring state and country data for the given region.
 '''
-    @staticmethod
-    def parse_state(comd):
+    def parse_state(self, comd):
         if comd == '':
             print('=== Game state ===')
-            print('VP status: %d' % Game.main.vp_track)
+            print('VP status: %d' % self.game.vp_track)
             print('Unimplemented')
         elif comd == '?':
             print(UI.help_state)

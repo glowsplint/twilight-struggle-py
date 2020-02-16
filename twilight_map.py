@@ -353,8 +353,19 @@ class Country:
         if self.influence[Side.USSR] < 0:
             self.influence[Side.USSR] = 0
 
-    def increment_influence(self, side):
-        self.influence[side] += 1
+    def remove_influence(self, side):
+        if self.influence[side] == 0: return False
+        self.influence[side] = 0
+        return True
+
+    def increment_influence(self, side, amt=1):
+        self.influence[side] += amt
+        return True
+
+    def decrement_influence(self, side, amt=1):
+        if self.influence[side] == 0: return False
+        self.influence[side] = max(self.influence[side] - amt, 0)
+        return True
 
 
 USSR = {

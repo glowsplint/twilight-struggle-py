@@ -249,26 +249,30 @@ class Game:
         self.stage_list[-1]()
 
     '''
-    event_influence_callback is used when a side is given the opportunity to modify influence.
-    Unlike card_operation_add_influence, this is mostly used for card events where the player has to choose
+    event_influence_callback is used as the callback function for modifying influence.
+    This is mostly used for card events where the player has to choose
     which regions in which to directly insert influence.
 
     Examples of cards that use this function are: VOA, Decolonization, OAS_Founded, Junta.
-    available_list is the list of names that can be manipulated by the effect.
-    can_split is True for cards where the influence adjustment can be split like VOA. False for cards like Junta.
-    limit is the maximum influence adjustment that can be made to a single country. 2 for VOA, 1 for COMECON.
-    positive is True for positive adjustments like Decolonization, False for VOA.
-    all is True for Warsaw Pact removal, Muslim_Revolution, Truman Doctrine.
+
+    country_function is the function that the country will apply.
+    For example, for cards like COMECON / Decolonization,
+        use partial(Country.increment_influence, Side.USSR)
+    For Voice Of America, specify max_per_option in input_state as 2, then
+        use partial(Country.decrement_influence, Side.USSR).
+    For a card like Junta you want to get an increment by 2 function, so
+        use partial(Country.increment_influence, side, amt=2).
+    For a card like Warsaw Pact / Muslim_Revolution / Truman Doctrine
+        use partial(Country.remove_influence, Side.US).
     '''
-    def event_influence_callback(self, side, name):
+    def event_influence_callback(self, country_function, side, name):
         self.input_state.reps -= 1
-        self.map[name].increment_influence(side)
-        return True
+        return country_function(self.map[name], side)
 
     def put_start_USSR(self):
         self.input_state = Game.Input(
             Side.USSR, InputType.SELECT_COUNTRY,
-            partial(self.event_influence_callback, Side.USSR),
+            partial(self.event_influence_callback, Country.increment_influence, Side.USSR),
             CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE],
             prompt="Place starting influence.",
             reps=1, # TODO: FOR TESTING ONLY
@@ -279,7 +283,7 @@ class Game:
 
         self.input_state = Game.Input(
             Side.US, InputType.SELECT_COUNTRY,
-            partial(self.event_influence_callback, Side.US),
+            partial(self.event_influence_callback, Country.increment_influence, Side.US),
             CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE],
             prompt="Place starting influence.",
             reps=1,  # TODO: FOR TESTING ONLY
@@ -299,7 +303,7 @@ class Game:
 
         self.input_state = Game.Input(
             side, InputType.SELECT_COUNTRY,
-            partial(self.event_influence_callback, side),
+            partial(self.event_influence_callback, Country.increment_influence, side),
             self.map.has_influence(side),
             prompt="Place additional starting influence.",
             reps=side.vp_mult * self.handicap,
