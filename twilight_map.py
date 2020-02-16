@@ -134,7 +134,7 @@ class GameMap:
         return not (side == Side.US and country.influence[Side.USSR] == 0 or
                     side == Side.USSR and country.influence[Side.US] == 0)
 
-    def coup(self, game_instance, name: str, side: Side, effective_ops: int):
+    def coup(self, game_instance, name: str, side: Side, effective_ops: int, die_roll: int):
         assert(self.can_coup(game_instance, name, side))
         country = self[name]
 
@@ -148,7 +148,6 @@ class GameMap:
             elif 'Latin_American_Death_Squads' in game_instance.basket[side.opp]:
                 modifier -= 1
 
-        die_roll = random.randint(1, 6)
         difference = die_roll + effective_ops + modifier - country.info.stability * 2
 
         if difference > 0:
