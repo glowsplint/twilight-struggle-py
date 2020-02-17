@@ -1271,14 +1271,8 @@ class Game:
             partial(self.event_influence_callback,
                     Country.increment_influence, Side.US),
             self.map.has_us_influence,
-<<<<<<< HEAD
-            prompt='Place NORAD influence.',
-            reps=1,
-            reps_unit='influence'
-=======
             prompt="Place NORAD influence.",
             reps_unit="influence"
->>>>>>> ui
         )
 
     def cuba_missile_remove(self):
@@ -1367,12 +1361,8 @@ class Game:
         def check_milops(self):
             milops_vp_change = map(
                 lambda x: x - self.defcon_track if x < self.defcon_track else 0,
-<<<<<<< HEAD
-                self.milops_track)
-=======
                 self.milops_track
             )
->>>>>>> ui
             swing = 0
             for s in [Side.USSR, Side.US]:
                 swing += s.vp_mult * milops_vp_change[s]
@@ -1625,12 +1615,7 @@ class Game:
                 lambda n: self.map[n].control == Side.NEUTRAL and self.map[n].has_ussr_influence,
                 CountryInfo.REGION_ALL[MapRegion.EUROPE]
             ),
-<<<<<<< HEAD
-            prompt='Truman Doctrine: Select a country in which to remove all USSR influence.',
-            reps=1
-=======
             prompt="Truman Doctrine: Select a country in which to remove all USSR influence."
->>>>>>> ui
         )
 
     def _Olympic_Games(self, side):
@@ -1829,12 +1814,7 @@ class Game:
                 partial(self.event_influence_callback, partial(
                     Country.increment_influence, amt=incr), Side.US),
                 available_list,
-<<<<<<< HEAD
-                prompt=f'Place {incr} influence in a single country using Special Relationship.',
-                reps=1,
-=======
                 prompt=f"Place {incr} influence in a single country using Special Relationship.",
->>>>>>> ui
             )
 
     def _NORAD(self, side):
