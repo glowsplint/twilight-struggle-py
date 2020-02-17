@@ -537,6 +537,12 @@ class Country:
         self.influence[side] = max(self.influence[side] - amt, 0)
         return True
 
+    def match_influence(self, side):
+        if self.influence[side] == 0:
+            return False
+        self.influence[side] = self.influence[side.opp]
+        return True
+
 
 USSR = {
     'name': 'USSR',
