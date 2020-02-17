@@ -1,6 +1,7 @@
 from game_mechanics import *
 from copy import deepcopy
 
+
 class UI:
 
     help = '''
@@ -76,15 +77,18 @@ quit        Exit the game.
                     first = False
                 else:
                     print(",", k, end="")
-        if not first: print() # newline
+        if not first:
+            print()  # newline
 
         if self.input_state.reps_unit:
-            print(f"Remaining {self.input_state.reps_unit}: {self.input_state.reps}")
+            print(
+                f"Remaining {self.input_state.reps_unit}: {self.input_state.reps}")
 
         if self.awaiting_commit:
             print("Commit your actions? (Yes/No)")
         else:
-            print(f"Options: {', '.join(sorted(self.input_state.available_options))}")
+            print(
+                f"Options: {', '.join(sorted(self.input_state.available_options))}")
 
     def run(self):
 
@@ -177,13 +181,15 @@ c dec       Returns the number of cards in the draw deck.
     def parse_card(self, comd):
 
         if comd == '':
-            print(f'Listing {len(self.game.hand[self.input_state.side])} cards in hand.')
+            print(
+                f'Listing {len(self.game.hand[self.input_state.side])} cards in hand.')
             for c in sorted(self.game.hand[self.input_state.side]):
                 print(c)
         elif comd == '?':
             print(UI.help_card)
         elif comd == 'opp':
-            print(f'Cards in opponent hand: {len(self.game.hand[self.input_state.side.opp])}')
+            print(
+                f'Cards in opponent hand: {len(self.game.hand[self.input_state.side.opp])}')
         elif comd == 'dis':
             print(f'Listing {len(self.game.discard_pile)} discarded cards.')
             for c in sorted(self.game.discard_pile):
@@ -200,14 +206,15 @@ c dec       Returns the number of cards in the draw deck.
     help_state = '''
 s <eu|as|me|af|na|sa>   Displays the scoring state and country data for the given region.
 '''
+
     def parse_state(self, comd):
         if comd == '':
             print('=== Game state ===')
-            print('VP status: %d' % self.game.vp_track)
+            print(f'VP status: {self.game.vp_track}')
             print('Unimplemented')
         elif comd == '?':
             print(UI.help_state)
         else:
             # remember to check if comd is a valid ID
-            print('State of %s:' % comd)
+            print(f'State of {comd}')
             print('Unimplemented')

@@ -24,8 +24,8 @@ class Game:
     class Input:
 
         def __init__(self, side: Side, state: InputType, callback: Callable[[str], bool],
-                     options: Iterable[str], prompt: str = "",
-                     reps=1, reps_unit: str = "", max_per_option=-1):
+                     options: Iterable[str], prompt: str = '',
+                     reps=1, reps_unit: str = '', max_per_option=-1):
             self.side = side
             self.state = state
             self.callback = callback
@@ -40,8 +40,8 @@ class Game:
         @staticmethod
         def DiceRoll(side: Side, callback: Callable[[str], bool]):
             return Game.Input(side, InputType.DICE_ROLL, callback,
-                              ["Yes", "No"],
-                              "Commit your actions and roll the dice?")
+                              ['Yes', 'No'],
+                              'Commit your actions and roll the dice?')
 
         def recv(self, input_str):
             if input_str not in self.available_options:
@@ -54,7 +54,7 @@ class Game:
 
         def remove_option(self, option):
             if option not in self.selection:
-                raise KeyError("Option was never present!")
+                raise KeyError('Option was never present!')
             self.discarded_options.add(option)
 
         @property
@@ -73,7 +73,7 @@ class Game:
 
     class Output:
 
-        def __init__(self, turn, ar, ar_side=None, input=None, prompt=""):
+        def __init__(self, turn, ar, ar_side=None, input=None, prompt=''):
             self.turn = turn
             self.ar = ar
             self.ar_side = ar_side
@@ -89,9 +89,7 @@ class Game:
         self.ar_side = None
         self.defcon_track = 0
         self.milops_track = [0, 0]  # ussr first
-
-        # 0 is start, 1 is earth satellite etc
-        self.space_track = [0, 0]
+        self.space_track = [0, 0]  # 0 is start, 1 is earth satellite etc
         self.spaced_turns = [0, 0]
         self.extra_turn = [False, False]
 
@@ -106,10 +104,9 @@ class Game:
         self.removed_pile = []
         self.discard_pile = []
         self.draw_pile = []
-
-        # ussr, us hands; list of 2 lists of Card objects
+        # ussr, us baskets; list of 2 lists of Card objects
         self.basket = [[], []]
-        self.headline_bin = ["", ""]
+        self.headline_bin = ['', '']
 
         # For new set the first created game to be the actual ongoing game.
         if Game.main is None:
@@ -117,27 +114,22 @@ class Game:
 
     '''
     Starts a new game.
-
     '''
 
     def start(self, handicap=-2):
 
+        self.started = True
         self.vp_track = 0  # positive for ussr
         self.turn_track = 1
         self.ar_track = 0
         self.ar_side = Side.USSR
         self.defcon_track = 5
         self.milops_track = [0, 0]  # ussr first
-        self.started = True
-
-        # 0 is start, 1 is earth satellite etc
-        self.space_track = [0, 0]
+        self.space_track = [0, 0]  # 0 is start, 1 is earth satellite etc
         self.spaced_turns = [0, 0]
         self.extra_turn = [False, False]
-
         self.map = GameMap()
         self.cards = GameCards()
-
         self.handicap = handicap  # positive in favour of ussr
 
         self.stage_list = [
@@ -176,7 +168,8 @@ class Game:
 
     def change_space(self, side: Side, n: int):
         '''
-        Changes a player's advancement on the space track. This should be used instead of self.space_track[side] += n because it provides the correct VPs.
+        Changes a player's advancement on the space track. This should be used
+        instead of self.space_track[side] += n because it provides the correct VPs.
 
         Parameters
         ----------
@@ -237,7 +230,8 @@ class Game:
 
     def change_defcon(self, n: int):
         '''
-        Changes the current DEFCON level. Keeps DEFCON level between 1-5. If DEFCON level goes below 2, the game ends.
+        Changes the current DEFCON level. Keeps DEFCON level between 1-5.
+        If DEFCON level goes below 2, the game ends.
 
         Parameters
         ----------
@@ -281,9 +275,9 @@ class Game:
             partial(self.event_influence_callback,
                     Country.increment_influence, Side.USSR),
             CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE],
-            prompt="Place starting influence.",
+            prompt='Place starting influence.',
             reps=1,  # TODO: FOR TESTING ONLY
-            reps_unit="influence"
+            reps_unit='influence'
         )
 
     def put_start_US(self):
@@ -295,9 +289,9 @@ class Game:
             partial(self.event_influence_callback,
                     Country.increment_influence, Side.US),
             CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE],
-            prompt="Place starting influence.",
+            prompt='Place starting influence.',
             reps=1,  # TODO: FOR TESTING ONLY
-            reps_unit="influence"
+            reps_unit='influence'
         )
 
     def put_start_extra(self):
@@ -319,9 +313,9 @@ class Game:
             partial(self.event_influence_callback,
                     Country.increment_influence, side),
             self.map.has_influence(side),
-            prompt="Place additional starting influence.",
+            prompt='Place additional starting influence.',
             reps=side.vp_mult * self.handicap,
-            reps_unit="influence"
+            reps_unit='influence'
         )
 
     def headline_callback(self, side: Side, name: str):
@@ -335,7 +329,7 @@ class Game:
             side, InputType.SELECT_CARD_IN_HAND,
             partial(self.headline_callback, side),
             filter(lambda c: self.cards[c].info.can_headline, self.hand[side]),
-            prompt="Select headline."
+            prompt='Select headline.'
         )
 
     def process_headline(self):
@@ -344,7 +338,6 @@ class Game:
         Due to UI constraints, USSR player chooses first, then the US player.
         All choices are then displayed.
         '''
-
         # TODO account for space race!
         # must append triggers in backwards order
         self.stage_list.append(self.ar_complete)
@@ -362,17 +355,17 @@ class Game:
 
         self.output_both(Game.Output(
             self.turn_track, self.ar_track,
-            prompt=f"USSR selected {self.headline_bin[Side.USSR]} for headline."
+            prompt=f'USSR selected {self.headline_bin[Side.USSR]} for headline.'
         ))
         self.output_both(Game.Output(
             self.turn_track, self.ar_track,
-            prompt=f"US selected {self.headline_bin[Side.US]} for headline."
+            prompt=f'US selected {self.headline_bin[Side.US]} for headline.'
         ))
 
         ussr_hl = self.headline_bin[Side.USSR]
         us_hl = self.headline_bin[Side.US]
 
-        if us_hl == "Defectors" or self.cards[us_hl].info.ops >= self.cards[ussr_hl].info.ops:
+        if us_hl == 'Defectors' or self.cards[us_hl].info.ops >= self.cards[ussr_hl].info.ops:
             # must append triggers in backwards order
             self.stage_list.append(partial(self.resolve_headline, Side.USSR))
             self.stage_list.append(partial(self.resolve_headline, Side.US))
@@ -399,7 +392,7 @@ class Game:
                 partial(self.dispose_card, side, card_name, event=True))
             self.stage_list.append(
                 partial(self.trigger_event, side, card_name))
-            self.headline_bin[side] = ""
+            self.headline_bin[side] = ''
         self.stage_complete()
 
     def ar_complete(self):
@@ -580,7 +573,7 @@ class Game:
             side, InputType.SELECT_CARD_IN_HAND,
             partial(self.card_callback, side),
             filter(lambda c: self.cards[c].is_playable, self.hand[side]),
-            prompt="Select a card in hand to play."
+            prompt='Select a card in hand to play.'
         )
 
     def card_callback(self, side: Side, card_name: str):
@@ -636,7 +629,7 @@ class Game:
             partial(self.action_callback, side, card_name),
             map(lambda e: CardAction(e[0]).name,
                 filter(lambda e: e[1], enumerate(bool_arr))),
-            prompt=f"Select an action for {card_name}."
+            prompt=f'Select an action for {card_name}.'
         )
 
     def resolve_card_action(self, side: Side, card_name: str, action_name: str):
@@ -855,9 +848,9 @@ class Game:
             partial(self.ops_influence_callback, side),
             filter(lambda n: self.map.can_place_influence(
                 n, side, effective_ops), CountryInfo.ALL),
-            prompt=f"Place operations from {card_name} as influence.",
+            prompt=f'Place operations from {card_name} as influence.',
             reps=effective_ops,
-            reps_unit="operations"
+            reps_unit='operations'
         )
 
     def realignment_callback(self, side, name):
@@ -889,9 +882,9 @@ class Game:
             partial(self.realignment_callback, side),
             filter(lambda n: self.map.can_realignment(
                 self, n, side), self.map.ALL),
-            prompt=f"Select a country for realignment using operations from {card_name}.",
+            prompt=f'Select a country for realignment using operations from {card_name}.',
             reps=effective_ops,
-            reps_unit="operations"
+            reps_unit='operations'
         )
 
     def coup_callback(self, side, effective_ops, name):
@@ -933,7 +926,7 @@ class Game:
             partial(self.coup_callback, side, effective_ops),
             filter(lambda n: self.map.can_coup(self, n, side)
                    and n in restricted_list, CountryInfo.ALL),
-            prompt=f"Select a country to coup using operations from {card_name}.",
+            prompt=f'Select a country to coup using operations from {card_name}.',
         )
 
     def space(self, side: Side, card_name: str):
@@ -1278,9 +1271,9 @@ class Game:
             partial(self.event_influence_callback,
                     Country.increment_influence, Side.US),
             self.map.has_us_influence,
-            prompt="Place NORAD influence.",
+            prompt='Place NORAD influence.',
             reps=1,
-            reps_unit="influence"
+            reps_unit='influence'
         )
 
     def cuba_missile_remove(self):
@@ -1368,9 +1361,8 @@ class Game:
         # 1. Check milops
         def check_milops(self):
             milops_vp_change = map(
-                lambda x, y: x - self.defcon_track if x < self.defcon_track else 0,
-                self.milops_track
-            )
+                lambda x: x - self.defcon_track if x < self.defcon_track else 0,
+                self.milops_track)
             swing = 0
             for s in [Side.USSR, Side.US]:
                 swing += s.vp_mult * milops_vp_change[s]
@@ -1502,9 +1494,9 @@ class Game:
                     Country.decrement_influence, Side.US),
             filter(lambda n: self.map[n].has_us_influence,
                    CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE]),
-            prompt="Place influence from Socialist Governments.",
+            prompt='Place influence from Socialist Governments.',
             reps=3,
-            reps_unit="influence",
+            reps_unit='influence',
             max_per_option=2
         )
 
@@ -1565,9 +1557,9 @@ class Game:
                     Country.increment_influence, Side.USSR),
             filter(lambda n: self.map[n].control != Side.US,
                    CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE]),
-            prompt="Place influence from COMECON.",
+            prompt='Place influence from COMECON.',
             reps=4,
-            reps_unit="influence",
+            reps_unit='influence',
             max_per_option=1
         )
 
@@ -1617,7 +1609,7 @@ class Game:
                 lambda n: self.map[n].control == Side.NEUTRAL and self.map[n].has_ussr_influence,
                 CountryInfo.REGION_ALL[MapRegion.EUROPE]
             ),
-            prompt="Truman Doctrine: Select a country in which to remove all USSR influence.",
+            prompt='Truman Doctrine: Select a country in which to remove all USSR influence.',
             reps=1
         )
 
@@ -1684,9 +1676,9 @@ class Game:
                     Country.increment_influence, Side.US),
             filter(lambda n: self.map[n].control != Side.USSR,
                    CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE]),
-            prompt="Place influence from Marshall Plan.",
+            prompt='Place influence from Marshall Plan.',
             reps=7,
-            reps_unit="influence",
+            reps_unit='influence',
             max_per_option=1
         )
         self.basket[Side.US].append('Marshall Plan')
@@ -1722,9 +1714,9 @@ class Game:
             partial(self.event_influence_callback,
                     Country.decrement_influence, Side.USSR),
             filter(lambda n: self.map[n].has_us_influence, suez),
-            prompt="Remove US influence using Suez Crisis.",
+            prompt='Remove US influence using Suez Crisis.',
             reps=4,
-            reps_unit="influence",
+            reps_unit='influence',
             max_per_option=2
         )
 
@@ -1741,9 +1733,9 @@ class Game:
                 Country.decrement_influence, amt=dec), Side.USSR),
             filter(lambda n: self.map[n].has_ussr_influence,
                    CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE]),
-            prompt="Remove USSR influence using East European Unrest.",
+            prompt='Remove USSR influence using East European Unrest.',
             reps=3,
-            reps_unit="influence",
+            reps_unit='influence',
             max_per_option=1
         )
 
@@ -1755,9 +1747,9 @@ class Game:
                     Country.increment_influence, Side.USSR),
             chain(CountryInfo.REGION_ALL[MapRegion.SOUTHEAST_ASIA],
                   CountryInfo.REGION_ALL[MapRegion.AFRICA]),
-            prompt="Place influence using Decolonization.",
+            prompt='Place influence using Decolonization.',
             reps=4,
-            reps_unit="influence",
+            reps_unit='influence',
             max_per_option=1
         )
 
@@ -1794,7 +1786,7 @@ class Game:
         # checks to see if headline bin is empty i.e. in action round
         if self.headline_bin[Side.USSR]:  # check if there's a headline
             self.discard_pile.append(self.headline_bin[Side.USSR])
-            self.headline_bin[Side.USSR] = ""
+            self.headline_bin[Side.USSR] = ''
         if side == Side.USSR and self.ar_track > 0:
             self.change_vp(1)
         self.stage_complete()
@@ -1817,7 +1809,7 @@ class Game:
                 partial(self.event_influence_callback, partial(
                     Country.increment_influence, amt=incr), Side.US),
                 available_list,
-                prompt=f"Place {incr} influence in a single country using Special Relationship.",
+                prompt=f'Place {incr} influence in a single country using Special Relationship.',
                 reps=1,
             )
 
@@ -1965,9 +1957,9 @@ class Game:
             partial(self.event_influence_callback,
                     Country.remove_influence, Side.US),
             filter(lambda n: self.map[n].has_us_influence, mr),
-            prompt="Muslim Revolution: Select countries in which to remove all US influence.",
+            prompt='Muslim Revolution: Select countries in which to remove all US influence.',
             reps=2,
-            reps_unit="countries",
+            reps_unit='countries',
             max_per_option=1
         )
 
@@ -2001,9 +1993,9 @@ class Game:
                     Country.increment_influence, Side.US),
             chain(CountryInfo.REGION_ALL[MapRegion.SOUTHEAST_ASIA],
                   CountryInfo.REGION_ALL[MapRegion.AFRICA]),
-            prompt="Place influence using Colonial Real Guards.",
+            prompt='Place influence using Colonial Real Guards.',
             reps=4,
-            reps_unit="influence",
+            reps_unit='influence',
             max_per_option=1
         )
 
@@ -2027,9 +2019,9 @@ class Game:
                     Country.increment_influence, Side.US),
             filter(
                 lambda n: not self.map[n].has_us_influenc and not self.map[n].has_ussr_influence, CountryInfo.ALL),
-            prompt="Place influence using Puppet Governments.",
+            prompt='Place influence using Puppet Governments.',
             reps=3,
-            reps_unit="influence",
+            reps_unit='influence',
             max_per_option=1
         )
 
@@ -2050,9 +2042,9 @@ class Game:
                     Country.increment_influence, Side.US),
             chain(CountryInfo.REGION_ALL[MapRegion.CENTRAL_AMERICA],
                   CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA]),
-            prompt="Place influence using OAS_Founded.",
+            prompt='Place influence using OAS_Founded.',
             reps=2,
-            reps_unit="influence",
+            reps_unit='influence',
             max_per_option=1
         )
 
@@ -2076,9 +2068,9 @@ class Game:
                 lambda n: n not in CountryInfo.REGION_ALL[MapRegion.EUROPE] and self.map[n].has_ussr_influence,
                 CountryInfo.ALL
             ),
-            prompt="Remove USSR influence using The Voice Of America.",
+            prompt='Remove USSR influence using The Voice Of America.',
             reps=4,
-            reps_unit="influence",
+            reps_unit='influence',
             max_per_option=2
         )
 
@@ -2088,9 +2080,9 @@ class Game:
             partial(self.event_influence_callback,
                     Country.increment_influence, Side.USSR),
             CountryInfo.REGION_ALL[MapRegion.CENTRAL_AMERICA],
-            prompt="Place influence using Liberation Theology.",
+            prompt='Place influence using Liberation Theology.',
             reps=3,
-            reps_unit="influence",
+            reps_unit='influence',
             max_per_option=2
         )
 
@@ -2168,9 +2160,9 @@ class Game:
                     Country.decrement_influence, Side.US),
             filter(lambda n: self.map[n].has_us_influence,
                    CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST]),
-            prompt="Remove US influence using Marine_Barracks_Bombing.",
+            prompt='Remove US influence using Marine_Barracks_Bombing.',
             reps=2,
-            reps_unit="influence",
+            reps_unit='influence',
         )
 
     def _Soviets_Shoot_Down_KAL(self, side):
@@ -2221,9 +2213,9 @@ class Game:
                     Country.decrement_influence, Side.US),
             filter(lambda n: self.map[n].has_us_influence,
                    CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE]),
-            prompt="Remove US influence using Pershing II Deployed.",
+            prompt='Remove US influence using Pershing II Deployed.',
             reps=3,
-            reps_unit="influence",
+            reps_unit='influence',
             max_per_option=1
         )
 

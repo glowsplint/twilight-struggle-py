@@ -74,19 +74,11 @@ class GameMap:
 
     def has_us_influence(self):
         '''Returns list of names that have US influence, less superpowers..'''
-        country_list = []
-        for country in self.ALL.values():
-            if country.influence[Side.US] > 0 and country.info.superpower == False:
-                country_list.append(country.info.name)
-        return country_list
+        return [country.info.name for country in self.ALL.values() if country.influence[Side.US] > 0 and country.info.superpower == False]
 
     def has_ussr_influence(self):
         '''Returns list of names that have USSR influence, less superpowers..'''
-        country_list = []
-        for country in self.ALL.values():
-            if country.influence[Side.USSR] > 0 and country.info.superpower == False:
-                country_list.append(country.info.name)
-        return country_list
+        return [country.info.name for country in self.ALL.values() if country.influence[Side.USSR] > 0 and country.info.superpower == False]
 
     def build_standard(self):
         '''

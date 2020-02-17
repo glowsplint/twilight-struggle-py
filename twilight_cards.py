@@ -2,7 +2,7 @@ from twilight_map import *
 
 
 class CardInfo:
-    """
+    '''
     Cards should be able to be used for:
     1. Event
     2. Realignment
@@ -10,14 +10,14 @@ class CardInfo:
     4. Placing influence
     5. Space race
     6. Trigger event first >> realignment/coup/influence
-    """
+    '''
 
     ALL = dict()
 
-    def __init__(self, name="", type="", stage="", card_index=0,
+    def __init__(self, name='', type='', stage='', card_index=0,
                  optional_card=False, ops=0,
-                 event_text="", scoring_region="", may_be_held=True,
-                 owner="NEUTRAL", remove_if_used_as_event=False,
+                 event_text='', scoring_region='', may_be_held=True,
+                 owner='NEUTRAL', remove_if_used_as_event=False,
                  resolve_headline_first=False, can_headline=True,
                  **kwargs):
         self.name = name
