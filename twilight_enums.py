@@ -22,8 +22,7 @@ class Side(enum.IntEnum):
         else:
             raise NameError('Invalid string for Side.fromStr')
 
-    @property
-    def toStr(s):
+    def toStr(self, s):
         if s == Side.US:
             return 'US'
         elif s == Side.USSR:
@@ -87,6 +86,7 @@ class MapRegion(enum.IntEnum):
         else:
             raise NameError('Invalid string for MapRegion.fromStr')
 
+
 class InputType(enum.IntEnum):
 
     COMMIT = 0
@@ -97,6 +97,7 @@ class InputType(enum.IntEnum):
     SELECT_CARD_IN_HAND = 3
     SELECT_COUNTRY = 4
     SELECT_DISCARD_OPTIONAL = 5
+
 
 class CardAction(enum.IntEnum):
 

@@ -1,5 +1,8 @@
-from game_mechanics import *
 from copy import deepcopy
+
+from game_mechanics import Game
+from twilight_enums import Side
+from twilight_map import MapRegion, CountryInfo
 
 
 class UI:
@@ -18,8 +21,6 @@ new         Start a new game.
 quit        Exit the game.
 '''
 
-    '''ask_for_input is our primary means of getting input from the user.'''
-
     ussr_prompt = '----- USSR Player: -----'
     us_prompt = '----- US Player: -----'
     commit_options = ["yes", "no"]
@@ -27,29 +28,6 @@ quit        Exit the game.
     def __init__(self):
         self.game_rollback = None
         self.game = Game()
-
-    @staticmethod
-    def ask_for_input(expected_number_of_arguments: int, rejection_msg: str, can_be_less=True):
-        while True:
-            if can_be_less:
-                raw_input = input('> ').split(
-                    ',')
-                if raw_input[0].lower() == 'quit' or raw_input[0].lower() == 'exit' or raw_input[0].lower() == 'q':
-                    return
-                elif len(raw_input) == 0 or raw_input[0] == '?':
-                    print(UI.help)
-                elif len(raw_input) <= expected_number_of_arguments:
-                    return raw_input
-            else:
-                raw_input = input('> ').split(
-                    ',', expected_number_of_arguments - 1)
-                if raw_input[0].lower() == 'quit' or raw_input[0].lower() == 'exit' or raw_input[0].lower() == 'q':
-                    return
-                elif len(raw_input) == 0 or raw_input[0] == '?':
-                    print(UI.help)
-                elif len(raw_input) == expected_number_of_arguments:
-                    return raw_input
-            print(rejection_msg)
 
     @property
     def input_state(self) -> Game.Input:
@@ -71,7 +49,7 @@ quit        Exit the game.
         # print the already selected options
         first = True
         for k, v in self.input_state.selection.items():
-            for i in range(v):
+            for _i in range(v):
                 if first:
                     print("You have selected", k, end="")
                     first = False
@@ -104,7 +82,7 @@ quit        Exit the game.
             if len(user_choice) == 0 or user_choice[0] == "?":
                 print(UI.help)
 
-            elif user_choice[0] == "quit" or user_choice[0] == "exit":
+            elif user_choice[0] == "quit" or user_choice[0] == "exit" or user_choice[0].lower() == 'q':
                 break
 
             elif user_choice[0].lower() == 'new':

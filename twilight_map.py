@@ -1,5 +1,5 @@
 import random
-from twilight_enums import *
+from twilight_enums import Side, MapRegion, InputType, CardAction
 
 
 class CountryInfo:

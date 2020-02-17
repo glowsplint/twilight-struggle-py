@@ -1,4 +1,5 @@
-from twilight_map import *
+from twilight_map import MapRegion, CountryInfo
+from twilight_enums import Side, MapRegion, InputType, CardAction
 
 
 class CardInfo:

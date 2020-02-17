@@ -5,9 +5,9 @@ from functools import partial
 from itertools import chain
 from typing import Sequence
 
-from twilight_enums import *
-from twilight_map import *
-from twilight_cards import *
+from twilight_map import GameMap, CountryInfo, Country
+from twilight_enums import Side, MapRegion, InputType, CardAction
+from twilight_cards import GameCards, CardInfo, Card
 
 
 class Game:
@@ -1129,7 +1129,7 @@ class Game:
                 else:
                     print('\nYour input cannot be accepted.')
 
-    def may_discard_callback(self, side: Side, opt: str, did_not_discard_fn : Callable[[], None]=lambda: None):
+    def may_discard_callback(self, side: Side, opt: str, did_not_discard_fn: Callable[[], None] = lambda: None):
 
         if opt == Game.Input.OPTION_DO_NOT_DISCARD:
             did_not_discard_fn()
@@ -1516,13 +1516,13 @@ class Game:
                     did_not_discard_fn=partial(self.map['West_Germany'].remove_influence, Side.US)),
             chain(
                 filter(
-                    lambda n: n != 'The_China_Card' and self.get_global_effective_ops(side, self.cards[n].info.ops) >= 3,
+                    lambda n: n != 'The_China_Card' and self.get_global_effective_ops(
+                        side, self.cards[n].info.ops) >= 3,
                     self.hand[Side.US]
                 ),
                 [Game.Input.OPTION_DO_NOT_DISCARD]),
             prompt='You may discard a card. If you choose not to discard a card, US loses all influence in West Germany.',
         )
-
 
     def _Korean_War(self, side):
         self._War('South_Korea', Side.USSR)
@@ -1648,29 +1648,6 @@ class Game:
         guide_msg = f'You may add influence in these countries to equal USSR influence. Type in the country index.'
         rejection_msg = f'Please key in a single appropriate value.'
 
-        while True:
-            self.prompt_side(Side.US)
-            if all:
-                print(guide_msg_all)
-            else:
-                print(guide_msg)
-            if limit != None:
-                print(limit_msg)
-            for available_name in available_list:
-                print(
-                    f'{self.map[available_name].info.country_index}\t{self.map[available_name].info.name}')
-
-            user_choice = UI.ask_for_input(1, rejection_msg)
-            if user_choice == None:
-                break
-
-            if len(set(user_choice) - set(available_list_values)) == 0:
-                name = self.map.index_country_mapping[int(user_choice[0])]
-                self.map.set_influence(
-                    name, Side.US, self.map[name].influence[Side.USSR])
-                break
-            else:
-                print('\nYour input cannot be accepted.')
         pass
 
     def _Marshall_Plan(self, side):
@@ -1869,23 +1846,6 @@ class Game:
 
     def _Quagmire(self, side):
         # need to insert and replace the US Action round with the quagmire_discard stage
-        '''This runs every US action round if quagmire is in ussr_basket.'''
-        if 'NORAD' in self.basket[Side.US]:
-            self.removed_pile.append(
-                self.basket[Side.US].pop(self.basket[Side.US].index('NORAD')))
-        discard = self.quagmire_discard()
-        if discard == 'discard successful':
-            roll = random.randint(1, 6)
-            if roll >= 4:
-                self.basket[Side.USSR].pop(
-                    self.basket[Side.USSR].index('Quagmire'))
-                print(f'Roll successful with roll of {roll}. Quagmire lifted.')
-            else:
-                print(f'Roll failed with roll of {roll}.')
-
-        # ```
-
-        return self.removed_pile
         pass
 
     def _Salt_Negotiations(self, side):
@@ -2109,7 +2069,7 @@ class Game:
         return self.discard_pile
 
     def _One_Small_Step(self, side):
-        if can_play_event(side, 'One_Small_Step'):
+        if self.can_play_event(side, 'One_Small_Step'):
             self.change_space(side, 2)
         return self.discard_pile
 
@@ -2188,8 +2148,9 @@ class Game:
         pass
 
     def _Latin_American_Debt_Crisis(self, side):
-        def double_inf_ussr_callback(country_name : str) -> bool:
-            if self.map[country_name].get_ussr_influence == 0: return False
+        def double_inf_ussr_callback(country_name: str) -> bool:
+            if self.map[country_name].get_ussr_influence == 0:
+                return False
             self.map[country_name].influence[Side.USSR] *= 2
             return True
 
@@ -2211,13 +2172,13 @@ class Game:
                     did_not_discard_fn=did_not_discard_fn),
             chain(
                 filter(
-                    lambda n: n != 'The_China_Card' and self.get_global_effective_ops(side, self.cards[n].info.ops) >= 3,
+                    lambda n: n != 'The_China_Card' and self.get_global_effective_ops(
+                        side, self.cards[n].info.ops) >= 3,
                     self.hand[Side.US]
                 ),
                 [Game.Input.OPTION_DO_NOT_DISCARD]),
             prompt='You may discard a card. If you choose not to discard a card, US loses all influence in West Germany.',
         )
-
 
     def _Tear_Down_This_Wall(self, side):
         if 'Willy_Brandt' in self.basket[Side.USSR]:

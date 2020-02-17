@@ -3,7 +3,5 @@
 
 # ### Twilight Struggle
 
-from twilight_ui import *
+from twilight_ui import UI
 UI().run()
-
-
