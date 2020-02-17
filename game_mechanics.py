@@ -1518,7 +1518,7 @@ class Game:
 
     def _Blockade(self, side):
         self.input_state = Game.Input(
-            Side.US, InputType.SELECT_COUNTRY,
+            Side.US, InputType.SELECT_DISCARD_OPTIONAL,
             partial(self.may_discard_callback, Side.US,
                     did_not_discard_fn=partial(self.map['West_Germany'].remove_influence, Side.US)),
             chain(
@@ -2195,7 +2195,35 @@ class Game:
         pass
 
     def _Latin_American_Debt_Crisis(self, side):
-        pass
+        def double_inf_ussr(country_name : str) -> bool:
+            if self.map[country_name].get_ussr_influence == 0: return False
+            self.map[country_name].influence[Side.USSR] *= 2
+            return True
+
+        def did_not_discard_fn():
+            self.input_state = Game.Input(
+                Side.USSR, InputType.SELECT_COUNTRY,
+                double_inf_ussr,
+                filter(lambda n: self.map[n].has_ussr_influence,
+                       CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA]),
+                prompt="Select countries to double USSR influence",
+                reps=2,
+                reps_unit="countries",
+            )
+
+        self.input_state = Game.Input(
+            Side.US, InputType.SELECT_DISCARD_OPTIONAL,
+            partial(self.may_discard_callback, Side.US,
+                    did_not_discard_fn=did_not_discard_fn),
+            chain(
+                filter(
+                    lambda n: n != 'The_China_Card' and self.get_global_effective_ops(side, self.cards[n].info.ops) >= 3,
+                    self.hand[Side.US]
+                ),
+                [Game.Input.OPTION_DO_NOT_DISCARD]),
+            prompt='You may discard a card. If you choose not to discard a card, US loses all influence in West Germany.',
+        )
+
 
     def _Tear_Down_This_Wall(self, side):
         if 'Willy_Brandt' in self.basket[Side.USSR]:
