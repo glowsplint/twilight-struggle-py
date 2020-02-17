@@ -216,5 +216,13 @@ s <eu|as|me|af|na|sa>   Displays the scoring state and country data for the give
             print(UI.help_state)
         else:
             # remember to check if comd is a valid ID
+<<<<<<< HEAD
             print(f'State of {comd}')
             print('Unimplemented')
+=======
+            region = MapRegion.fromStr(comd)
+            print(f'State of {region.name}:')
+            for n in sorted(CountryInfo.REGION_ALL[region]):
+                print(self.game.map[n].get_state_str())
+            print('Score state currently unimplemented')
+>>>>>>> ui

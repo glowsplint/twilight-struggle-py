@@ -1,7 +1,7 @@
 import math
 import random
 
-from functools import reduce, partial
+from functools import partial
 from itertools import chain
 from typing import Sequence
 
@@ -22,6 +22,8 @@ class Game:
     ars_by_turn = [None, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7]
 
     class Input:
+
+        OPTION_DO_NOT_DISCARD = 'Do Not Discard'
 
         def __init__(self, side: Side, state: InputType, callback: Callable[[str], bool],
                      options: Iterable[str], prompt: str = '',
@@ -436,11 +438,8 @@ class Game:
         elif card_name == 'The_China_Card':
             return False
         elif card_name == 'UN_Intervention':
-            eligible_count = reduce(
-                lambda x, y: x + y,
-                map(lambda c: self.cards[c].info.owner == side.opp, hand),
-                0)
-            return eligible_count != 0
+            return any(
+                map(lambda c: self.cards[c].info.owner == side.opp, hand))
         elif card_name == 'Defectors':
             return False
         elif card_name == 'Special_Relationship':
@@ -508,21 +507,16 @@ class Game:
         Checks if the player of <side> can use realignment on any country.
         True if there is at least 1 country suitable for realignment.
         '''
-        return reduce(
-            lambda x, y: x + y,
-            map(lambda n: self.map.can_realignment(
-                self, n, side), CountryInfo.ALL),
-            0) > 0
+        return any(map(
+            lambda n: self.map.can_realignment(self, n, side), CountryInfo.ALL))
 
     def can_coup_at_all(self, side: Side):
         '''
         Checks if the player of <side> can coup in any country.
         True if there is at least 1 country suitable for coup.
         '''
-        return reduce(
-            lambda x, y: x + y,
-            map(lambda n: self.map.can_coup(self, n, side), CountryInfo.ALL),
-            0) > 0
+        return any(map(
+            lambda n: self.map.can_coup(self, n, side), CountryInfo.ALL))
 
     def can_space(self, side: Side, card_name: str):
         '''
@@ -1135,6 +1129,21 @@ class Game:
                 else:
                     print('\nYour input cannot be accepted.')
 
+    def may_discard_callback(self, side: Side, opt: str, did_not_discard_fn : Callable[[], None]=lambda: None):
+
+        if opt == Game.Input.OPTION_DO_NOT_DISCARD:
+            did_not_discard_fn()
+            self.input_state.reps -= 1
+            return True
+
+        if opt not in self.hand[side]:
+            return False
+
+        self.hand[side].remove(opt)
+        self.discard_pile.append(opt)
+        self.input_state.reps -= 1
+        return True
+
     def may_discard_card(self, side: Side, blockade=False):
         '''
         Stage where a player is given the opportunity to discard a single card.
@@ -1152,17 +1161,8 @@ class Game:
         guide_msg = f'You may discard a card. Type in the card index.'
         rejection_msg = f'Please key in a single value.'
 
-        if blockade:
-            hand = self.hand[Side.US]
-            available_list = [
-                'Do not discard a card.']
-            available_list.extend([
-                card.info.name for card in hand if self.get_global_effective_ops(side, card.info.ops) >= 3])
-            if len(available_list) == 0:
-                return 'did not discard'
-        else:
-            hand = self.hand[side]
-            available_list = self.hand[side]
+        hand = self.hand[side]
+        available_list = self.hand[side]
 
         if 'The_China_Card' in available_list:
             available_list.pop(available_list.index('The_China_Card'))
@@ -1271,9 +1271,14 @@ class Game:
             partial(self.event_influence_callback,
                     Country.increment_influence, Side.US),
             self.map.has_us_influence,
+<<<<<<< HEAD
             prompt='Place NORAD influence.',
             reps=1,
             reps_unit='influence'
+=======
+            prompt="Place NORAD influence.",
+            reps_unit="influence"
+>>>>>>> ui
         )
 
     def cuba_missile_remove(self):
@@ -1309,7 +1314,7 @@ class Game:
 
         # TODO: FOR TESTING ONLY
         if self.turn_track == 1:
-            handsize_target = [10, 10]
+            handsize_target = [12, 12]
 
         # Ignore China Card if it is in either hand
         if 'The_China_Card' in self.hand[Side.USSR]:
@@ -1362,7 +1367,12 @@ class Game:
         def check_milops(self):
             milops_vp_change = map(
                 lambda x: x - self.defcon_track if x < self.defcon_track else 0,
+<<<<<<< HEAD
                 self.milops_track)
+=======
+                self.milops_track
+            )
+>>>>>>> ui
             swing = 0
             for s in [Side.USSR, Side.US]:
                 swing += s.vp_mult * milops_vp_change[s]
@@ -1510,13 +1520,19 @@ class Game:
         self.stage_complete()
 
     def _Blockade(self, side):
-        print(
-            'If you choose not to discard a card, US loses all influence in West Germany.')
-        result = self.may_discard_card(Side.US, blockade=True)
-        if result == 'did not discard':
-            west_germany = self.map['West_Germany']
-            west_germany.set_influence(0, west_germany.influence[Side.USSR])
-        return self.removed_pile
+        self.input_state = Game.Input(
+            Side.US, InputType.SELECT_DISCARD_OPTIONAL,
+            partial(self.may_discard_callback, Side.US,
+                    did_not_discard_fn=partial(self.map['West_Germany'].remove_influence, Side.US)),
+            chain(
+                filter(
+                    lambda n: n != 'The_China_Card' and self.get_global_effective_ops(side, self.cards[n].info.ops) >= 3,
+                    self.hand[Side.US]
+                ),
+                [Game.Input.OPTION_DO_NOT_DISCARD]),
+            prompt='You may discard a card. If you choose not to discard a card, US loses all influence in West Germany.',
+        )
+
 
     def _Korean_War(self, side):
         self._War('South_Korea', Side.USSR)
@@ -1609,8 +1625,12 @@ class Game:
                 lambda n: self.map[n].control == Side.NEUTRAL and self.map[n].has_ussr_influence,
                 CountryInfo.REGION_ALL[MapRegion.EUROPE]
             ),
+<<<<<<< HEAD
             prompt='Truman Doctrine: Select a country in which to remove all USSR influence.',
             reps=1
+=======
+            prompt="Truman Doctrine: Select a country in which to remove all USSR influence."
+>>>>>>> ui
         )
 
     def _Olympic_Games(self, side):
@@ -1809,8 +1829,12 @@ class Game:
                 partial(self.event_influence_callback, partial(
                     Country.increment_influence, amt=incr), Side.US),
                 available_list,
+<<<<<<< HEAD
                 prompt=f'Place {incr} influence in a single country using Special Relationship.',
                 reps=1,
+=======
+                prompt=f"Place {incr} influence in a single country using Special Relationship.",
+>>>>>>> ui
             )
 
     def _NORAD(self, side):
@@ -2184,7 +2208,35 @@ class Game:
         pass
 
     def _Latin_American_Debt_Crisis(self, side):
-        pass
+        def double_inf_ussr(country_name : str) -> bool:
+            if self.map[country_name].get_ussr_influence == 0: return False
+            self.map[country_name].influence[Side.USSR] *= 2
+            return True
+
+        def did_not_discard_fn():
+            self.input_state = Game.Input(
+                Side.USSR, InputType.SELECT_COUNTRY,
+                double_inf_ussr,
+                filter(lambda n: self.map[n].has_ussr_influence,
+                       CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA]),
+                prompt="Select countries to double USSR influence",
+                reps=2,
+                reps_unit="countries",
+            )
+
+        self.input_state = Game.Input(
+            Side.US, InputType.SELECT_DISCARD_OPTIONAL,
+            partial(self.may_discard_callback, Side.US,
+                    did_not_discard_fn=did_not_discard_fn),
+            chain(
+                filter(
+                    lambda n: n != 'The_China_Card' and self.get_global_effective_ops(side, self.cards[n].info.ops) >= 3,
+                    self.hand[Side.US]
+                ),
+                [Game.Input.OPTION_DO_NOT_DISCARD]),
+            prompt='You may discard a card. If you choose not to discard a card, US loses all influence in West Germany.',
+        )
+
 
     def _Tear_Down_This_Wall(self, side):
         if 'Willy_Brandt' in self.basket[Side.USSR]:
