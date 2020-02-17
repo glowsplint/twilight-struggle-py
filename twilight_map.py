@@ -465,10 +465,17 @@ class Country:
             return f'{self.info.name} [Superpower]'
         else:
             ctrl = self.control
-            if ctrl == Side.NEUTRAL: ctrl_str = ''
-            else: ctrl_str = f'[{ctrl.name} control]'
+            if ctrl == Side.US:
+                name_str = f'\033[104m{self.info.name:20}\033[0m'
+                ctrl_str = f'[{ctrl.name} control]'
+            elif ctrl == Side.USSR:
+                name_str = f'\033[101m{self.info.name:20}\033[0m'
+                ctrl_str = f'[{ctrl.name} control]'
+            else:
+                name_str = f'{self.info.name:20}'
+                ctrl_str = ''
 
-            return f'{self.info.name:20}US {self.influence[Side.US]}:{self.influence[Side.USSR]} USSR {ctrl_str}'
+            return f'{name_str}US {self.influence[Side.US]}:{self.influence[Side.USSR]} USSR {ctrl_str}'
 
     @property
     def control(self):

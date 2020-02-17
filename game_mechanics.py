@@ -953,7 +953,7 @@ class Game:
 
         self.stage_complete()  # TODO the die roll in the UI
 
-    def event_influence_callback(self, country_function, side, name):
+    def event_influence_callback(self, country_function, side: Side, name: str) -> bool:
         '''
         event_influence_callback is used as the callback function for modifying influence.
         This is mostly used for card events where the player has to choose
@@ -2188,7 +2188,7 @@ class Game:
         pass
 
     def _Latin_American_Debt_Crisis(self, side):
-        def double_inf_ussr(country_name : str) -> bool:
+        def double_inf_ussr_callback(country_name : str) -> bool:
             if self.map[country_name].get_ussr_influence == 0: return False
             self.map[country_name].influence[Side.USSR] *= 2
             return True
@@ -2196,12 +2196,13 @@ class Game:
         def did_not_discard_fn():
             self.input_state = Game.Input(
                 Side.USSR, InputType.SELECT_COUNTRY,
-                double_inf_ussr,
+                double_inf_ussr_callback,
                 filter(lambda n: self.map[n].has_ussr_influence,
                        CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA]),
                 prompt="Select countries to double USSR influence",
                 reps=2,
                 reps_unit="countries",
+                max_per_option=1
             )
 
         self.input_state = Game.Input(
