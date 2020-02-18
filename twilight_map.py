@@ -232,6 +232,15 @@ class GameMap:
     def coup(self, game_instance, name: str, side: Side, effective_ops: int, die_roll: int):
         '''
         The result of a given side couping in a country, with a die_roll provided.
+        Accounts for:
+        - Global operations modifiers
+        - Latin_American_Death_Squads,
+        - Nuclear_Subs
+        - Yuri_And_Samantha
+        - The_China_Card
+        - Vietnam_Revolts
+        - Cuban_Missile_Crisis
+        - SALT Negotiations
 
         Parameters
         ----------
@@ -250,14 +259,19 @@ class GameMap:
         country = self[name]
 
         modifier = 0
+
+        # Latin American Death Squads
         ca = list(CountryInfo.REGION_ALL[MapRegion.CENTRAL_AMERICA])
         sa = list(CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA])
-
         if name in ca or name in sa:
             if 'Latin_American_Death_Squads' in game_instance.basket[side]:
                 modifier += 1
             elif 'Latin_American_Death_Squads' in game_instance.basket[side.opp]:
                 modifier -= 1
+
+        # SALT Negotiations
+        if 'SALT_Negotiations' in game_instance.basket[side] or 'SALT_Negotiations' in game_instance.basket[side]:
+            modifier -= 1
 
         difference = die_roll + effective_ops + modifier - country.info.stability * 2
 
@@ -275,9 +289,19 @@ class GameMap:
         else:
             print(f'Coup failed with roll of {die_roll}.')
 
-        if country.info.battleground and 'Nuclear_Subs' not in game_instance.basket[Side.US]:
-            game_instance.change_defcon(-1)
+        # Nuclear Subs
+        if country.info.battleground:
+            if side == Side.US:
+                if 'Nuclear_Subs' not in game_instance.basket[Side.US]:
+                    game_instance.change_defcon(-1)
+            else:
+                game_instance.change_defcon(-1)
 
+        # Cuban Missile Crisis
+        if 'Cuban_Missile_Crisis' in self.basket[side.opp]:
+            game_instance.change_defcon(1-game_instance.defcon_track)
+
+        # Yuri and Samantha
         if side == Side.US and 'Yuri_and_Samantha' in game_instance.basket[Side.USSR]:
             game_instance.change_vp(1)
 

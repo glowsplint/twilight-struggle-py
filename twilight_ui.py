@@ -5,6 +5,7 @@ from twilight_enums import Side, InputType, CardAction
 from twilight_map import MapRegion, CountryInfo
 from twilight_cards import CardInfo
 
+
 class UI:
 
     help = '''
@@ -90,7 +91,7 @@ quit        Exit the game.
             print("Commit your actions? (Yes/No)")
         else:
             print("Available options:")
-            for k, v in self.options.items():
+            for k, v in sorted(self.options.items()):
                 print(f'{k:5} {v}')
 
     def run(self):
@@ -116,7 +117,7 @@ quit        Exit the game.
                 self.game_rollback = deepcopy(self.game)
                 self.get_options()
                 self.prompt()
-                
+
             elif user_choice[0].lower() == 'dbg':
                 self.parse_debug(user_choice[1])
 
@@ -235,19 +236,19 @@ s <eu|as|me|af|na|sa>   Displays the scoring state and country data for the give
             for n in sorted(CountryInfo.REGION_ALL[region]):
                 print(self.game.map[n].get_state_str())
             print('Score state currently unimplemented')
-    
+
     help_debug = '''
 dbg                                 Starts debugging mode.
 dbg inf set <country> <us>:<ussr>   Sets the influence in a particular country.
 dbg card <card_name> <side>         Triggers the card event as the given side.
 dbg rollback                        Restores the state before debugging started.
-'''        
+'''
     def parse_debug(self, comd):
-    
-        
+
         if not comd:
             print("Debugging mode started.")
-            self.debug_save = (deepcopy(self.game), deepcopy(self.game_rollback))
+            self.debug_save = (deepcopy(self.game),
+                               deepcopy(self.game_rollback))
             return
         elif comd == '?':
             print(UI.help_debug)
@@ -266,8 +267,10 @@ dbg rollback                        Restores the state before debugging started.
                 if len(inf) != 2:
                     print('Invalid command. Enter ? for help.')
                 else:
-                    self.game.map[user_choice[2]].influence[Side.US] = int(inf[0])
-                    self.game.map[user_choice[2]].influence[Side.USSR] = int(inf[1])
+                    self.game.map[user_choice[2]
+                                  ].influence[Side.US] = int(inf[0])
+                    self.game.map[user_choice[2]
+                                  ].influence[Side.USSR] = int(inf[1])
         elif user_choice[0] == 'card':
             if len(user_choice) != 3:
                 print('Invalid command. Enter ? for help.')
@@ -276,8 +279,10 @@ dbg rollback                        Restores the state before debugging started.
             elif user_choice[2].lower() not in ['us', 'ussr']:
                 print('Invalid side.')
             else:
-                self.game.stage_list.append(lambda: print(f'\n=== {user_choice[1]} event complete. ===\nThe final prompt may print again. You should rollback.\n'))
-                self.game.card_function_mapping[user_choice[1]](self.game, Side.fromStr(user_choice[2]))
+                self.game.stage_list.append(lambda: print(
+                    f'\n=== {user_choice[1]} event complete. ===\nThe final prompt may print again. You should rollback.\n'))
+                self.game.card_function_mapping[user_choice[1]](
+                    self.game, Side.fromStr(user_choice[2]))
                 self.get_options()
                 self.prompt()
         elif user_choice[0] == 'rollback':
@@ -288,5 +293,3 @@ dbg rollback                        Restores the state before debugging started.
             self.prompt()
         else:
             print('Invalid command. Enter ? for help.')
-          
-
