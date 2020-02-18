@@ -25,8 +25,8 @@ class Game:
         OPTION_DO_NOT_DISCARD = 'Do Not Discard'
 
         def __init__(self, side: Side, state: InputType, callback: Callable[[str], bool],
-                     options: Iterable[str], prompt: str = '',
-                     reps=1, reps_unit: str = '', max_per_option=-1):
+                     options: Iterable[str], prompt: str='',
+                     reps=1, reps_unit: str='', max_per_option=-1):
             self.side = side
             self.state = state
             self.callback = callback
