@@ -60,13 +60,7 @@ class Game:
 
         @property
         def available_options(self):
-            return map(
-                lambda item: item[0],
-                filter(
-                    lambda item: item[0] not in self.discarded_options and item[1] < self.max_per_option,
-                    self.selection.items()
-                )
-            )
+            return [item[0] for item in self.selection.items() if item[0] not in self.discarded_options and item[1] < self.max_per_option]
 
         @property
         def complete(self):
@@ -1006,34 +1000,6 @@ class Game:
         self.discard_pile.append(opt)
         self.input_state.reps -= 1
         return True
-
-    def pick_from_discarded(self, side: Side):
-        '''
-        Stage where a player is given the opportunity to pick a card from the discard pile.
-        Used in the Star_Wars (event happens immediately) and Salt_Negotiations.
-        Returns selected card which has to be placed somewhere.
-
-        # TODO: not sure if the interpretation for Star_Wars is a 'may' or a 'must'
-
-        Parameters
-        ----------
-        side : Side
-            Side of the player who is to pick from the discard pile.
-        '''
-        hand = self.hand[Side.US]
-        available_list = ['Do not take a card.']
-        available_list_values = ['0']
-        available_list.extend(
-            card.info.name for card in self.discard_pile if card.info.type != 'Scoring')
-        available_list_values.extend(
-            [str(self.cards[n].info.card_index) for n in available_list[1:]])
-        choice = self.select_multiple(
-            side, available_list, values=available_list_values)
-        if choice == 0:
-            return None
-        else:
-            name = self.cards.index_card_mapping[choice]
-            return hand.pop(hand.index(name))
 
     def forced_to_missile_envy(self):
         # check first if the player has as many scoring cards as turns
