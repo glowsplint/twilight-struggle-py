@@ -25,8 +25,8 @@ class Game:
         OPTION_DO_NOT_DISCARD = 'Do Not Discard'
 
         def __init__(self, side: Side, state: InputType, callback: Callable[[str], bool],
-                     options: Iterable[str], prompt: str='',
-                     reps=1, reps_unit: str='', max_per_option=-1):
+                     options: Iterable[str], prompt: str = '',
+                     reps=1, reps_unit: str = '', max_per_option=-1):
             self.side = side
             self.state = state
             self.callback = callback
@@ -405,7 +405,7 @@ class Game:
                 self.ar_side = self.ar_side.opp
 
             self.stage_list.append(self.ar_complete)
-            self.stage_list.append(partial(self.select_card_and_action))
+            self.stage_list.append(partial(self.select_card))
 
         self.stage_complete()
 
@@ -427,7 +427,7 @@ class Game:
             prerequisites are not fulfilled.
         '''
         hand = self.hand[side]
-        if card_name == 'Blank_4_Op_Card':
+        if card_name in [f'Blank_{n}_Op_Card' for n in range(1, 5)]:
             return False
         elif card_name == 'The_China_Card':
             return False
@@ -546,7 +546,7 @@ class Game:
 
         return available_space_turn(self, side) and enough_ops(self, side, card_name)
 
-    def select_card_and_action(self, side: Side = Side.NEUTRAL):
+    def select_card(self, side: Side = Side.NEUTRAL):
         '''
         Stage for a single player to choose a card in hand to play.
 
@@ -574,6 +574,8 @@ class Game:
                         card_name, CardAction.PLAY_EVENT.name)
             )
         else:
+            if card_name == 'The_China_Card' and side == Side.US and 'Formosan_Resolution' in self.basket[Side.US]:
+                self.basket[Side.US].remove('Formosan_Resolution')
             self.select_action(side, card_name, False)
         return True
 
@@ -615,7 +617,7 @@ class Game:
         ]
 
         self.input_state = Game.Input(
-            side, InputType.SELECT_CARD_IN_HAND,
+            side, InputType.SELECT_CARD_ACTION,
             partial(self.action_callback, side, card_name),
             map(lambda e: CardAction(e[0]).name,
                 filter(lambda e: e[1], enumerate(bool_arr))),
@@ -630,7 +632,7 @@ class Game:
 
         action = CardAction[action_name]
         card = self.cards[card_name]
-        opp_event = card.info.owner == side.opp
+        opp_event = (card.info.owner == side.opp)
 
         if action == CardAction.PLAY_EVENT:
 
@@ -788,6 +790,7 @@ class Game:
         side : Side
             Side of the player whose hand we pick the card from.
         '''
+        # TODO: move this to UI
         return self.hand[side].pop(random.randint(1, len(self.hand[side])))
 
     '''
@@ -1040,8 +1043,12 @@ class Game:
 
         # if turn 4, add mid war cards into draw pile and shuffle, same for turn 8 for late war cards
         if self.turn_track == 1:
-            # self.hand[Side.USSR].append(self.cards.early_war.pop(
-            # self.cards.early_war.index('Asia_Scoring')))  # for testing of specific cards
+            # TEST CODE BELOW -- remove when done
+            self.hand[Side.USSR].extend([self.cards.early_war.pop(i)
+                                         for i in range(18)])
+            self.hand[Side.US].extend([self.cards.early_war.pop(0)
+                                       for i in range(18)])
+            # TEST CODE ABOVE -- remove when done
             self.draw_pile.extend(self.cards.early_war)
             self.cards.early_war = []
             random.shuffle(self.draw_pile)
@@ -1059,10 +1066,6 @@ class Game:
         else:
             handsize_target = [9, 9]
 
-        # TODO: FOR TESTING ONLY
-        if self.turn_track == 1:
-            handsize_target = [12, 12]
-
         # Ignore China Card if it is in either hand
         if 'The_China_Card' in self.hand[Side.USSR]:
             handsize_target[Side.USSR] += 1
@@ -1070,7 +1073,7 @@ class Game:
             handsize_target[Side.US] += 1
 
         next_side = Side.USSR
-        while not list(map(len, self.hand)) == handsize_target:
+        while list(map(len, self.hand)) < handsize_target:
             if len(self.hand[next_side]) == handsize_target[next_side]:
                 next_side = next_side.opp
                 continue
@@ -1158,6 +1161,10 @@ class Game:
         self.process_headline()
 
     def score(self, region: MapRegion, presence_vps: int, domination_vps: int, control_vps: int):
+
+        if 'Formosan_Resolution' in self.basket[Side.US]:
+            self.map['Taiwan'].info.battleground = True
+
         bg_count = [0, 0, 0]  # USSR, US, NEUTRAL
         country_count = [0, 0, 0]
         vps = [0, 0]
@@ -1184,6 +1191,10 @@ class Game:
 
         swing = vps[Side.USSR] - vps[Side.US]
         self.change_vp(swing)
+
+        if self.map['Taiwan'].info.battleground:
+            self.map['Taiwan'].info.battleground = False
+
         print(f'{region.name} scores for {swing} VP')
 
     '''
@@ -1212,7 +1223,12 @@ class Game:
         self.stage_complete()
 
     def _Five_Year_Plan(self, side):
-        pass
+        random_card = self.choose_random_card(Side.USSR)
+        if random_card.info.owner == Side.US:
+            self.trigger_event(side, random_card.info.name)
+        else:
+            self.discard_pile.append(random_card)
+        self.stage_complete()
 
     def _The_China_Card(self, side):
         'No event.'
@@ -1237,12 +1253,11 @@ class Game:
         self.stage_complete()
 
     def _Vietnam_Revolts(self, side):
-        # TODO
+        # TODO: Continuous effect
         self.basket[Side.USSR].append('Vietnam_Revolts')
         self.end_turn_stage_list.append(
             lambda: self.basket[Side.USSR].remove('Vietnam_Revolts'))
         self.stage_complete()
-        pass
 
     def _Blockade(self, side):
         self.input_state = Game.Input(
@@ -1269,6 +1284,7 @@ class Game:
 
     def _War(self, country_name: str, side: Side, lower: int = 4, win_vp: int = 2, win_milops: int = 2):
         country = self.map[country_name]
+        # TODO: move this to the UI
         roll = random.randint(1, 6)
         modifier = sum([self.map[adjacent_country].control ==
                         side.opp for adjacent_country in country.info.adjacent_countries])
@@ -1347,11 +1363,8 @@ class Game:
             prompt='Warsaw Pact: Choose between two options.'
         )
 
-        pass
-
     def _De_Gaulle_Leads_France(self, side):
         self.map['France'].change_influence(1, -2)
-        # for NATO cancellation effect
         self.basket[Side.USSR].append('De_Gaulle_Leads_France')
         self.stage_complete()
 
@@ -1372,14 +1385,14 @@ class Game:
         )
 
     def _Olympic_Games(self, side):
-        def _participate(self, side):
+        def _participate(side):
             # TODO: shift this dice roll to UI
             if random.uniform(0, 1) < 13 / 16:
                 self.change_vp(2 * side.vp_mult)
             else:
                 self.change_vp(-2 * side.vp_mult)
 
-        def _boycott(self, side):
+        def _boycott(side):
             self.change_defcon(-1)
             self.select_action(side, 'Blank_4_Op_Card')
 
@@ -1394,10 +1407,11 @@ class Game:
             option_function_mapping.keys(),
             prompt='Olympic Games: Choose between two options.'
         )
-        pass
 
     def _NATO(self, side):
-        return self.basket[Side.US] if self.can_play_event(side, 'NATO') else self.discard_pile
+        if self.can_play_event(side, 'NATO'):
+            self.basket[Side.USSR].append('NATO')
+        self.stage_complete()
 
     def _Independent_Reds(self, side):
         ireds = ['Yugoslavia', 'Romania',
@@ -1441,8 +1455,6 @@ class Game:
             prompt='Indo-Pakistani War: Choose between two options.'
         )
 
-        pass
-
     def _Containment(self, side):
         self.basket[Side.US].append('Containment')
         self.end_turn_stage_list.append(
@@ -1450,13 +1462,16 @@ class Game:
         self.stage_complete()
 
     def _CIA_Created(self, side):
-        pass
+        # TODO: reveal hand
+        ops = self.get_global_effective_ops(Side.US, 1)
+        self.select_action(side, f'Blank_{ops}_Op_Card')
 
     def _US_Japan_Mutual_Defense_Pact(self, side):
         # TODO: coup and realignment in Japan
         japan = self.map['Japan']
         japan.set_influence(japan.influence[Side.USSR], max(
             japan.influence[Side.USSR] + 4, japan.influence[Side.US]))
+        self.stage_complete()
 
     def _Suez_Crisis(self, side):
         suez = ['France', 'UK', 'Israel']
@@ -1547,7 +1562,8 @@ class Game:
         self.stage_complete()
 
     def _Formosan_Resolution(self, side):
-        pass
+        self.basket[Side.US].append('Formosan_Resolution')
+        self.stage_complete()
 
     def _Defectors(self, side):
         # checks to see if headline bin is empty i.e. in action round
@@ -1637,6 +1653,8 @@ class Game:
 
     def _Quagmire(self, side):
         # need to insert and replace the US Action round with the quagmire_discard stage
+        if 'NORAD' in self.basket[Side.US]:
+            self.basket[Side.US].remove('NORAD')
         pass
 
     def _Salt_Negotiations(self, side):
@@ -1688,24 +1706,36 @@ class Game:
         return self.removed_pile
 
     def _South_African_Unrest(self, side):
-        statements = ['Add 2 Influence to South Africa', 'Add 1 Influence to South Africa and 2 Influence to Angola',
-                      'Add 1 Influence to South Africa and 2 Influence to Botswana',
-                      'Add 1 Influence each to South Africa, Angola, and Botswana']
-        choice = self.select_multiple(side, statements)
-        # using alternate syntax
-        if choice == 0:
+
+        def _sa():
             self.map.change_influence('South_Africa', Side.USSR, 2)
-        elif choice == 1:
+
+        def _sa_angola():
             self.map.change_influence('South_Africa', Side.USSR, 1)
             self.map.change_influence('Angola', Side.USSR, 2)
-        elif choice == 2:
+
+        def _sa_botswana():
             self.map.change_influence('South_Africa', Side.USSR, 1)
             self.map.change_influence('Botswana', Side.USSR, 2)
-        elif choice == 3:
+
+        def _sa_angola_botswana():
             self.map.change_influence('South_Africa', Side.USSR, 1)
             self.map.change_influence('Angola', Side.USSR, 1)
             self.map.change_influence('Botswana', Side.USSR, 1)
-        return self.discard_pile
+
+        option_function_mapping = {
+            'Add 2 Influence to South Africa': _sa,
+            'Add 1 Influence to South Africa and 2 Influence to Angola': _sa_angola,
+            'Add 1 Influence to South Africa and 2 Influence to Botswana': _sa_botswana,
+            'Add 1 Influence each to South Africa, Angola, and Botswana': _sa_angola_botswana
+        }
+
+        self.input_state = Game.Input(
+            side, InputType.SELECT_MULTIPLE,
+            partial(self.select_multiple_callback, option_function_mapping),
+            option_function_mapping.keys(),
+            prompt='Indo-Pakistani War: Choose between two options.'
+        )
 
     def _Allende(self, side):
         self.map['Chile'].change_influence(2, 0)

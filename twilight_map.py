@@ -209,13 +209,13 @@ class GameMap:
         if country.info.superpower:
             return False
 
-        d4 = [n for n in CountryInfo.REGION_ALL[MapRegion.EUROPE]]
-        d3 = [n for n in CountryInfo.REGION_ALL[MapRegion.ASIA]]
+        d4 = list(CountryInfo.REGION_ALL[MapRegion.EUROPE])
+        d3 = list(CountryInfo.REGION_ALL[MapRegion.ASIA])
         d3.extend(d4)
-        d2 = [n for n in CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST]]
+        d2 = list(CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST])
         d2.extend(d3)
 
-        if 'NATO' in game_instance.basket[Side.US] and name in d4:
+        if 'NATO' in game_instance.basket[Side.US] and name in game_instance.calculate_nato_countries():
             return False
         elif 'US_Japan_Mutual_Defense_Pact' in game_instance.basket[Side.US] and name == 'Japan':
             return False
@@ -300,13 +300,13 @@ class GameMap:
         if country.info.superpower:
             return False
 
-        d4 = [n for n in CountryInfo.REGION_ALL[MapRegion.EUROPE]]
-        d3 = [n for n in CountryInfo.REGION_ALL[MapRegion.ASIA]]
+        d4 = list(CountryInfo.REGION_ALL[MapRegion.EUROPE])
+        d3 = list(CountryInfo.REGION_ALL[MapRegion.ASIA])
         d3.extend(d4)
-        d2 = [n for n in CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST]]
+        d2 = list(CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST])
         d2.extend(d3)
 
-        if 'NATO' in game_instance.basket[Side.US] and name in d4:
+        if 'NATO' in game_instance.basket[Side.US] and name in game_instance.calculate_nato_countries():
             return False
         elif 'US_Japan_Mutual_Defense_Pact' in game_instance.basket[Side.US] and name == 'Japan':
             return False

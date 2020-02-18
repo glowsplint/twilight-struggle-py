@@ -1398,15 +1398,54 @@ AWACS_Sale_to_Saudis = {
 }
 
 
+Blank_1_Op_Card = {
+    'name': 'Blank_1_Op_Card',
+    'type': 'Template',
+    'stage': 'Template',
+    'card_index': 150,
+    'optional_card': False,
+    'ops': 1,
+    'owner': 'NEUTRAL',
+    'event_text': 'This is a blank card worth 1 operations points.',
+    'remove_if_used_as_event': False,
+}
+
+
+Blank_2_Op_Card = {
+    'name': 'Blank_2_Op_Card',
+    'type': 'Template',
+    'stage': 'Template',
+    'card_index': 151,
+    'optional_card': False,
+    'ops': 2,
+    'owner': 'NEUTRAL',
+    'event_text': 'This is a blank card worth 2 operations points.',
+    'remove_if_used_as_event': False,
+}
+
+
+Blank_3_Op_Card = {
+    'name': 'Blank_3_Op_Card',
+    'type': 'Template',
+    'stage': 'Template',
+    'card_index': 152,
+    'optional_card': False,
+    'ops': 3,
+    'owner': 'NEUTRAL',
+    'event_text': 'This is a blank card worth 3 operations points.',
+    'remove_if_used_as_event': False,
+}
+
+
 Blank_4_Op_Card = {
     'name': 'Blank_4_Op_Card',
     'type': 'Template',
     'stage': 'Template',
-    'card_index': 111,
+    'card_index': 153,
     'optional_card': False,
     'ops': 4,
     'owner': 'NEUTRAL',
-    'event_text': 'This is a blank card worth 4 operations points used when the Olympic Games sponsor\'s opposing player chooses to boycott the Event.',
+    'event_text': 'This is a blank card worth 4 operations points.',
     'remove_if_used_as_event': False,
 }
 
@@ -1522,4 +1561,7 @@ Solidarity = CardInfo(**Solidarity)
 Iran_Iraq_War = CardInfo(**Iran_Iraq_War)
 Yuri_and_Samantha = CardInfo(**Yuri_and_Samantha)
 AWACS_Sale_to_Saudis = CardInfo(**AWACS_Sale_to_Saudis)
+Blank_1_Op_Card = CardInfo(**Blank_1_Op_Card)
+Blank_2_Op_Card = CardInfo(**Blank_2_Op_Card)
+Blank_3_Op_Card = CardInfo(**Blank_3_Op_Card)
 Blank_4_Op_Card = CardInfo(**Blank_4_Op_Card)

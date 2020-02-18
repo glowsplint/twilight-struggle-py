@@ -180,7 +180,7 @@ quit        Exit the game.
                     self.prompt()
                     return
 
-                print(f"Selected: {matched}.")
+                print(f"Selected: {matched}")
                 self.input_state.recv(matched)
                 self.get_options()
                 self.prompt()
