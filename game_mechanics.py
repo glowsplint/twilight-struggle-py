@@ -2017,7 +2017,7 @@ class Game:
                     self.hand[Side.US]
                 ),
                 [Game.Input.OPTION_DO_NOT_DISCARD]),
-            prompt='You may discard a card. If you choose not to discard, US loses all influence in West Germany.',
+            prompt='You may discard a card. If you choose not to discard, USSR chooses two countries in South America to double USSR influence',
         )
 
     def _Tear_Down_This_Wall(self, side):
