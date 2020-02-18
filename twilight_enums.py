@@ -1,5 +1,5 @@
 import enum
-
+from typing import Iterable, Callable
 # you can now refer to USSR and US as Side.USSR / Side.US / Side.NEUTRAL
 # without concern about which is 0 and which is 1; also robust to
 # change any time.
@@ -22,8 +22,7 @@ class Side(enum.IntEnum):
         else:
             raise NameError('Invalid string for Side.fromStr')
 
-    @property
-    def toStr(s):
+    def toStr(self, s):
         if s == Side.US:
             return 'US'
         elif s == Side.USSR:
@@ -86,3 +85,26 @@ class MapRegion(enum.IntEnum):
             return MapRegion.SOUTHEAST_ASIA
         else:
             raise NameError('Invalid string for MapRegion.fromStr')
+
+
+class InputType(enum.IntEnum):
+
+    COMMIT = 0
+    DICE_ROLL = 1
+
+    # these should have a list of text options.
+    SELECT_CARD_ACTION = 2  # Realign, coup, space, event, etc.
+    SELECT_CARD_IN_HAND = 3
+    SELECT_COUNTRY = 4
+    SELECT_MULTIPLE = 5
+    SELECT_DISCARD_OPTIONAL = 6
+
+
+class CardAction(enum.IntEnum):
+
+    PLAY_EVENT = 0,
+    RESOLVE_EVENT_FIRST = 1
+    INFLUENCE = 2
+    REALIGNMENT = 3
+    COUP = 4
+    SPACE = 5
