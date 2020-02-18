@@ -249,11 +249,14 @@ dbg rollback                        Restores the state before debugging started.
             print("Debugging mode started.")
             self.debug_save = (deepcopy(self.game), deepcopy(self.game_rollback))
             return
-        user_choice = comd.split(' ')
-        if not self.debug_save:
-            print("Error: Not in debug mode.")
+        elif comd == '?':
             print(UI.help_debug)
-        elif user_choice[0] == 'inf':
+            return
+        elif not self.debug_save:
+            print("Error: Not in debug mode.")
+            return
+        user_choice = comd.split(' ')
+        if user_choice[0] == 'inf':
             if len(user_choice) != 4:
                 print('Invalid command. Enter ? for help.')
             elif user_choice[2] not in CountryInfo.ALL:
