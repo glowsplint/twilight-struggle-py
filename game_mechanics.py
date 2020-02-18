@@ -493,7 +493,7 @@ class Game:
         side : Side
             Side of the player who plays the card.
         card_name : str
-            Card itself, or string representation of the card.
+            String representation of the card.
         '''
         return False if self.cards[card_name].info.owner != side.opp else self.can_play_event(side, card_name, resolve_check=True)
 
@@ -703,7 +703,7 @@ class Game:
         side : Side
             Side of the player who plays the card.
         card_name : str
-            Card itself, or string representation of the card.
+            String representation of the card.
         event : bool, default=False
             True if the event has been resolved.
         '''
