@@ -1,7 +1,7 @@
 from copy import deepcopy
 
 from game_mechanics import Game
-from twilight_enums import Side
+from twilight_enums import Side, InputType, CardAction
 from twilight_map import MapRegion, CountryInfo
 from twilight_cards import CardInfo
 
@@ -30,6 +30,7 @@ quit        Exit the game.
         self.game_rollback = None
         self.game = Game()
         self.debug_save = None
+        self.options = dict()
 
     @property
     def input_state(self) -> Game.Input:
@@ -38,6 +39,27 @@ quit        Exit the game.
     @property
     def awaiting_commit(self):
         return self.input_state.complete
+
+    def get_options(self):
+        self.options = dict()
+        if self.game.input_state.state == InputType.SELECT_CARD_ACTION:
+            for opt in self.input_state.available_options:
+                self.options[CardAction[opt].value] = opt
+        elif self.game.input_state.state == InputType.SELECT_CARD_IN_HAND:
+            for opt in self.input_state.available_options:
+                self.options[CardInfo.ALL[opt].card_index] = opt
+        elif self.game.input_state.state == InputType.SELECT_COUNTRY:
+            for opt in self.input_state.available_options:
+                self.options[CountryInfo.ALL[opt].country_index] = opt
+        elif self.game.input_state.state == InputType.SELECT_MULTIPLE:
+            for i, opt in enumerate(self.input_state.available_options):
+                self.options[i] = opt
+        elif self.game.input_state.state == InputType.SELECT_DISCARD_OPTIONAL:
+            for opt in self.input_state.available_options:
+                if opt == Game.Input.OPTION_DO_NOT_DISCARD:
+                    self.options[0] = opt
+                else:
+                    self.options[CardInfo.ALL[opt].card_index] = opt
 
     def prompt(self):
 
@@ -67,8 +89,9 @@ quit        Exit the game.
         if self.awaiting_commit:
             print("Commit your actions? (Yes/No)")
         else:
-            print(
-                f"Options: {', '.join(sorted(self.input_state.available_options))}")
+            print("Available options:")
+            for k, v in self.options.items():
+                print(f'{k:5} {v}')
 
     def run(self):
 
@@ -91,6 +114,7 @@ quit        Exit the game.
                 print("Starting new game.")
                 self.game.start()
                 self.game_rollback = deepcopy(self.game)
+                self.get_options()
                 self.prompt()
                 
             elif user_choice[0].lower() == 'dbg':
@@ -122,11 +146,13 @@ quit        Exit the game.
                 if "yes".startswith(comd):
                     self.game.stage_complete()
                     self.game_rollback = deepcopy(self.game)
+                    self.get_options()
                     self.prompt()
                 elif "no".startswith(comd):
                     self.game = self.game_rollback
                     self.game_rollback = deepcopy(self.game)
                     print("Actions undone.")
+                    self.get_options()
                     self.prompt()
                 else:
                     print("Invalid input.")
@@ -136,14 +162,18 @@ quit        Exit the game.
 
                 # this counts how many strings in the options start with the input
                 matched = None
-                for opt in self.input_state.available_options:
-                    if opt.lower().startswith(comd):
-                        if matched:
-                            # there is more than one match
-                            print("Error: multiple matching options!")
-                            self.prompt()
-                            return
-                        matched = opt
+                if comd.isdigit():
+                    if int(comd) in self.options:
+                        matched = self.options[int(comd)]
+                else:
+                    for opt in self.options.values():
+                        if opt.lower().startswith(comd):
+                            if matched:
+                                # there is more than one match
+                                print("Error: multiple matching options!")
+                                self.prompt()
+                                return
+                            matched = opt
 
                 if not matched:
                     print("Error: no matching option!")
@@ -152,6 +182,7 @@ quit        Exit the game.
 
                 print(f"Selected: {matched}.")
                 self.input_state.recv(matched)
+                self.get_options()
                 self.prompt()
 
     help_card = '''
@@ -244,11 +275,13 @@ dbg rollback                        Restores the state before debugging started.
             else:
                 self.game.stage_list.append(lambda: print(f'\n=== {user_choice[1]} event complete. ===\nThe final prompt may print again. You should rollback.\n'))
                 self.game.card_function_mapping[user_choice[1]](self.game, Side.fromStr(user_choice[2]))
+                self.get_options()
                 self.prompt()
         elif user_choice[0] == 'rollback':
             print("Restoring pre-debugging state.")
             self.game = self.debug_save[0]
             self.game_rollback = self.debug_save[1]
+            self.get_options()
             self.prompt()
         else:
             print('Invalid command. Enter ? for help.')
