@@ -980,7 +980,13 @@ class Game:
             partial(Country.remove_influence, Side.US).
         '''
         self.input_state.reps -= 1
-        return country_function(self.map[name], side)
+        status = country_function(self.map[name], side)
+        # TODO: this might not be general enough. If bugs happen check here
+        if not status: return False
+        else:
+            if not self.map[name].influence[side]:
+                self.input_state.remove_option(name)
+            return True
 
     def select_multiple_callback(self, option_function_mapping: dict, selected_option: list):
         '''
@@ -2086,7 +2092,7 @@ class Game:
                     self.hand[Side.US]
                 ),
                 [Game.Input.OPTION_DO_NOT_DISCARD]),
-            prompt='You may discard a card. If you choose not to discard, US loses all influence in West Germany.',
+            prompt='You may discard a card. If you choose not to discard, USSR chooses two countries in South America to double USSR influence',
         )
 
     def _Tear_Down_This_Wall(self, side):
