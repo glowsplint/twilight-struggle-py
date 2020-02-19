@@ -446,6 +446,7 @@ class GameMap:
                 return False if name in list(CountryInfo.REGION_ALL[MapRegion.CENTRAL_AMERICA]) else True
             elif 'Chernobyl_South_America' in game_instance.basket[Side.US]:
                 return False if name in list(CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA]) else True
+            return True
 
         return has_influence_around(self, name, side) and sufficient_ops(effective_ops) and is_chernobyl(game_instance, name)
 
