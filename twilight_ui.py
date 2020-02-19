@@ -42,6 +42,10 @@ quit        Exit the game.
 
     def get_options(self):
         self.options = dict()
+        if self.game.input_state.optional_prompt:
+            self.options[0] = self.game.input_state.optional_prompt
+
+
         if self.game.input_state.state == InputType.SELECT_CARD_ACTION:
             for opt in self.input_state.available_options:
                 self.options[CardAction[opt].value] = opt
@@ -54,12 +58,8 @@ quit        Exit the game.
         elif self.game.input_state.state == InputType.SELECT_MULTIPLE:
             for i, opt in enumerate(self.input_state.available_options):
                 self.options[i] = opt
-        elif self.game.input_state.state == InputType.SELECT_DISCARD_OPTIONAL:
-            for opt in self.input_state.available_options:
-                if opt == Game.Input.OPTION_DO_NOT_DISCARD:
-                    self.options[0] = opt
-                else:
-                    self.options[CardInfo.ALL[opt].card_index] = opt
+
+
 
     def prompt(self):
 

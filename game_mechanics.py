@@ -22,11 +22,12 @@ class Game:
 
     class Input:
 
-        OPTION_DO_NOT_DISCARD = 'Do Not Discard'
+        OPTION_DO_NOTHING = 'Do Not Discard'
 
         def __init__(self, side: Side, state: InputType, callback: Callable[[str], bool],
                      options: Iterable[str], prompt: str = '',
-                     reps=1, reps_unit: str = '', max_per_option=-1):
+                     reps=1, reps_unit: str = '', max_per_option=-1,
+                     optional_prompt=''):
             self.side = side
             self.state = state
             self.callback = callback
@@ -34,6 +35,7 @@ class Game:
             self.reps = reps
             self.reps_unit = reps_unit
             self.max_per_option = reps if max_per_option == -1 else max_per_option
+            self.optional_prompt = optional_prompt
             self.selection = {k: 0 for k in options}
             self.discarded_options = set()
 
@@ -45,8 +47,14 @@ class Game:
                               'Commit your actions and roll the dice?')
 
         def recv(self, input_str):
-            if input_str not in self.available_options:
+            if (input_str not in self.available_options and
+                    (not self.optional_prompt or input_str != self.optional_prompt)):
                 return False
+
+            if input_str == self.optional_prompt:
+                self.callback(input_str)
+                return True
+
             if self.callback(input_str):
                 self.selection[input_str] += 1
                 return True
@@ -996,7 +1004,7 @@ class Game:
 
     def may_discard_callback(self, side: Side, opt: str, did_not_discard_fn: Callable[[], None] = lambda: None):
 
-        if opt == Game.Input.OPTION_DO_NOT_DISCARD:
+        if opt == self.input_state.optional_prompt:
             did_not_discard_fn()
             self.input_state.reps -= 1
             return True
@@ -1266,15 +1274,14 @@ class Game:
 
     def _Blockade(self, side):
         self.input_state = Game.Input(
-            Side.US, InputType.SELECT_DISCARD_OPTIONAL,
+            Side.US, InputType.SELECT_CARD_IN_HAND,
             partial(self.may_discard_callback, Side.US,
                     did_not_discard_fn=partial(self.map['West_Germany'].remove_influence, Side.US)),
-            chain(
-                (n for n in self.hand[Side.US]
-                    if n != 'The_China_Card'
-                    and self.get_global_effective_ops(side, self.cards[n].info.ops) >= 3),
-                [Game.Input.OPTION_DO_NOT_DISCARD]),
+            (n for n in self.hand[Side.US]
+                if n != 'The_China_Card'
+                and self.get_global_effective_ops(side, self.cards[n].info.ops) >= 3),
             prompt='You may discard a card. If you choose not to discard a card, US loses all influence in West Germany.',
+            optional_prompt="Do Not Discard"
         )
 
     def _Korean_War(self, side):
@@ -1528,31 +1535,38 @@ class Game:
 
     def _De_Stalinization(self, side):
 
+        def remove_callback(n):
+            if n != self.input_state.optional_prompt:
+                self.event_influence_callback(Country.decrement_influence, Side.USSR, n)
+                if self.input_state.reps:
+                    #TODO make a better prompt
+                    self.input_state.optional_prompt = f'Move {4 - self.input_state.reps} influence.'
+                    return True
+
+            ops = 4 - self.input_state.reps
+            # if we get here, either out of reps or optional prompt
+            self.input_state = Game.Input(
+                Side.USSR, InputType.SELECT_COUNTRY,
+                partial(self.event_influence_callback,
+                        Country.increment_influence, Side.USSR),
+                (n for n in CountryInfo.ALL if self.map[n].control != Side.US),
+                prompt=f'Add {ops} influence using De-Stalinization.',
+                reps=ops,
+                reps_unit='influence'
+            )
+            return True
+
         # gathering stage
         # cannot accept input if you are trying to remove more influence than you have
         self.input_state = Game.Input(
             Side.USSR, InputType.SELECT_COUNTRY,
-            partial(self.event_influence_callback,
-                    Country.decrement_influence, Side.USSR),
+            remove_callback,
             (n for n in CountryInfo.ALL if self.map[n].has_ussr_influence),
             prompt='Remove up to 4 influence using De-Stalinization.',
             reps=4,
-            reps_unit='influence'
+            reps_unit='influence',
+            optional_prompt='Move no influence.'
         )
-
-        ops = 0  # this should be equal to whatever was removed in the gathering stage
-
-        # releasing stage
-        self.input_state = Game.Input(
-            Side.USSR, InputType.SELECT_COUNTRY,
-            partial(self.event_influence_callback,
-                    Country.decrement_influence, Side.USSR),
-            (n for n in CountryInfo.ALL if self.map[n].control != Side.US),
-            prompt=f'Add {ops} influence using De-Stalinization.',
-            reps=ops,
-            reps_unit='influence'
-        )
-        pass
 
     def _Nuclear_Test_Ban(self, side):
         self.change_vp((self.defcon_track - 2) * side.vp_mult)
@@ -2004,14 +2018,14 @@ class Game:
             )
 
         self.input_state = Game.Input(
-            Side.US, InputType.SELECT_DISCARD_OPTIONAL,
+            Side.US, InputType.SELECT_CARD_IN_HAND,
             partial(self.may_discard_callback, Side.US,
                     did_not_discard_fn=did_not_discard_fn),
-            chain([Game.Input.OPTION_DO_NOT_DISCARD],
-                (n for n in self.hand[Side.US]
+            (n for n in self.hand[Side.US]
                     if n != 'The_China_Card'
-                    and self.get_global_effective_ops(side, self.cards[n].info.ops) >= 3)),
+                    and self.get_global_effective_ops(side, self.cards[n].info.ops) >= 3),
             prompt='You may discard a card. If you choose not to discard, USSR chooses two countries in South America to double USSR influence',
+            optional_prompt="Do Not Discard"
         )
 
     def _Tear_Down_This_Wall(self, side):
