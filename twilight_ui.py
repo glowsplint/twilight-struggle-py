@@ -279,19 +279,14 @@ dbg rollback                        Restores the state before debugging started.
             elif user_choice[2].lower() not in ['us', 'ussr']:
                 print('Invalid side.')
             else:
-<<<<<<< .merge_file_a20444
-                self.game.stage_list.append(lambda: print(
-                    f'\n=== {user_choice[1]} event complete. ===\nThe final prompt may print again. You should rollback.\n'))
-                self.game.card_function_mapping[user_choice[1]](
-                    self.game, Side.fromStr(user_choice[2]))
-=======
                 input_state_rollback = deepcopy(self.game.input_state)
+
                 def end_of_event():
                     self.game.input_state = input_state_rollback
                     print(f'\n=== {user_choice[1]} event complete. ===\n')
                 self.game.stage_list.append(end_of_event)
-                self.game.card_function_mapping[user_choice[1]](self.game, Side.fromStr(user_choice[2]))
->>>>>>> .merge_file_a01040
+                self.game.card_function_mapping[user_choice[1]](
+                    self.game, Side.fromStr(user_choice[2]))
                 self.get_options()
                 self.prompt()
         elif user_choice[0] == 'rollback':

@@ -229,7 +229,7 @@ class GameMap:
         return not (side == Side.US and country.influence[Side.USSR] == 0 or
                     side == Side.USSR and country.influence[Side.US] == 0)
 
-    def coup(self, game_instance, name: str, side: Side, effective_ops: int, die_roll: int):
+    def coup(self, game_instance, name: str, side: Side, effective_ops: int, die_roll: int, free=False):
         '''
         The result of a given side couping in a country, with a die_roll provided.
         Accounts for:
@@ -305,7 +305,9 @@ class GameMap:
         if side == Side.US and 'Yuri_and_Samantha' in game_instance.basket[Side.USSR]:
             game_instance.change_vp(1)
 
-        game_instance.change_milops(side, effective_ops)
+        # Free coups
+        if not free:
+            game_instance.change_milops(side, effective_ops)
 
     def can_realignment(self, game_instance, name: str, side: Side) -> bool:
         '''
@@ -426,7 +428,21 @@ class GameMap:
             else:
                 return True
 
-        return has_influence_around(self, name, side) and sufficient_ops(self, effective_ops)
+        def is_chernobyl(self, name: str):
+            if 'Chernobyl_Europe' in self.basket[Side.US]:
+                return False if name in list(CountryInfo.REGION_ALL[MapRegion.EUROPE]) else True
+            elif 'Chernobyl_Middle_East' in self.basket[Side.US]:
+                return False if name in list(CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST]) else True
+            elif 'Chernobyl_Asia' in self.basket[Side.US]:
+                return False if name in list(CountryInfo.REGION_ALL[MapRegion.ASIA]) else True
+            elif 'Chernobyl_Africa' in self.basket[Side.US]:
+                return False if name in list(CountryInfo.REGION_ALL[MapRegion.AFRICA]) else True
+            elif 'Chernobyl_Central_America' in self.basket[Side.US]:
+                return False if name in list(CountryInfo.REGION_ALL[MapRegion.CENTRAL_AMERICA]) else True
+            elif 'Chernobyl_South_America' in self.basket[Side.US]:
+                return False if name in list(CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA]) else True
+
+        return has_influence_around(self, name, side) and sufficient_ops(self, effective_ops) and is_chernobyl(self, name)
 
     def place_influence(self, name: str, side: Side, effective_ops: int):
         if side == Side.USSR and self[name].control == Side.US:

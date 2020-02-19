@@ -586,7 +586,7 @@ class Game:
         )
         return True
 
-    def select_action(self, side: Side, card_name: str, is_event_resolved: bool = False):
+    def select_action(self, side: Side, card_name: str, is_event_resolved: bool = False, can_coup=True):
         '''
         Stage where the player has already chosen a card and now chooses an action to do with the card.
         Checks are made to ensure that the actions made available to the player are feasible actions,
@@ -612,7 +612,7 @@ class Game:
                 side, card_name),
             self.can_place_influence(side, card_name),
             self.can_realign_at_all(side),
-            self.can_coup_at_all(side),
+            self.can_coup_at_all(side) and can_coup,
             self.can_space(side, card_name)
         ]
 
@@ -885,7 +885,7 @@ class Game:
             reps_unit='operations'
         )
 
-    def coup_callback(self, side, effective_ops, country_name):
+    def coup_callback(self, side, effective_ops, country_name, free=False):
         '''
         TODO: Latin American DS, Iran-contra
         '''
@@ -897,10 +897,10 @@ class Game:
             local_ops_modifier += 1
 
         self.map.coup(self, country_name, side, effective_ops +
-                      local_ops_modifier, random.randint(1, 6))
+                      local_ops_modifier, random.randint(1, 6), free=free)
         return True
 
-    def card_operation_coup(self, side: Side, card_name: str, restricted_list: Sequence[str] = None):
+    def card_operation_coup(self, side: Side, card_name: str, restricted_list: Sequence[str] = None, free=False):
         '''
         Stage when a player is given the opportunity to coup. Provides a list
         of countries which can be couped and waits for player input.
@@ -927,7 +927,7 @@ class Game:
 
         self.input_state = Game.Input(
             side, InputType.SELECT_COUNTRY,
-            partial(self.coup_callback, side, effective_ops),
+            partial(self.coup_callback, side, effective_ops, free=free),
             filter(lambda n: self.map.can_coup(self, n, side)
                    and n in restricted_list, CountryInfo.ALL),
             prompt=f'Select a country to coup using operations from {card_name}.',
@@ -982,7 +982,8 @@ class Game:
         self.input_state.reps -= 1
         status = country_function(self.map[name], side)
         # TODO: this might not be general enough. If bugs happen check here
-        if not status: return False
+        if not status:
+            return False
         else:
             if not self.map[name].influence[side]:
                 self.input_state.remove_option(name)
@@ -1301,12 +1302,16 @@ class Game:
         romania.set_influence(max(3, romania.influence[Side.USSR]), 0)
         self.stage_complete()
 
-    def _War(self, country_name: str, side: Side, lower: int = 4, win_vp: int = 2, win_milops: int = 2):
+    def _War(self, country_name: str, side: Side, country_itself: bool = False, lower: int = 4, win_vp: int = 2, win_milops: int = 2):
         country = self.map[country_name]
         # TODO: move this to the UI
         roll = random.randint(1, 6)
         modifier = sum([self.map[adjacent_country].control ==
                         side.opp for adjacent_country in country.info.adjacent_countries])
+
+        if country_itself:  # For Arab-Israeli War
+            modifier += 1
+
         if roll - modifier >= lower:
             self.change_vp(win_vp * side.vp_mult)
             self.change_milops(side, win_milops)
@@ -1322,7 +1327,7 @@ class Game:
 
     def _Arab_Israeli_War(self, side):
         if self.can_play_event(side, 'Arab_Israeli_War'):
-            self._War('Israel', Side.USSR)
+            self._War('Israel', Side.USSR, country_itself=True)
         self.stage_complete()
 
     def _COMECON(self, side):
@@ -1996,19 +2001,20 @@ class Game:
         # uses alternate syntax
         self.map.set_influence('Iran', Side.US, 0)
         self.map.change_influence('Iran', Side.USSR, 2)
-        return self.basket[Side.USSR]
+        self.basket[Side.US].append('Iranian_Hostage_Crisis')
+        self.stage_complete()
 
     def _The_Iron_Lady(self, side):
         # uses alternate syntax
         self.map.change_influence('Argentina', Side.USSR, 1)
         self.map.set_influence('UK', Side.USSR, 0)
         self.change_vp(-1)
-        return self.basket[Side.US]
+        self.basket[Side.US].append('The_Iron_Lady')
 
     def _Reagan_Bombs_Libya(self, side):
         swing = math.floor(self.map['Libya'].influence[Side.USSR] / 2)
         self.change_vp(-swing)
-        return self.discard_pile
+        self.stage_complete()
 
     def _Star_Wars(self, side):
         if self.can_play_event(side, 'Star_Wars'):
@@ -2018,10 +2024,22 @@ class Game:
             pass
 
     def _North_Sea_Oil(self, side):
-        return self.basket[Side.US]
+        self.basket[Side.US].append('North_Sea_Oil')
+        pass
 
     def _The_Reformer(self, side):
-        pass
+        reps = 6 if self.vp_track > 0 else 4
+        self.input_state = Game.Input(
+            Side.USSR, InputType.SELECT_COUNTRY,
+            partial(self.event_influence_callback,
+                    Country.increment_influence, Side.USSR),
+            CountryInfo.REGION_ALL[MapRegion.EUROPE],
+            prompt=f'The Reformer: Add {reps} influence to Europe.',
+            reps=reps,
+            reps_unit='influence',
+            max_per_option=2
+        )
+        self.basket[Side.USSR].append('The_Reformer')
 
     def _Marine_Barracks_Bombing(self, side):
         self.map.set_influence('Lebanon', Side.US, 0)
@@ -2037,30 +2055,64 @@ class Game:
         )
 
     def _Soviets_Shoot_Down_KAL(self, side):
-        pass
+        self.change_defcon(-1)
+        self.change_vp(-2)
+        if self.map['South_Korea'].control == Side.US:
+            self.select_action(Side.US, 'Blank_4_Op_Card', can_coup=False)
 
     def _Glasnost(self, side):
-        pass
+        self.change_defcon(1)
+        self.change_vp(2)
+        if 'The_Reformer' in self.basket[Side.USSR]:
+            self.select_action(Side.USSR, 'Blank_4_Op_Card', can_coup=False)
 
     def _Ortega_Elected_in_Nicaragua(self, side):
-        pass
+        self.map.set_influence('Nicaragua', Side.US, 0)
+        self.card_operation_coup(side, 'Ortega_Elected_in_Nicaragua', restricted_list=[
+                                 n for n in self.map['Nicaragua'].info.adjacent_countries], free=True)
 
     def _Terrorism(self, side):
-        pass
+        reps = 2 if 'Terrorism' in self.basket[Side.USSR] and side == Side.USSR else 1
+
+        self.input_state = Game.Input(
+            Side.US, InputType.SELECT_DISCARD_OPTIONAL,
+            partial(self.may_discard_callback, Side.US,
+                    did_not_discard_fn=None),
+            self.hand[Side.US],
+            prompt='Iranian Hostage Crisis: You must discard a card.',
+            reps=reps,
+            max_per_option=1
+        )
+
+        self.basket[Side.USSR].append('Terrorism')
 
     def _Iran_Contra_Scandal(self, side):
         self.basket[Side.USSR].append('Iran_Contra_Scandal')
         self.end_turn_stage_list.append(
             lambda: self.basket[Side.USSR].remove('Iran_Contra_Scandal'))
         self.stage_complete()
-        pass
 
     def _Chernobyl(self, side):
-        self.basket[Side.US].append('Chernobyl')
-        self.end_turn_stage_list.append(
-            lambda: self.basket[Side.US].remove('Chernobyl'))
-        self.stage_complete()
-        pass
+        def add_chernobyl(effect_name: str):
+            self.basket[Side.US].append('effect_name')
+            self.end_turn_stage_list.append(
+                lambda: self.basket[Side.US].remove(effect_name))
+
+        option_function_mapping = {
+            'Europe': add_chernobyl('Chernobyl_Europe'),
+            'Middle East': add_chernobyl('Chernobyl_Middle_East'),
+            'Asia': add_chernobyl('Chernobyl_Asia'),
+            'Africa': add_chernobyl('Chernobyl_Africa'),
+            'Central America': add_chernobyl('Chernobyl_Central_America'),
+            'South America': add_chernobyl('Chernobyl_South_America'),
+        }
+
+        self.input_state = Game.Input(
+            side.opp, InputType.SELECT_MULTIPLE,
+            partial(self.select_multiple_callback, option_function_mapping),
+            option_function_mapping.keys(),
+            prompt='Chernobyl: Designate a single Region where USSR cannot place influence using Operations for the rest of the turn.'
+        )
 
     def _Latin_American_Debt_Crisis(self, side):
         def double_inf_ussr_callback(country_name: str) -> bool:
