@@ -587,7 +587,7 @@ class Game:
         )
         return True
 
-    def select_action(self, side: Side, card_name: str, is_event_resolved: bool = False, can_coup=True):
+    def select_action(self, side: Side, card_name: str, is_event_resolved: bool = False, can_coup=True, free_coup_realignment=False):
         '''
         Stage where the player has already chosen a card and now chooses an action to do with the card.
         Checks are made to ensure that the actions made available to the player are feasible actions,
@@ -803,7 +803,7 @@ class Game:
     operations points for coup or realignment, and also on the space race.
     '''
 
-    def ops_influence_callback(self, side, name):
+    def ops_influence_callback(self, side: Side, name: str) -> bool:
         c = self.map[name]
 
         # may no longer need this eventually if we ensure options are always correct
@@ -845,20 +845,19 @@ class Game:
             side, InputType.SELECT_COUNTRY,
             partial(self.ops_influence_callback, side),
             (n for n in CountryInfo.ALL
-                if self.map.can_place_influence(n, side, effective_ops)),
+                if self.map.can_place_influence(self, n, side, effective_ops)),
             prompt=f'Place operations from {card_name} as influence.',
             reps=effective_ops,
             reps_unit='operations'
         )
 
-    def realignment_callback(self, side, name):
-
+    def realignment_callback(self, side: Side, name: str) -> bool:
         self.input_state.reps -= 1
-        self.map.realignment(self, name, side)
-
+        self.map.realignment(self, name, side, random.randint(
+            1, 6), random.randint(1, 6))
         return True
 
-    def card_operation_realignment(self, side: Side, card_name: str):
+    def card_operation_realignment(self, side: Side, card_name: str, restricted_list: Sequence[str] = None, free=False):
         '''
         Stage when a player is given the opportunity to use realignment. Provides a list
         of countries where realignment can take place and waits for player input.
@@ -874,21 +873,25 @@ class Game:
         '''
         card = self.cards[card_name]
         effective_ops = self.get_global_effective_ops(side, card.info.ops)
+        if restricted_list is None:
+            restricted_list = CountryInfo.ALL
 
         self.input_state = Game.Input(
             side, InputType.SELECT_COUNTRY,
             partial(self.realignment_callback, side),
-            (n for n in CountryInfo.ALL if self.map.can_realignment(self, n, side)),
+            (n for n in CountryInfo.ALL if self.map.can_realignment(
+                self, n, side) and n in restricted_list),
             prompt=f'Select a country for realignment using operations from {card_name}.',
             reps=effective_ops,
             reps_unit='operations'
         )
 
-    def coup_callback(self, side, effective_ops, country_name, free=False):
+    def coup_callback(self, side: Side, effective_ops: int, card_name: str, country_name, free=False) -> bool:
         '''
         TODO: Latin American DS, Iran-contra
         '''
         self.input_state.reps -= 1
+
         local_ops_modifier = 0
         if card_name == 'The_China_Card' and country_name in CountryInfo.REGION_ALL[MapRegion.ASIA]:
             local_ops_modifier += 1
@@ -926,7 +929,7 @@ class Game:
 
         self.input_state = Game.Input(
             side, InputType.SELECT_COUNTRY,
-            partial(self.coup_callback, side, effective_ops),
+            partial(self.coup_callback, side, effective_ops, card_name),
             (n for n in CountryInfo.ALL
                 if self.map.can_coup(self, n, side) and n in restricted_list),
             prompt=f'Select a country to coup using operations from {card_name}.',
@@ -1002,6 +1005,7 @@ class Game:
             String which the player selected.
         '''
         option_function_mapping[selected_option]()
+        self.input_state.reps -= 1
         return True
 
   # The following stages tend to be for cards that are a little more specific.
@@ -1020,6 +1024,37 @@ class Game:
         self.discard_pile.append(opt)
         self.input_state.reps -= 1
         return True
+
+    def war_callback(self, country_name: str, side: Side, country_itself: bool = False,
+                     lower: int = 4, win_vp: int = 2, win_milops: int = 2) -> bool:
+
+        country = self.map[country_name]
+        # TODO: move this to the UI
+        roll = random.randint(1, 6)
+        modifier = sum([self.map[adjacent_country].control ==
+                        side.opp for adjacent_country in country.info.adjacent_countries])
+
+        if country_itself:  # For Arab-Israeli War
+            modifier += 1
+
+        if roll - modifier >= lower:
+            self.change_vp(win_vp * side.vp_mult)
+            self.change_milops(side, win_milops)
+            if side == Side.US:
+                country.change_influence(
+                    -country.influence[side.opp], country.influence[side.opp])
+            if side == Side.USSR:
+                country.change_influence(
+                    country.influence[side.opp], -country.influence[side.opp])
+            print(f'Success with roll of {roll}.')
+        else:
+            print(f'Failure with roll of {roll}.')
+
+        self.input_state.reps -= 1
+        return True
+
+    def pick_from_discarded(self):
+        pass
 
     def forced_to_missile_envy(self):
         # check first if the player has as many scoring cards as turns
@@ -1061,12 +1096,21 @@ class Game:
         # if turn 4, add mid war cards into draw pile and shuffle, same for turn 8 for late war cards
         if self.turn_track == 1:
             # TEST CODE BELOW -- remove when done
-            self.hand[Side.USSR].append(self.cards.early_war.pop(0))
-            self.hand[Side.US].append(self.cards.early_war.pop(0))
-            self.hand[Side.USSR].extend([self.cards.mid_war.pop(i)
-                                         for i in range(18)])
-            self.hand[Side.US].extend([self.cards.mid_war.pop(0)
-                                       for i in range(18)])
+            '''For testing early-war cards'''
+            self.hand[Side.USSR].extend([self.cards.early_war.pop(i)
+                                         for i in range(20)])
+            self.hand[Side.US].extend([self.cards.early_war.pop(0)
+                                       for i in range(19)])
+            '''For testing mid-war cards'''
+            self.hand[Side.US].extend([self.cards.mid_war.pop(i)
+                                       for i in range(24)])
+            self.hand[Side.USSR].extend([self.cards.mid_war.pop(0)
+                                         for i in range(24)])
+            '''For testing late-war cards'''
+            self.hand[Side.US].extend([self.cards.late_war.pop(i)
+                                       for i in range(12)])
+            self.hand[Side.USSR].extend([self.cards.late_war.pop(0)
+                                         for i in range(11)])
             # TEST CODE ABOVE -- remove when done
             self.draw_pile.extend(self.cards.early_war)
             self.cards.early_war = []
@@ -1292,39 +1336,16 @@ class Game:
         )
 
     def _Korean_War(self, side):
-        self._War('South_Korea', Side.USSR)
+        self.war_callback('South_Korea', Side.USSR)
 
     def _Romanian_Abdication(self, side):
         romania = self.map['Romania']
         romania.set_influence(max(3, romania.influence[Side.USSR]), 0)
         self.stage_complete()
 
-    def _War(self, country_name: str, side: Side, country_itself: bool = False, lower: int = 4, win_vp: int = 2, win_milops: int = 2):
-        country = self.map[country_name]
-        # TODO: move this to the UI
-        roll = random.randint(1, 6)
-        modifier = sum([self.map[adjacent_country].control ==
-                        side.opp for adjacent_country in country.info.adjacent_countries])
-
-        if country_itself:  # For Arab-Israeli War
-            modifier += 1
-
-        if roll - modifier >= lower:
-            self.change_vp(win_vp * side.vp_mult)
-            self.change_milops(side, win_milops)
-            if side == Side.US:
-                country.change_influence(
-                    -country.influence[side.opp], country.influence[side.opp])
-            if side == Side.USSR:
-                country.change_influence(
-                    country.influence[side.opp], -country.influence[side.opp])
-            print(f'Success with roll of {roll}.')
-        else:
-            print(f'Failure with roll of {roll}.')
-
     def _Arab_Israeli_War(self, side):
         if self.can_play_event(side, 'Arab_Israeli_War'):
-            self._War('Israel', Side.USSR, country_itself=True)
+            self.war_callback('Israel', Side.USSR, country_itself=True)
         self.stage_complete()
 
     def _COMECON(self, side):
@@ -1463,8 +1484,8 @@ class Game:
     def _Indo_Pakistani_War(self, side):
 
         option_function_mapping = {
-            'India': partial(self._War, 'India'),
-            'Pakistan': partial(self._War, 'Pakistan')
+            'India': partial(self.war_callback, 'India'),
+            'Pakistan': partial(self.war_callback, 'Pakistan')
         }
 
         self.input_state = Game.Input(
@@ -1621,7 +1642,8 @@ class Game:
     def _Brush_War(self, side):
         self.input_state = Game.Input(
             side, InputType.SELECT_COUNTRY,
-            partial(self._War, side=side, lower=3, win_vp=1, win_milops=3),
+            partial(self.war_callback, side=side,
+                    lower=3, win_vp=1, win_milops=3),
             [n for n in self.map.ALL if self.map[n].info.stability <=
              2 and n not in self.calculate_nato_countries()],
             prompt='Brush War: Choose a target country.'
@@ -1710,7 +1732,7 @@ class Game:
         self.input_state = Game.Input(
             Side.USSR, InputType.SELECT_COUNTRY,
             partial(self.event_influence_callback,
-                    Country.partial(Country.increment_influence, side, amt=2), side),
+                    partial(Country.increment_influence, side, amt=2), side),
             [n for n in chain(CountryInfo.REGION_ALL[MapRegion.CENTRAL_AMERICA],
                               CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA])],
             prompt='Junta: Add 2 influence to a single country in Central America or South America.',
@@ -1940,7 +1962,7 @@ class Game:
 
     def _Ussuri_River_Skirmish(self, side):
         if 'The_China_Card' in self.hand[Side.USSR]:
-            self.move_china_card(Side.USSR, made_playable=True):
+            self.move_china_card(Side.USSR, made_playable=True)
         elif 'The_China_Card' in self.hand[Side.US]:
             self.input_state = Game.Input(
                 Side.US, InputType.SELECT_COUNTRY,
@@ -2011,7 +2033,8 @@ class Game:
 
     def _Star_Wars(self, side):
         if self.can_play_event(side, 'Star_Wars'):
-            self.pick_from_discarded(side)
+            # self.pick_from_discarded(side)
+            pass
         else:
             # return self.discard_pile
             pass
@@ -2139,32 +2162,49 @@ class Game:
 
     def _Tear_Down_This_Wall(self, side):
         if 'Willy_Brandt' in self.basket[Side.USSR]:
-            self.removed_pile.append(self.basket[Side.USSR].pop(
-                self.basket[Side.USSR].index('Willy_Brandt')))
+            self.basket[Side.USSR].remove('Willy_Brandt')
         self.change_vp(1)
         self.map['West_Germany'].change_influence(0, 3)
-        pass
-        # coup/realignment not done
+
+        def _coup(self, side):
+            self.card_operation_coup(side, 'Tear_Down_This_Wall', restricted_list=list(
+                CountryInfo.REGION_ALL[MapRegion.EUROPE]), free=True)
+
+        def _realignment(self, side):
+            self.card_operation_realignment(side, 'Tear_Down_This_Wall', restricted_list=list(
+                CountryInfo.REGION_ALL[MapRegion.EUROPE]), free=True)
+
+        option_function_mapping = {
+            'Free coup attempt': _coup,
+            'Free realignment rolls': _realignment
+        }
+
+        self.input_state = Game.Input(
+            side.opp, InputType.SELECT_MULTIPLE,
+            partial(self.select_multiple_callback, option_function_mapping),
+            option_function_mapping.keys(),
+            prompt='Tear Down This Wall: US player may make free Coup attempts or realignment rolls in Europe.'
+        )
 
     def _An_Evil_Empire(self, side):
         self.change_vp(-1)
         if 'Flower_Power' in self.basket[Side.USSR]:
-            self.removed_pile.append(self.basket[Side.USSR].pop(
-                self.basket[Side.USSR].index('Flower_Power')))
-        return self.basket[Side.US]
+            self.basket[Side.USSR].remove('Flower_Power')
+        self.basket[Side.US].append('An_Evil_Empire')
+        self.stage_complete()
 
     def _Aldrich_Ames_Remix(self, side):
         pass
 
     def _Pershing_II_Deployed(self, side):
-        self.change_vp(Side.USSR.vp_mult)
+        self.change_vp(1)
         self.input_state = Game.Input(
             Side.USSR, InputType.SELECT_COUNTRY,
             partial(self.event_influence_callback,
                     Country.decrement_influence, Side.US),
             (n for n in CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE]
                 if self.map[n].has_us_influence),
-            prompt='Remove US influence using Pershing II Deployed.',
+            prompt='Pershing II Deployed: Remove 1 US influence from any 3 countries in Western Europe.',
             reps=3,
             reps_unit='influence',
             max_per_option=1
@@ -2176,14 +2216,23 @@ class Game:
         pass
 
     def _Solidarity(self, side):
-        if 'John_Paul_II_Elected_Pope' in self.basket[Side.US]:
+        if self.can_play_event(side, 'Solidarity'):
             self.map['Poland'].change_influence(0, 3)
-            self.removed_pile.append(self.basket[Side.US].pop(
-                self.basket[Side.US].index('John_Paul_II_Elected_Pope')))
-        return self.removed_pile
+            self.basket[Side.US].remove('John_Paul_II_Elected_Pope')
+        self.stage_complete()
 
     def _Iran_Iraq_War(self, side):
-        pass
+        option_function_mapping = {
+            'Iran': partial(self.war_callback, 'Iran'),
+            'Iraq': partial(self.war_callback, 'Iraq')
+        }
+
+        self.input_state = Game.Input(
+            side, InputType.SELECT_MULTIPLE,
+            partial(self.select_multiple_callback, option_function_mapping),
+            option_function_mapping.keys(),
+            prompt='Iran Iraq War: Choose between two options.'
+        )
 
     def _Yuri_and_Samantha(self, side):
         self.basket[Side.USSR].append('Yuri_and_Samantha')
@@ -2193,7 +2242,8 @@ class Game:
 
     def _AWACS_Sale_to_Saudis(self, side):
         self.map.change_influence('Saudi_Arabia', Side.US, 2)
-        return self.basket[Side.US]
+        self.basket[Side.US].append('AWACS_Sale_to_Saudis')
+        self.stage_complete()
 
     card_function_mapping = {
         'Asia_Scoring': _Asia_Scoring,
