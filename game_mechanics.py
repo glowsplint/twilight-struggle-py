@@ -593,7 +593,7 @@ class Game:
         )
         return True
 
-    def select_action(self, side: Side, card_name: str, is_event_resolved: bool = False, can_coup=True, free_coup_realignment=False):
+    def select_action(self, side: Side, card_name: str, is_event_resolved: bool=False, can_coup=True, free_coup_realignment=False):
         '''
         Stage where the player has already chosen a card and now chooses an action to do with the card.
         Checks are made to ensure that the actions made available to the player are feasible actions,
@@ -892,10 +892,19 @@ class Game:
             reps_unit='operations'
         )
 
+    def dice_stage(self, fn: Callable[[str], bool]):
+        self.input_state = Game.Input(
+            Side.NEUTRAL, InputType.DICE_ROLL,
+            fn,
+            (str(i) for i in range(1, 7)),
+            prompt='1D6 roll'
+        )
+
     def coup_callback(self, side: Side, effective_ops: int, card_name: str, country_name, free=False) -> bool:
         '''
         TODO: Latin American DS, Iran-contra
         '''
+
         self.input_state.reps -= 1
 
         local_ops_modifier = 0
@@ -904,8 +913,13 @@ class Game:
         if 'Vietnam_Revolts' in self.basket[Side.USSR] and country_name in CountryInfo.REGION_ALL[MapRegion.SOUTHEAST_ASIA]:
             local_ops_modifier += 1
 
-        self.map.coup(self, country_name, side, effective_ops +
-                      local_ops_modifier, random.randint(1, 6), free=free)
+        def dice_callback(num: str):
+            self.map.coup(self, country_name, side, effective_ops +
+                          local_ops_modifier, int(num), free=free)
+            self.stage_complete()
+            return True
+        self.stage_list.append(partial(self.dice_stage, dice_callback))
+
         return True
 
     def card_operation_coup(self, side: Side, card_name: str, restricted_list: Sequence[str] = None, free=False):
@@ -1570,13 +1584,22 @@ class Game:
         self.stage_complete()
 
     def _UN_Intervention(self, side):
-        pass
+        '''
+        self.input_state = Game.Input(
+            side, InputType.SELECT_COUNTRY,
+            partial(self.event_influence_callback,
+                    Country.increment_influence, Side.USSR),
+            (c for c in self.hand[side] if self.cards[c].info.owner == side.opp),
+            prompt=f'Select a card with an opponent event to use for operations with UN Intervention.'
+        )
+        '''
+
 
     def _De_Stalinization(self, side):
 
-        def remove_callback(n):
+        def remove_callback(country_name):
             if n != self.input_state.option_stop_early:
-                self.event_influence_callback(Country.decrement_influence, Side.USSR, n)
+                self.event_influence_callback(Country.decrement_influence, Side.USSR, country_name)
                 if self.input_state.reps:
                     #TODO make a better prompt
                     self.input_state.option_stop_early = f'Move {4 - self.input_state.reps} influence.'
@@ -1588,7 +1611,8 @@ class Game:
                 Side.USSR, InputType.SELECT_COUNTRY,
                 partial(self.event_influence_callback,
                         Country.increment_influence, Side.USSR),
-                (n for n in CountryInfo.ALL if self.map[n].control != Side.US),
+                (n for n in CountryInfo.ALL
+                    if self.map[n].control != Side.US and not self.map[n].info.superpower),
                 prompt=f'Add {ops} influence using De-Stalinization.',
                 reps=ops,
                 reps_unit='influence',
@@ -1601,7 +1625,8 @@ class Game:
         self.input_state = Game.Input(
             Side.USSR, InputType.SELECT_COUNTRY,
             remove_callback,
-            (n for n in CountryInfo.ALL if self.map[n].has_ussr_influence),
+            (n for n in CountryInfo.ALL
+                if self.map[n].has_ussr_influence and not self.map[n].info.superpower),
             prompt='Remove up to 4 influence using De-Stalinization.',
             reps=4,
             reps_unit='influence',

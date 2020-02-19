@@ -4,7 +4,7 @@ from game_mechanics import Game
 from twilight_enums import Side, InputType, CardAction
 from twilight_map import MapRegion, CountryInfo
 from twilight_cards import CardInfo
-
+from random import randint
 
 class UI:
 
@@ -25,6 +25,7 @@ quit        Exit the game.
 
     ussr_prompt = '----- USSR Player: -----'
     us_prompt = '----- US Player: -----'
+    rng_prompt = '----- RNG: -----'
     commit_options = ["yes", "no"]
 
     def __init__(self):
@@ -45,8 +46,6 @@ quit        Exit the game.
         self.options = dict()
         if self.game.input_state.option_stop_early:
             self.options[0] = self.game.input_state.option_stop_early
-
-
         if self.game.input_state.state == InputType.SELECT_CARD_ACTION:
             for opt in self.input_state.available_options:
                 self.options[CardAction[opt].value] = opt
@@ -59,8 +58,23 @@ quit        Exit the game.
         elif self.game.input_state.state == InputType.SELECT_MULTIPLE:
             for i, opt in enumerate(self.input_state.available_options):
                 self.options[i] = opt
+        elif self.game.input_state.state == InputType.DICE_ROLL:
+            for opt in self.input_state.available_options:
+                self.options[int(opt)] = opt
 
+    def commit(self):
+        self.game.stage_complete()
+        self.game_rollback = deepcopy(self.game)
+        self.game_state_changed()
 
+    def revert(self):
+        self.game = self.game_rollback
+        self.game_rollback = deepcopy(self.game)
+        self.game_state_changed()
+
+    def game_state_changed(self):
+        self.get_options()
+        self.prompt()
 
     def prompt(self):
 
@@ -68,6 +82,8 @@ quit        Exit the game.
             print(UI.ussr_prompt)
         elif self.input_state.side == Side.US:
             print(UI.us_prompt)
+        elif self.input_state.side == Side.NEUTRAL:
+            print(UI.rng_prompt)
 
         print(self.input_state.prompt)
 
@@ -115,8 +131,7 @@ quit        Exit the game.
                 print("Starting new game.")
                 self.game.start()
                 self.game_rollback = deepcopy(self.game)
-                self.get_options()
-                self.prompt()
+                self.game_state_changed()
 
             elif user_choice[0].lower() == 'dbg':
                 self.parse_debug(user_choice[1])
@@ -145,16 +160,10 @@ quit        Exit the game.
 
             if self.awaiting_commit:
                 if "yes".startswith(comd):
-                    self.game.stage_complete()
-                    self.game_rollback = deepcopy(self.game)
-                    self.get_options()
-                    self.prompt()
+                    self.commit()
                 elif "no".startswith(comd):
-                    self.game = self.game_rollback
-                    self.game_rollback = deepcopy(self.game)
                     print("Actions undone.")
-                    self.get_options()
-                    self.prompt()
+                    self.revert()
                 else:
                     print("Invalid input.")
                     self.prompt()
@@ -183,8 +192,7 @@ quit        Exit the game.
 
                 print(f"Selected: {matched}")
                 self.input_state.recv(matched)
-                self.get_options()
-                self.prompt()
+                self.game_state_changed()
 
     help_card = '''
 c           Display a list of cards in the current player's hand.
@@ -287,13 +295,11 @@ dbg rollback                        Restores the state before debugging started.
                 self.game.stage_list.append(end_of_event)
                 self.game.card_function_mapping[user_choice[1]](
                     self.game, Side.fromStr(user_choice[2]))
-                self.get_options()
-                self.prompt()
+                self.game_state_changed()
         elif user_choice[0] == 'rollback':
             print("Restoring pre-debugging state.")
             self.game = self.debug_save[0]
             self.game_rollback = self.debug_save[1]
-            self.get_options()
-            self.prompt()
+            self.game_state_changed()
         else:
             print('Invalid command. Enter ? for help.')
