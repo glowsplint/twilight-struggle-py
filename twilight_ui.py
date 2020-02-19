@@ -42,8 +42,8 @@ quit        Exit the game.
 
     def get_options(self):
         self.options = dict()
-        if self.game.input_state.optional_prompt:
-            self.options[0] = self.game.input_state.optional_prompt
+        if self.game.input_state.option_stop_early:
+            self.options[0] = self.game.input_state.option_stop_early
 
 
         if self.game.input_state.state == InputType.SELECT_CARD_ACTION:
