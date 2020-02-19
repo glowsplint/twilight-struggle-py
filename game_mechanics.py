@@ -22,12 +22,10 @@ class Game:
 
     class Input:
 
-        OPTION_DO_NOTHING = 'Do Not Discard'
-
         def __init__(self, side: Side, state: InputType, callback: Callable[[str], bool],
                      options: Iterable[str], prompt: str = '',
                      reps=1, reps_unit: str = '', max_per_option=-1,
-                     optional_prompt=''):
+                     option_stop_early=''):
             self.side = side
             self.state = state
             self.callback = callback
@@ -35,7 +33,7 @@ class Game:
             self.reps = reps
             self.reps_unit = reps_unit
             self.max_per_option = reps if max_per_option == -1 else max_per_option
-            self.optional_prompt = optional_prompt
+            self.option_stop_early = option_stop_early
             self.selection = {k: 0 for k in options}
             self.discarded_options = set()
 
@@ -48,10 +46,10 @@ class Game:
 
         def recv(self, input_str):
             if (input_str not in self.available_options and
-                    (not self.optional_prompt or input_str != self.optional_prompt)):
+                    (not self.option_stop_early or input_str != self.option_stop_early)):
                 return False
 
-            if input_str == self.optional_prompt:
+            if input_str == self.option_stop_early:
                 self.callback(input_str)
                 return True
 
@@ -1020,7 +1018,7 @@ class Game:
 
     def may_discard_callback(self, side: Side, opt: str, did_not_discard_fn: Callable[[], None] = lambda: None):
 
-        if opt == self.input_state.optional_prompt:
+        if opt == self.input_state.option_stop_early:
             did_not_discard_fn()
             self.input_state.reps -= 1
             return True
@@ -1339,7 +1337,7 @@ class Game:
                 if n != 'The_China_Card'
                 and self.get_global_effective_ops(side, self.cards[n].info.ops) >= 3),
             prompt='You may discard a card. If you choose not to discard a card, US loses all influence in West Germany.',
-            optional_prompt="Do Not Discard"
+            option_stop_early="Do Not Discard"
         )
 
     def _Korean_War(self, side):
@@ -1577,12 +1575,11 @@ class Game:
     def _De_Stalinization(self, side):
 
         def remove_callback(n):
-            if n != self.input_state.optional_prompt:
-                self.event_influence_callback(
-                    Country.decrement_influence, Side.USSR, n)
+            if n != self.input_state.option_stop_early:
+                self.event_influence_callback(Country.decrement_influence, Side.USSR, n)
                 if self.input_state.reps:
-                    # TODO make a better prompt
-                    self.input_state.optional_prompt = f'Move {4 - self.input_state.reps} influence.'
+                    #TODO make a better prompt
+                    self.input_state.option_stop_early = f'Move {4 - self.input_state.reps} influence.'
                     return True
 
             ops = 4 - self.input_state.reps
@@ -1607,7 +1604,7 @@ class Game:
             prompt='Remove up to 4 influence using De-Stalinization.',
             reps=4,
             reps_unit='influence',
-            optional_prompt='Move no influence.'
+            option_stop_early='Move no influence.'
         )
 
     def _Nuclear_Test_Ban(self, side):
@@ -2172,7 +2169,7 @@ class Game:
              if n != 'The_China_Card'
              and self.get_global_effective_ops(side, self.cards[n].info.ops) >= 3),
             prompt='You may discard a card. If you choose not to discard, USSR chooses two countries in South America to double USSR influence',
-            optional_prompt="Do Not Discard"
+            option_stop_early="Do Not Discard"
         )
 
     def _Tear_Down_This_Wall(self, side):
