@@ -1591,7 +1591,8 @@ class Game:
                 (n for n in CountryInfo.ALL if self.map[n].control != Side.US),
                 prompt=f'Add {ops} influence using De-Stalinization.',
                 reps=ops,
-                reps_unit='influence'
+                reps_unit='influence',
+                max_per_option=2
             )
             return True
 
