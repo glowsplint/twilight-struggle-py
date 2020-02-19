@@ -68,9 +68,8 @@ class GameMap:
 
     def has_influence(self, side: Side):
         '''Returns list of names that have influence from side, less superpowers..'''
-        return map(lambda item: item[0],
-                   filter(lambda item: item[1].has_influence(side) and not item[1].info.superpower,
-                          self.ALL.items()))
+        return (n for n, c in self.ALL.items()
+                if c.has_influence(side) and not c.info.superpower)
 
     def has_us_influence(self):
         '''Returns list of names that have US influence, less superpowers..'''
