@@ -90,7 +90,7 @@ class MapRegion(enum.IntEnum):
 class InputType(enum.IntEnum):
 
     COMMIT = 0
-    DICE_ROLL = 1
+    SELECT_RANDOM = 1
 
     # these should have a list of text options.
     SELECT_CARD_ACTION = 2  # Realign, coup, space, event, etc.

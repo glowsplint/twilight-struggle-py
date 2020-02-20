@@ -40,7 +40,7 @@ class Game:
         # Following here are some factory methods for standard required inputs.
         @staticmethod
         def DiceRoll(side: Side, callback: Callable[[str], bool]):
-            return Game.Input(side, InputType.DICE_ROLL, callback,
+            return Game.Input(side, InputType.SELECT_RANDOM, callback,
                               ['Yes', 'No'],
                               'Commit your actions and roll the dice?')
 
@@ -281,7 +281,7 @@ class Game:
                     Country.increment_influence, Side.USSR),
             CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE],
             prompt='Place starting influence.',
-            reps=1,  # TODO: FOR TESTING ONLY
+            reps=6,  # TODO: FOR TESTING ONLY
             reps_unit='influence'
         )
 
@@ -295,7 +295,7 @@ class Game:
                     Country.increment_influence, Side.US),
             CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE],
             prompt='Place starting influence.',
-            reps=1,  # TODO: FOR TESTING ONLY
+            reps=7,  # TODO: FOR TESTING ONLY
             reps_unit='influence'
         )
 
@@ -894,7 +894,7 @@ class Game:
 
     def dice_stage(self, fn: Callable[[str], bool]):
         self.input_state = Game.Input(
-            Side.NEUTRAL, InputType.DICE_ROLL,
+            Side.NEUTRAL, InputType.SELECT_RANDOM,
             fn,
             (str(i) for i in range(1, 7)),
             prompt='1D6 roll'

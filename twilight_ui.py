@@ -11,10 +11,8 @@ class UI:
     help = '''
 The following commands are available:
 ?           Displays this help text.
-m           Lists all possible moves, along with their respective IDs.
-m <ID>      Makes a move.
-m commit    Commits all moves made.
 s           Displays the overall game state.
+m ?         Shows help on move queries.
 s ?         Shows help on game state queries.
 c ?         Shows help on card information queries.
 dbg ?       Shows help on debugging.
@@ -58,7 +56,7 @@ quit        Exit the game.
         elif self.game.input_state.state == InputType.SELECT_MULTIPLE:
             for i, opt in enumerate(self.input_state.available_options):
                 self.options[i] = opt
-        elif self.game.input_state.state == InputType.DICE_ROLL:
+        elif self.game.input_state.state == InputType.SELECT_RANDOM:
             for opt in self.input_state.available_options:
                 self.options[int(opt)] = opt
 
@@ -72,9 +70,9 @@ quit        Exit the game.
         self.game_rollback = deepcopy(self.game)
         self.game_state_changed()
 
-    def game_state_changed(self):
+    def game_state_changed(self, prompt=True):
         self.get_options()
-        self.prompt()
+        if prompt: self.prompt()
 
     def prompt(self):
 
@@ -148,13 +146,22 @@ quit        Exit the game.
             else:
                 print('Invalid command. Enter ? for help.')
 
+    help_move = '''
+m                   Lists all possible moves, along with their respective enum.
+m <name|enum>       Makes the move with the name or with the enum. The name can be
+                    abbreviated to the first characters as long as it is unambiguous.
+m <m1 m2 m3 ...>    Makes multiple moves in order m1, m2, m3, ...
+'''
     def parse_move(self, comd):
 
-        if comd == '':
+        if not comd: #empty string
             self.prompt()
             # Here you want to call some function to get all possible moves.
             # Each move should be deterministically assigned an ID (so it
             # can be referenced later).
+        elif comd == '?':
+            print(UI.help_move)
+
         else:
             comd = comd.lower()
 
@@ -169,30 +176,36 @@ quit        Exit the game.
                     self.prompt()
 
             else:
+                # check for multiple move entry
+                moves = comd.split(' ')[:self.input_state.reps]
+                for m in moves:
 
-                # this counts how many strings in the options start with the input
-                matched = None
-                if comd.isdigit():
-                    if int(comd) in self.options:
-                        matched = self.options[int(comd)]
-                else:
-                    for opt in self.options.values():
-                        if opt.lower().startswith(comd):
-                            if matched:
-                                # there is more than one match
-                                print("Error: multiple matching options!")
-                                self.prompt()
-                                return
-                            matched = opt
+                    # this counts how many strings in the options start with the input
+                    matched = None
+                    ambiguous = False
+                    if m.isdigit():
+                        if int(m) in self.options:
+                            matched = self.options[int(m)]
+                    else:
+                        for opt in self.options.values():
+                            if opt.lower().startswith(m):
+                                if matched:
+                                    # there is more than one match
+                                    ambiguous = True
+                                    break
+                                matched = opt
 
-                if not matched:
-                    print("Error: no matching option!")
-                    self.prompt()
-                    return
+                    if not matched:
+                        print(f'Error: no matching option for {m}!')
+                        break
+                    if ambiguous:
+                        print(f'Error: multiple matching options for {m}!')
+                        break
 
-                print(f"Selected: {matched}")
-                self.input_state.recv(matched)
-                self.game_state_changed()
+                    print(f"Selected: {matched}")
+                    self.input_state.recv(matched)
+                    self.game_state_changed(prompt=False)
+                self.prompt()
 
     help_card = '''
 c           Display a list of cards in the current player's hand.
