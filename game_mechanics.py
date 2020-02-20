@@ -593,7 +593,7 @@ class Game:
         )
         return True
 
-    def select_action(self, side: Side, card_name: str, is_event_resolved: bool=False, can_coup=True, free_coup_realignment=False):
+    def select_action(self, side: Side, card_name: str, is_event_resolved: bool = False, can_coup=True, free_coup_realignment=False):
         '''
         Stage where the player has already chosen a card and now chooses an action to do with the card.
         Checks are made to ensure that the actions made available to the player are feasible actions,
@@ -1073,6 +1073,16 @@ class Game:
         self.input_state.reps -= 1
         return True
 
+    def norad_influence(self):
+        self.input_state = Game.Input(
+            Side.US, InputType.SELECT_COUNTRY,
+            partial(self.event_influence_callback,
+                    Country.increment_influence, Side.US),
+            self.map.has_us_influence,
+            prompt="Place NORAD influence.",
+            reps_unit="influence"
+        )
+
     def pick_from_discarded(self):
         pass
 
@@ -1093,22 +1103,7 @@ class Game:
         # '''
         pass
 
-    def norad_influence(self):
-        self.input_state = Game.Input(
-            Side.US, InputType.SELECT_COUNTRY,
-            partial(self.event_influence_callback,
-                    Country.increment_influence, Side.US),
-            self.map.has_us_influence,
-            prompt="Place NORAD influence.",
-            reps_unit="influence"
-        )
-
     def cuba_missile_remove(self):
-        pass
-
-    def headline(self):
-        # decide if it is going to be joint_choose_headline or separated
-        # modify top to use this function instead
         pass
 
     def deal(self):
@@ -1593,15 +1588,16 @@ class Game:
             prompt=f'Select a card with an opponent event to use for operations with UN Intervention.'
         )
         '''
-
+        pass
 
     def _De_Stalinization(self, side):
 
         def remove_callback(country_name):
-            if n != self.input_state.option_stop_early:
-                self.event_influence_callback(Country.decrement_influence, Side.USSR, country_name)
+            if country_name != self.input_state.option_stop_early:
+                self.event_influence_callback(
+                    Country.decrement_influence, Side.USSR, country_name)
                 if self.input_state.reps:
-                    #TODO make a better prompt
+                    # TODO make a better prompt
                     self.input_state.option_stop_early = f'Move {4 - self.input_state.reps} influence.'
                     return True
 
@@ -2108,7 +2104,7 @@ class Game:
             reps_unit='influence',
         )
 
-    def _Soviets_Shoot_Down_KAL(self, side):
+    def _Soviets_Shoot_Down_KAL_007(self, side):
         self.change_defcon(-1)
         self.change_vp(-2)
         if self.map['South_Korea'].control == Side.US:
@@ -2153,12 +2149,12 @@ class Game:
                 lambda: self.basket[Side.US].remove(effect_name))
 
         option_function_mapping = {
-            'Europe': add_chernobyl('Chernobyl_Europe'),
-            'Middle East': add_chernobyl('Chernobyl_Middle_East'),
-            'Asia': add_chernobyl('Chernobyl_Asia'),
-            'Africa': add_chernobyl('Chernobyl_Africa'),
-            'Central America': add_chernobyl('Chernobyl_Central_America'),
-            'South America': add_chernobyl('Chernobyl_South_America'),
+            'Europe': partial(add_chernobyl, 'Chernobyl_Europe'),
+            'Middle East': partial(add_chernobyl, 'Chernobyl_Middle_East'),
+            'Asia': partial(add_chernobyl, 'Chernobyl_Asia'),
+            'Africa': partial(add_chernobyl, 'Chernobyl_Africa'),
+            'Central America': partial(add_chernobyl, 'Chernobyl_Central_America'),
+            'South America': partial(add_chernobyl, 'Chernobyl_South_America'),
         }
 
         self.input_state = Game.Input(
@@ -2378,7 +2374,7 @@ class Game:
         'North_Sea_Oil': _North_Sea_Oil,
         'The_Reformer': _The_Reformer,
         'Marine_Barracks_Bombing': _Marine_Barracks_Bombing,
-        'Soviets_Shoot_Down_KAL': _Soviets_Shoot_Down_KAL,
+        'Soviets_Shoot_Down_KAL_007': _Soviets_Shoot_Down_KAL_007,
         'Glasnost': _Glasnost,
         'Ortega_Elected_in_Nicaragua': _Ortega_Elected_in_Nicaragua,
         'Terrorism': _Terrorism,

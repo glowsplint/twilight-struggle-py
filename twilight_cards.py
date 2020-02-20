@@ -1203,7 +1203,7 @@ Marine_Barracks_Bombing = {
 }
 
 
-Soviets_Shoot_Down_KAL = {
+Soviets_Shoot_Down_KAL_007 = {
     'name': 'Soviets_Shoot_Down_KAL_007',
     'type': 'Event',
     'stage': 'Late War',
@@ -1545,7 +1545,7 @@ Star_Wars = CardInfo(**Star_Wars)
 North_Sea_Oil = CardInfo(**North_Sea_Oil)
 The_Reformer = CardInfo(**The_Reformer)
 Marine_Barracks_Bombing = CardInfo(**Marine_Barracks_Bombing)
-Soviets_Shoot_Down_KAL = CardInfo(**Soviets_Shoot_Down_KAL)
+Soviets_Shoot_Down_KAL_007 = CardInfo(**Soviets_Shoot_Down_KAL_007)
 Glasnost = CardInfo(**Glasnost)
 Ortega_Elected_in_Nicaragua = CardInfo(**Ortega_Elected_in_Nicaragua)
 Terrorism = CardInfo(**Terrorism)
