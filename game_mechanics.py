@@ -22,10 +22,47 @@ class Game:
 
     class Input:
 
+
         def __init__(self, side: Side, state: InputType, callback: Callable[[str], bool],
                      options: Iterable[str], prompt: str = '',
-                     reps=1, reps_unit: str = '', max_per_option=-1,
+                     reps: int=1, reps_unit: str = '', max_per_option: int=-1,
                      option_stop_early=''):
+            '''
+            Creates an input state, which is the interface by which the game engine
+            communicates with the user.
+
+            Parameters
+            ----------
+            side : Side
+                The side of the player receiving the prompt. Neutral for rng events.
+            state : InputType
+                The type of selection expected.
+            callback : Callable[[str], bool]
+                The function to run on each input received from the player. This
+                function should take a string as the user input. It should return
+                True if the string was valid, and False otherwise.
+                The return value may be deprecated in the future.
+            options : Iterable[str]
+                The options available to the user. Should match with state.
+                Options can be removed before all reps are exhausted, but additional
+                options cannot be added. Remove using the method remove_option.
+            prompt : str
+                The prompt to display to the user.
+            reps : int
+                The number of times this input is required. Defaults to 1.
+            reps_unit : str
+                The unit to provide to the user when notifying them about the
+                number of input repetitions remaining. Defaults to empty string,
+                which means do not inform the user about remaining repetitions.
+            max_per_option : int
+                The maximum number of times a particular option can be selected.
+                Defaults to reps.
+            options_stop_early : str
+                If the user is allowed to terminate input before the repetitions
+                have been exhausted, this the option text for the early stopping
+                option.
+                Defaults to empty string, which means this options is not available.
+            '''
             self.side = side
             self.state = state
             self.callback = callback
@@ -40,11 +77,21 @@ class Game:
         # Following here are some factory methods for standard required inputs.
         @staticmethod
         def DiceRoll(side: Side, callback: Callable[[str], bool]):
-            return Game.Input(side, InputType.DICE_ROLL, callback,
+            return Game.Input(side, InputType.SELECT_RANDOM, callback,
                               ['Yes', 'No'],
                               'Commit your actions and roll the dice?')
 
+
         def recv(self, input_str):
+            '''
+            This method is called by the user to select an option.
+            Returns True if the selection was accepted, False otherwise.
+
+            Parameters
+            ----------
+            input_str : str
+                The selected option.
+            '''
             if (input_str not in self.available_options and
                     (not self.option_stop_early or input_str != self.option_stop_early)):
                 return False
@@ -60,12 +107,25 @@ class Game:
                 return False
 
         def remove_option(self, option):
+            '''
+            The game calls this function to remove an existing option from the
+            player before reps has been exhausted. Generally used by callback
+            functions.
+
+            Parameters
+            ----------
+            option : str
+                The option to remove.
+            '''
             if option not in self.selection:
                 raise KeyError('Option was never present!')
             self.discarded_options.add(option)
 
         @property
         def available_options(self):
+            '''
+            Returns available input options to the user.
+            '''
             return (
                 item[0] for item in self.selection.items()
                 if item[0] not in self.discarded_options
@@ -73,6 +133,10 @@ class Game:
 
         @property
         def complete(self):
+            '''
+            Returns True if no more input is required, False if input is not
+            complete.
+            '''
             return not self.reps or len(self.selection) == len(self.discarded_options)
 
     class Output:
@@ -281,7 +345,7 @@ class Game:
                     Country.increment_influence, Side.USSR),
             CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE],
             prompt='Place starting influence.',
-            reps=1,  # TODO: FOR TESTING ONLY
+            reps=6,  # TODO: FOR TESTING ONLY
             reps_unit='influence'
         )
 
@@ -295,7 +359,7 @@ class Game:
                     Country.increment_influence, Side.US),
             CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE],
             prompt='Place starting influence.',
-            reps=1,  # TODO: FOR TESTING ONLY
+            reps=7,  # TODO: FOR TESTING ONLY
             reps_unit='influence'
         )
 
@@ -894,7 +958,7 @@ class Game:
 
     def dice_stage(self, fn: Callable[[str], bool]):
         self.input_state = Game.Input(
-            Side.NEUTRAL, InputType.DICE_ROLL,
+            Side.NEUTRAL, InputType.SELECT_RANDOM,
             fn,
             (str(i) for i in range(1, 7)),
             prompt='1D6 roll'
