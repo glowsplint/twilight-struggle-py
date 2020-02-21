@@ -4,7 +4,7 @@ from game_mechanics import Game
 from twilight_enums import Side, InputType, CardAction
 from twilight_map import MapRegion, CountryInfo
 from twilight_cards import CardInfo
-from random import randint
+import random
 
 class UI:
 
@@ -16,6 +16,7 @@ m ?         Shows help on move queries.
 s ?         Shows help on game state queries.
 c ?         Shows help on card information queries.
 dbg ?       Shows help on debugging.
+rng on|off  Toggles automatic random number generation (rng off for debugging).
 
 new         Start a new game.
 quit        Exit the game.
@@ -31,6 +32,7 @@ quit        Exit the game.
         self.game = Game()
         self.debug_save = None
         self.options = dict()
+        self.rng = True
 
     @property
     def input_state(self) -> Game.Input:
@@ -71,6 +73,12 @@ quit        Exit the game.
         self.game_state_changed()
 
     def game_state_changed(self, prompt=True):
+        if self.rng:
+            while (self.game.input_state.state == InputType.SELECT_RANDOM
+                    and self.game.input_state.reps):
+                choices = list(self.game.input_state.available_options)
+                c = random.choice(choices)
+                self.input_state.recv(c)
         self.get_options()
         if prompt: self.prompt()
 
@@ -110,7 +118,7 @@ quit        Exit the game.
 
     def run(self):
 
-        print('Initalising game..')
+        print('Initalising game.')
         while True:
 
             user_choice = input('> ').split(' ', 1)
@@ -133,6 +141,11 @@ quit        Exit the game.
 
             elif user_choice[0].lower() == 'dbg':
                 self.parse_debug(user_choice[1])
+
+            elif user_choice[0].lower() == 'rng':
+                if user_choice[1].lower() == 'on': self.rng = True
+                elif user_choice[1].lower() == 'off': self.rng = False
+                else: print('Invalid command. Enter ? for help.')
 
             elif user_choice[0].lower() == 'c':
                 self.parse_card(user_choice[1])
@@ -177,7 +190,7 @@ m <m1 m2 m3 ...>    Makes multiple moves in order m1, m2, m3, ...
 
             else:
                 # check for multiple move entry
-                moves = comd.split(' ')[:self.input_state.reps]
+                moves = comd.split()[:self.input_state.reps]
                 for m in moves:
 
                     # this counts how many strings in the options start with the input
