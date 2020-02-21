@@ -242,7 +242,7 @@ class GameMap:
         else:
             return not (country.influence[Side.USSR] == 0 and country.influence[Side.US] == 0)
 
-    def realignment(self, game_instance, name: str, side: Side, us_roll: int, ussr_roll: int):
+    def realignment(self, game_instance, name: str, side: Side, ussr_roll: int, us_roll: int):
         '''
         The result of a given side using realignment in a country, with both dice rolls provided.
 
@@ -260,27 +260,25 @@ class GameMap:
         assert(self.can_realignment(game_instance, name, side))
         country = self[name]
 
-        modifier = 0  # net positive is in favour of US
-        if 'Iran_Contra_Scandal' in game_instance.basket[Side.USSR]:
-            modifier -= 1
+        modifier = 0  # net positive is in favour of USSR
+        if 'Iran_Contra_Scandal' in game_instance.basket[Side.USSR] and side == Side.US:
+            modifier += 1
 
         for adjacent_name in country.info.adjacent_countries:
-            modifier += ((self[adjacent_name]).control == Side.US)
-            modifier -= ((self[adjacent_name]).control == Side.USSR)
-        if country.influence[Side.US] - country.influence[Side.USSR] > 0:
+            modifier -= ((self[adjacent_name]).control == Side.US)
+            modifier += ((self[adjacent_name]).control == Side.USSR)
+        if country.influence[Side.USSR] > country.influence[Side.US]:
             modifier += 1
-        elif country.influence[Side.US] - country.influence[Side.USSR] < 0:
+        elif country.influence[Side.USSR] < country.influence[Side.US]:
             modifier -= 1
 
-        difference = us_roll - ussr_roll + modifier
+        difference = ussr_roll - us_roll + modifier
         if difference > 0:
-            country.change_influence(-min(difference,
-                                          country.influence[Side.USSR]), 0)
+            country.change_influence(0, -difference)
         elif difference < 0:
-            country.change_influence(
-                0, -min(-difference, country.influence[Side.US]))
+            country.change_influence(-difference, 0)
         print(
-            f'US rolled: {us_roll}, USSR rolled: {ussr_roll}, Modifer = {modifier}, Difference = {difference}')
+            f'USSR rolled: {ussr_roll}, US rolled: {us_roll}, Modifer = {modifier}, Difference = {difference}')
 
     def can_place_influence(self, game_instance, name: str, side: Side, effective_ops: int) -> bool:
         '''
@@ -302,7 +300,7 @@ class GameMap:
         '''
         country = self[name]
 
-        def has_influence_around():
+        def has_influence_around(country: Country):
             if country.info.superpower:
                 return False
 
@@ -335,7 +333,7 @@ class GameMap:
                 return False if name in list(CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA]) else True
             return True
 
-        return has_influence_around() and sufficient_ops(effective_ops) and is_chernobyl()
+        return has_influence_around(country) and sufficient_ops(effective_ops) and is_chernobyl()
 
     def place_influence(self, name: str, side: Side, effective_ops: int):
         '''
@@ -595,8 +593,6 @@ class Country:
         return True
 
     def match_influence(self, side):
-        if self.influence[side] == 0:
-            return False
         self.influence[side] = self.influence[side.opp]
         return True
 

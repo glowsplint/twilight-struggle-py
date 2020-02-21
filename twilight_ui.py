@@ -6,6 +6,7 @@ from twilight_map import MapRegion, CountryInfo
 from twilight_cards import CardInfo
 import random
 
+
 class UI:
 
     help = '''
@@ -59,8 +60,8 @@ quit        Exit the game.
             for i, opt in enumerate(self.input_state.available_options):
                 self.options[i] = opt
         elif self.game.input_state.state == InputType.SELECT_RANDOM:
-            for opt in self.input_state.available_options:
-                self.options[int(opt)] = opt
+            for i, opt in enumerate(self.input_state.available_options):
+                self.options[i] = opt
 
     def commit(self):
         self.game.stage_complete()
@@ -80,7 +81,8 @@ quit        Exit the game.
                 c = random.choice(choices)
                 self.input_state.recv(c)
         self.get_options()
-        if prompt: self.prompt()
+        if prompt:
+            self.prompt()
 
     def prompt(self):
 
@@ -143,9 +145,12 @@ quit        Exit the game.
                 self.parse_debug(user_choice[1])
 
             elif user_choice[0].lower() == 'rng':
-                if user_choice[1].lower() == 'on': self.rng = True
-                elif user_choice[1].lower() == 'off': self.rng = False
-                else: print('Invalid command. Enter ? for help.')
+                if user_choice[1].lower() == 'on':
+                    self.rng = True
+                elif user_choice[1].lower() == 'off':
+                    self.rng = False
+                else:
+                    print('Invalid command. Enter ? for help.')
 
             elif user_choice[0].lower() == 'c':
                 self.parse_card(user_choice[1])
@@ -167,7 +172,7 @@ m <m1 m2 m3 ...>    Makes multiple moves in order m1, m2, m3, ...
 '''
     def parse_move(self, comd):
 
-        if not comd: #empty string
+        if not comd:  # empty string
             self.prompt()
             # Here you want to call some function to get all possible moves.
             # Each move should be deterministically assigned an ID (so it
