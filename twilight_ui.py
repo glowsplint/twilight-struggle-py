@@ -24,7 +24,7 @@ quit        Exit the game.
     ussr_prompt = '----- USSR Player: -----'
     us_prompt = '----- US Player: -----'
     rng_prompt = '----- RNG: -----'
-    commit_options = ["yes", "no"]
+    commit_options = ['yes', 'no']
 
     def __init__(self):
         self.game_rollback = None
@@ -90,21 +90,21 @@ quit        Exit the game.
         for k, v in self.input_state.selection.items():
             for _i in range(v):
                 if first:
-                    print("You have selected", k, end="")
+                    print('You have selected', k, end='')
                     first = False
                 else:
-                    print(",", k, end="")
+                    print(',', k, end='')
         if not first:
             print()  # newline
 
         if self.input_state.reps_unit:
             print(
-                f"Remaining {self.input_state.reps_unit}: {self.input_state.reps}")
+                f'Remaining {self.input_state.reps_unit}: {self.input_state.reps}')
 
         if self.awaiting_commit:
-            print("Commit your actions? (Yes/No)")
+            print('Commit your actions? (Yes/No)')
         else:
-            print("Available options:")
+            print('Available options:')
             for k, v in sorted(self.options.items()):
                 print(f'{k:5} {v}')
 
@@ -113,20 +113,20 @@ quit        Exit the game.
         print('Initalising game..')
         while True:
 
-            user_choice = input("> ").split(" ", 1)
+            user_choice = input('> ').split(' ', 1)
 
             if len(user_choice) == 1:
                 user_choice.append('')
 
             # parse the input
-            if len(user_choice) == 0 or user_choice[0] == "?":
+            if len(user_choice) == 0 or user_choice[0] == '?':
                 print(UI.help)
 
-            elif user_choice[0] == "quit" or user_choice[0] == "exit" or user_choice[0].lower() == 'q':
+            elif user_choice[0] == 'quit' or user_choice[0] == 'exit' or user_choice[0].lower() == 'q':
                 break
 
             elif user_choice[0].lower() == 'new':
-                print("Starting new game.")
+                print('Starting new game.')
                 self.game.start()
                 self.game_rollback = deepcopy(self.game)
                 self.game_state_changed()
@@ -166,13 +166,13 @@ m <m1 m2 m3 ...>    Makes multiple moves in order m1, m2, m3, ...
             comd = comd.lower()
 
             if self.awaiting_commit:
-                if "yes".startswith(comd):
+                if 'yes'.startswith(comd):
                     self.commit()
-                elif "no".startswith(comd):
-                    print("Actions undone.")
+                elif 'no'.startswith(comd):
+                    print('Actions undone.')
                     self.revert()
                 else:
-                    print("Invalid input.")
+                    print('Invalid input.')
                     self.prompt()
 
             else:
@@ -202,7 +202,7 @@ m <m1 m2 m3 ...>    Makes multiple moves in order m1, m2, m3, ...
                         print(f'Error: multiple matching options for {m}!')
                         break
 
-                    print(f"Selected: {matched}")
+                    print(f'Selected: {matched}')
                     self.input_state.recv(matched)
                     self.game_state_changed(prompt=False)
                 self.prompt()
@@ -267,7 +267,7 @@ dbg rollback                        Restores the state before debugging started.
     def parse_debug(self, comd):
 
         if not comd:
-            print("Debugging mode started.")
+            print('Debugging mode started.')
             self.debug_save = (deepcopy(self.game),
                                deepcopy(self.game_rollback))
             return
@@ -275,7 +275,7 @@ dbg rollback                        Restores the state before debugging started.
             print(UI.help_debug)
             return
         elif not self.debug_save:
-            print("Error: Not in debug mode.")
+            print('Error: Not in debug mode.')
             return
         user_choice = comd.split(' ')
         if user_choice[0] == 'inf':
@@ -310,7 +310,7 @@ dbg rollback                        Restores the state before debugging started.
                     self.game, Side.fromStr(user_choice[2]))
                 self.game_state_changed()
         elif user_choice[0] == 'rollback':
-            print("Restoring pre-debugging state.")
+            print('Restoring pre-debugging state.')
             self.game = self.debug_save[0]
             self.game_rollback = self.debug_save[1]
             self.game_state_changed()

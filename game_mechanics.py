@@ -81,7 +81,6 @@ class Game:
                               ['Yes', 'No'],
                               'Commit your actions and roll the dice?')
 
-
         def recv(self, input_str):
             '''
             This method is called by the user to select an option.
@@ -755,10 +754,10 @@ class Game:
             self.stage_list.append(
                 partial(self.card_operation_coup, side, card_name))
 
-        if 'Flower_Power' in self.basket[Side.USSR] and action in [CardAction.PLAY_EVENT,
-                                                                   CardAction.INFLUENCE, CardAction.REALIGNMENT, CardAction.COUP] and card_name in ['Arab_Israeli_War',
-                                                                                                                                                    'Indo_Pakistani_War', 'Korean_War', 'Brush_War', 'Iran_Iraq_War']:
-            self.change_vp(2)
+        if 'Flower_Power' in self.basket[Side.USSR]:
+            if action in [CardAction.PLAY_EVENT, CardAction.INFLUENCE, CardAction.REALIGNMENT, CardAction.COUP]:
+                if card_name in ['Arab_Israeli_War', 'Indo_Pakistani_War', 'Korean_War', 'Brush_War', 'Iran_Iraq_War']:
+                    self.change_vp(2)
 
         self.stage_complete()
 
@@ -1143,8 +1142,8 @@ class Game:
             partial(self.event_influence_callback,
                     Country.increment_influence, Side.US),
             self.map.has_us_influence,
-            prompt="Place NORAD influence.",
-            reps_unit="influence"
+            prompt='Place NORAD influence.',
+            reps_unit='influence'
         )
 
     def pick_from_discarded(self):
@@ -1172,7 +1171,6 @@ class Game:
 
     def deal(self):
 
-        # if turn 4, add mid war cards into draw pile and shuffle, same for turn 8 for late war cards
         if self.turn_track == 1:
             # TEST CODE BELOW -- remove when done
             '''For testing early-war cards'''
@@ -1410,7 +1408,7 @@ class Game:
                 if n != 'The_China_Card'
                 and self.get_global_effective_ops(side, self.cards[n].info.ops) >= 3),
             prompt='You may discard a card. If you choose not to discard a card, US loses all influence in West Germany.',
-            option_stop_early="Do Not Discard"
+            option_stop_early='Do Not Discard'
         )
 
     def _Korean_War(self, side):
@@ -1500,7 +1498,7 @@ class Game:
             (n for n in CountryInfo.REGION_ALL[MapRegion.EUROPE]
                 if self.map[n].control == Side.NEUTRAL
              and self.map[n].has_ussr_influence),
-            prompt="Truman Doctrine: Select a country in which to remove all USSR influence."
+            prompt='Truman Doctrine: Select a country in which to remove all USSR influence.'
         )
 
     def _Olympic_Games(self, side):
@@ -1729,7 +1727,7 @@ class Game:
                 partial(self.event_influence_callback, partial(
                     Country.increment_influence, amt=incr), Side.US),
                 available_list,
-                prompt=f"Place {incr} influence in a single country using Special Relationship.",
+                prompt=f'Place {incr} influence in a single country using Special Relationship.',
             )
 
     def _NORAD(self, side):
@@ -2111,14 +2109,12 @@ class Game:
         pass
 
     def _Iranian_Hostage_Crisis(self, side):
-        # uses alternate syntax
         self.map.set_influence('Iran', Side.US, 0)
         self.map.change_influence('Iran', Side.USSR, 2)
         self.basket[Side.US].append('Iranian_Hostage_Crisis')
         self.stage_complete()
 
     def _The_Iron_Lady(self, side):
-        # uses alternate syntax
         self.map.change_influence('Argentina', Side.USSR, 1)
         self.map.set_influence('UK', Side.USSR, 0)
         self.change_vp(-1)
@@ -2172,13 +2168,17 @@ class Game:
         self.change_defcon(-1)
         self.change_vp(-2)
         if self.map['South_Korea'].control == Side.US:
-            self.select_action(Side.US, 'Blank_4_Op_Card', can_coup=False)
+            global_ops = self.get_global_effective_ops(side, 4)
+            self.select_action(
+                Side.US, 'Blank_{global_ops}_Op_Card', can_coup=False)
 
     def _Glasnost(self, side):
         self.change_defcon(1)
         self.change_vp(2)
         if 'The_Reformer' in self.basket[Side.USSR]:
-            self.select_action(Side.USSR, 'Blank_4_Op_Card', can_coup=False)
+            global_ops = self.get_global_effective_ops(side, 4)
+            self.select_action(
+                Side.USSR, 'Blank_{global_ops}_Op_Card', can_coup=False)
 
     def _Ortega_Elected_in_Nicaragua(self, side):
         self.map.set_influence('Nicaragua', Side.US, 0)
@@ -2241,9 +2241,9 @@ class Game:
                 double_inf_ussr_callback,
                 (n for n in CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA]
                     if self.map[n].has_ussr_influence),
-                prompt="Select countries to double USSR influence.",
+                prompt='Select countries to double USSR influence.',
                 reps=2,
-                reps_unit="countries",
+                reps_unit='countries',
                 max_per_option=1
             )
 
@@ -2254,8 +2254,8 @@ class Game:
             (n for n in self.hand[Side.US]
              if n != 'The_China_Card'
              and self.get_global_effective_ops(side, self.cards[n].info.ops) >= 3),
-            prompt='You may discard a card. If you choose not to discard, USSR chooses two countries in South America to double USSR influence',
-            option_stop_early="Do Not Discard"
+            prompt='You may discard a card. If you choose not to discard, USSR chooses two countries in South America to double USSR influence.',
+            option_stop_early='Do Not Discard'
         )
 
     def _Tear_Down_This_Wall(self, side):

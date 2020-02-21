@@ -57,11 +57,8 @@ class GameMap:
     def __init__(self):
         self.ALL = dict()
         # Create mapping of (k,v) = (country_index, name)
-        self.index_country_mapping = dict()
         for name in CountryInfo.ALL.keys():
             self.ALL[name] = Country(name)
-            self.index_country_mapping[self.ALL[name]
-                                       .info.country_index] = self.ALL[name].info.name
 
     def __getitem__(self, item):
         return self.ALL[item]
@@ -71,125 +68,15 @@ class GameMap:
         return (n for n, c in self.ALL.items()
                 if c.has_influence(side) and not c.info.superpower)
 
+    @property
     def has_us_influence(self):
         '''Returns list of names that have US influence, less superpowers..'''
         return [country.info.name for country in self.ALL.values() if country.influence[Side.US] > 0 and country.info.superpower == False]
 
+    @property
     def has_ussr_influence(self):
         '''Returns list of names that have USSR influence, less superpowers..'''
         return [country.info.name for country in self.ALL.values() if country.influence[Side.USSR] > 0 and country.info.superpower == False]
-
-    def build_standard(self):
-        '''
-        Sets the appropriate amount of influence in each country.
-        '''
-        self['USSR'].set_influence(999, 0)
-        self['North_Korea'].set_influence(3, 0)
-        self['East_Germany'].set_influence(3, 0)
-        self['Finland'].set_influence(1, 0)
-        self['Syria'].set_influence(1, 0)
-        self['Iraq'].set_influence(1, 0)
-
-        self['US'].set_influence(0, 999)
-        self['Australia'].set_influence(0, 4)
-        self['Philippines'].set_influence(0, 1)
-        self['Canada'].set_influence(0, 2)
-        self['UK'].set_influence(0, 5)
-        self['Panama'].set_influence(0, 1)
-        self['Israel'].set_influence(0, 1)
-        self['Iran'].set_influence(0, 1)
-        self['South_Korea'].set_influence(0, 1)
-        self['Japan'].set_influence(0, 1)
-        self['South_Africa'].set_influence(0, 1)
-
-    def build_late_war(self):
-        '''
-        Sets the appropriate amount of influence in each country for the Late War scenario.
-        '''
-        self['Canada'].set_influence(0, 0)
-        self['UK'].set_influence(0, 5)
-        self['Norway'].set_influence(0, 4)
-        self['Sweden'].set_influence(0, 0)
-        self['Finland'].set_influence(2, 1)
-        self['Denmark'].set_influence(0, 3)
-        self['Benelux'].set_influence(0, 3)
-        self['France'].set_influence(1, 3)
-        self['Spain_Portugal'].set_influence(0, 1)
-        self['Italy'].set_influence(0, 3)
-        self['Greece'].set_influence(0, 0)
-        self['Austria'].set_influence(0, 0)
-        self['West_Germany'].set_influence(1, 5)
-        self['East_Germany'].set_influence(4, 0)
-        self['Poland'].set_influence(4, 0)
-        self['Czechoslovakia'].set_influence(3, 0)
-        self['Hungary'].set_influence(3, 0)
-        self['Yugoslavia'].set_influence(2, 1)
-        self['Romania'].set_influence(3, 1)
-        self['Bulgaria'].set_influence(3, 0)
-        self['Turkey'].set_influence(0, 2)
-        self['Libya'].set_influence(2, 0)
-        self['Egypt'].set_influence(0, 1)
-        self['Israel'].set_influence(0, 4)
-        self['Lebanon'].set_influence(0, 0)
-        self['Syria'].set_influence(3, 0)
-        self['Iraq'].set_influence(3, 0)
-        self['Iran'].set_influence(0, 2)
-        self['Jordan'].set_influence(2, 2)
-        self['Gulf_States'].set_influence(0, 0)
-        self['Saudi_Arabia'].set_influence(0, 2)
-        self['Afghanistan'].set_influence(2, 0)
-        self['Pakistan'].set_influence(0, 2)
-        self['India'].set_influence(3, 0)
-        self['Burma'].set_influence(1, 0)
-        self['Laos_Cambodia'].set_influence(2, 0)
-        self['Thailand'].set_influence(0, 2)
-        self['Vietnam'].set_influence(5, 0)
-        self['Malaysia'].set_influence(1, 3)
-        self['Australia'].set_influence(0, 4)
-        self['Indonesia'].set_influence(0, 1)
-        self['Philippines'].set_influence(1, 3)
-        self['Japan'].set_influence(0, 4)
-        self['Taiwan'].set_influence(0, 3)
-        self['South_Korea'].set_influence(0, 3)
-        self['North_Korea'].set_influence(3, 0)
-        self['Algeria'].set_influence(2, 0)
-        self['Morocco'].set_influence(0, 0)
-        self['Tunisia'].set_influence(0, 0)
-        self['West_African_States'].set_influence(0, 0)
-        self['Ivory_Coast'].set_influence(0, 0)
-        self['Saharan_States'].set_influence(0, 0)
-        self['Nigeria'].set_influence(0, 1)
-        self['Cameroon'].set_influence(0, 0)
-        self['Zaire'].set_influence(0, 1)
-        self['Angola'].set_influence(3, 1)
-        self['South_Africa'].set_influence(1, 2)
-        self['Botswana'].set_influence(0, 0)
-        self['Zimbabwe'].set_influence(1, 0)
-        self['SE_African_States'].set_influence(2, 0)
-        self['Kenya'].set_influence(0, 2)
-        self['Somalia'].set_influence(0, 2)
-        self['Ethiopia'].set_influence(1, 0)
-        self['Sudan'].set_influence(0, 0)
-        self['Mexico'].set_influence(0, 0)
-        self['Guatemala'].set_influence(0, 0)
-        self['El_Salvador'].set_influence(0, 0)
-        self['Honduras'].set_influence(0, 2)
-        self['Costa_Rica'].set_influence(0, 0)
-        self['Panama'].set_influence(0, 2)
-        self['Nicaragua'].set_influence(0, 1)
-        self['Cuba'].set_influence(0, 3)
-        self['Haiti'].set_influence(0, 1)
-        self['Dominican_Republic'].set_influence(0, 1)
-        self['Colombia'].set_influence(1, 2)
-        self['Ecuador'].set_influence(0, 0)
-        self['Peru'].set_influence(1, 2)
-        self['Chile'].set_influence(0, 3)
-        self['Argentina'].set_influence(0, 2)
-        self['Uruguay'].set_influence(0, 0)
-        self['Paraguay'].set_influence(0, 0)
-        self['Bolivia'].set_influence(0, 0)
-        self['Brazil'].set_influence(0, 0)
-        self['Venezuela'].set_influence(0, 2)
 
     def can_coup(self, game_instance, name: str, side: Side, free=False) -> bool:
         '''
@@ -415,16 +302,16 @@ class GameMap:
         '''
         country = self[name]
 
-        def has_influence_around(self, name: str, side: Side):
-            if self[name].info.superpower:
+        def has_influence_around():
+            if country.info.superpower:
                 return False
 
-            countries_to_check = self[name].info.adjacent_countries.copy()
+            countries_to_check = country.info.adjacent_countries.copy()
             countries_to_check.append(name)
             for country in countries_to_check:
                 if self[country].influence[side] > 0:
                     return True
-            return False  # returns false if none of the above are true
+            return False
 
         def sufficient_ops(effective_ops: int):
             # if country is controlled by opposition, if ops > 1, return true, else false
@@ -433,7 +320,7 @@ class GameMap:
             else:
                 return True
 
-        def is_chernobyl(game_instance, name: str):
+        def is_chernobyl():
             if 'Chernobyl_Europe' in game_instance.basket[Side.US]:
                 return False if name in list(CountryInfo.REGION_ALL[MapRegion.EUROPE]) else True
             elif 'Chernobyl_Middle_East' in game_instance.basket[Side.US]:
@@ -448,9 +335,27 @@ class GameMap:
                 return False if name in list(CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA]) else True
             return True
 
-        return has_influence_around(self, name, side) and sufficient_ops(effective_ops) and is_chernobyl(game_instance, name)
+        return has_influence_around() and sufficient_ops(effective_ops) and is_chernobyl()
 
     def place_influence(self, name: str, side: Side, effective_ops: int):
+        '''
+        The action of placing influence into a country.
+
+        Parameters
+        ----------
+        name : str
+            String representation of the country we are checking.
+        side : Side
+            Player side which we are checking. Can be Side.US or Side.USSR.
+        effective_ops : int
+            The number of effective operations used in the coup.
+
+        Raises
+        ------
+        ValueError
+            Throws you an error if you are trying to place 1 influence into an enemy-controlled country.
+            Used as a stopgap.
+        '''
         if side == Side.USSR and self[name].control == Side.US:
             # here we deduct 2 from effective_ops, to place 1 influence in the country,
             # and then recursively call the function again
@@ -472,13 +377,6 @@ class GameMap:
                 self[name].change_influence(0, effective_ops)
             elif side == Side.USSR:
                 self[name].change_influence(effective_ops, 0)
-            else:
-                raise ValueError('side must be \'us\' or \'ussr\'!')
-
-    '''
-    These functions have slightly different syntax from the Country ones, if you want to use them
-    you should preferably call the country methods directly, but these can be more elegant.
-    '''
 
     def change_influence(self, name: str, side: Side, influence: int):
         if side == Side.USSR:
@@ -492,6 +390,118 @@ class GameMap:
         elif side == Side.US:
             self[name].set_influence(
                 self[name].influence[Side.USSR], influence)
+
+    def build_standard(self):
+        '''
+        Sets the appropriate amount of influence in each country.
+        '''
+        self['USSR'].set_influence(999, 0)
+        self['North_Korea'].set_influence(3, 0)
+        self['East_Germany'].set_influence(3, 0)
+        self['Finland'].set_influence(1, 0)
+        self['Syria'].set_influence(1, 0)
+        self['Iraq'].set_influence(1, 0)
+
+        self['US'].set_influence(0, 999)
+        self['Australia'].set_influence(0, 4)
+        self['Philippines'].set_influence(0, 1)
+        self['Canada'].set_influence(0, 2)
+        self['UK'].set_influence(0, 5)
+        self['Panama'].set_influence(0, 1)
+        self['Israel'].set_influence(0, 1)
+        self['Iran'].set_influence(0, 1)
+        self['South_Korea'].set_influence(0, 1)
+        self['Japan'].set_influence(0, 1)
+        self['South_Africa'].set_influence(0, 1)
+
+    def build_late_war(self):
+        '''
+        Sets the appropriate amount of influence in each country for the Late War scenario.
+        '''
+        self['Canada'].set_influence(0, 0)
+        self['UK'].set_influence(0, 5)
+        self['Norway'].set_influence(0, 4)
+        self['Sweden'].set_influence(0, 0)
+        self['Finland'].set_influence(2, 1)
+        self['Denmark'].set_influence(0, 3)
+        self['Benelux'].set_influence(0, 3)
+        self['France'].set_influence(1, 3)
+        self['Spain_Portugal'].set_influence(0, 1)
+        self['Italy'].set_influence(0, 3)
+        self['Greece'].set_influence(0, 0)
+        self['Austria'].set_influence(0, 0)
+        self['West_Germany'].set_influence(1, 5)
+        self['East_Germany'].set_influence(4, 0)
+        self['Poland'].set_influence(4, 0)
+        self['Czechoslovakia'].set_influence(3, 0)
+        self['Hungary'].set_influence(3, 0)
+        self['Yugoslavia'].set_influence(2, 1)
+        self['Romania'].set_influence(3, 1)
+        self['Bulgaria'].set_influence(3, 0)
+        self['Turkey'].set_influence(0, 2)
+        self['Libya'].set_influence(2, 0)
+        self['Egypt'].set_influence(0, 1)
+        self['Israel'].set_influence(0, 4)
+        self['Lebanon'].set_influence(0, 0)
+        self['Syria'].set_influence(3, 0)
+        self['Iraq'].set_influence(3, 0)
+        self['Iran'].set_influence(0, 2)
+        self['Jordan'].set_influence(2, 2)
+        self['Gulf_States'].set_influence(0, 0)
+        self['Saudi_Arabia'].set_influence(0, 2)
+        self['Afghanistan'].set_influence(2, 0)
+        self['Pakistan'].set_influence(0, 2)
+        self['India'].set_influence(3, 0)
+        self['Burma'].set_influence(1, 0)
+        self['Laos_Cambodia'].set_influence(2, 0)
+        self['Thailand'].set_influence(0, 2)
+        self['Vietnam'].set_influence(5, 0)
+        self['Malaysia'].set_influence(1, 3)
+        self['Australia'].set_influence(0, 4)
+        self['Indonesia'].set_influence(0, 1)
+        self['Philippines'].set_influence(1, 3)
+        self['Japan'].set_influence(0, 4)
+        self['Taiwan'].set_influence(0, 3)
+        self['South_Korea'].set_influence(0, 3)
+        self['North_Korea'].set_influence(3, 0)
+        self['Algeria'].set_influence(2, 0)
+        self['Morocco'].set_influence(0, 0)
+        self['Tunisia'].set_influence(0, 0)
+        self['West_African_States'].set_influence(0, 0)
+        self['Ivory_Coast'].set_influence(0, 0)
+        self['Saharan_States'].set_influence(0, 0)
+        self['Nigeria'].set_influence(0, 1)
+        self['Cameroon'].set_influence(0, 0)
+        self['Zaire'].set_influence(0, 1)
+        self['Angola'].set_influence(3, 1)
+        self['South_Africa'].set_influence(1, 2)
+        self['Botswana'].set_influence(0, 0)
+        self['Zimbabwe'].set_influence(1, 0)
+        self['SE_African_States'].set_influence(2, 0)
+        self['Kenya'].set_influence(0, 2)
+        self['Somalia'].set_influence(0, 2)
+        self['Ethiopia'].set_influence(1, 0)
+        self['Sudan'].set_influence(0, 0)
+        self['Mexico'].set_influence(0, 0)
+        self['Guatemala'].set_influence(0, 0)
+        self['El_Salvador'].set_influence(0, 0)
+        self['Honduras'].set_influence(0, 2)
+        self['Costa_Rica'].set_influence(0, 0)
+        self['Panama'].set_influence(0, 2)
+        self['Nicaragua'].set_influence(0, 1)
+        self['Cuba'].set_influence(0, 3)
+        self['Haiti'].set_influence(0, 1)
+        self['Dominican_Republic'].set_influence(0, 1)
+        self['Colombia'].set_influence(1, 2)
+        self['Ecuador'].set_influence(0, 0)
+        self['Peru'].set_influence(1, 2)
+        self['Chile'].set_influence(0, 3)
+        self['Argentina'].set_influence(0, 2)
+        self['Uruguay'].set_influence(0, 0)
+        self['Paraguay'].set_influence(0, 0)
+        self['Bolivia'].set_influence(0, 0)
+        self['Brazil'].set_influence(0, 0)
+        self['Venezuela'].set_influence(0, 2)
 
 
 class Country:
