@@ -629,8 +629,8 @@ class Game:
         )
 
     def card_callback(self, side: Side, card_name: str):
+        self.input_state.reps -= 1
         if self.cards[card_name].info.type == 'Scoring':
-            self.input_state.reps -= 1
             self.stage_list.append(
                 partial(self.resolve_card_action, side,
                         card_name, CardAction.PLAY_EVENT.name)
@@ -638,7 +638,7 @@ class Game:
         else:
             if card_name == 'The_China_Card' and side == Side.US and 'Formosan_Resolution' in self.basket[Side.US]:
                 self.basket[Side.US].remove('Formosan_Resolution')
-            self.select_action(side, card_name, False)
+            self.stage_list.append(partial(self.select_action, side, card_name))
         return True
 
     def action_callback(self, side: Side, card_name: str, action_name: str, is_event_resolved=False):
