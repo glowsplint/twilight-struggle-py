@@ -26,14 +26,15 @@ quit        Exit the game.
     ussr_prompt = '----- USSR Player: -----'
     us_prompt = '----- US Player: -----'
     rng_prompt = '----- RNG: -----'
-    commit_options = ['yes', 'no']
 
     def __init__(self):
+        self.game_lookahead = None
         self.game_rollback = None
         self.game = Game()
         self.debug_save = None
         self.options = dict()
-        self.rng = True
+        self.auto_rng = True
+        self.auto_commit = True
 
     @property
     def input_state(self) -> Game.Input:
@@ -41,46 +42,85 @@ quit        Exit the game.
 
     @property
     def awaiting_commit(self):
-        return self.input_state.complete
-
-    def get_options(self):
-        self.options = dict()
-        if self.game.input_state.option_stop_early:
-            self.options[0] = self.game.input_state.option_stop_early
-        if self.game.input_state.state == InputType.SELECT_CARD_ACTION:
-            for opt in self.input_state.available_options:
-                self.options[CardAction[opt].value] = opt
-        elif self.game.input_state.state == InputType.SELECT_CARD_IN_HAND:
-            for opt in self.input_state.available_options:
-                self.options[CardInfo.ALL[opt].card_index] = opt
-        elif self.game.input_state.state == InputType.SELECT_COUNTRY:
-            for opt in self.input_state.available_options:
-                self.options[CountryInfo.ALL[opt].country_index] = opt
-        elif self.game.input_state.state == InputType.SELECT_MULTIPLE:
-            for i, opt in enumerate(self.input_state.available_options):
-                self.options[i] = opt
-        elif self.game.input_state.state == InputType.SELECT_RANDOM:
-            for i, opt in enumerate(self.input_state.available_options):
-                self.options[i] = opt
+        return self.game_lookahead
 
     def commit(self):
+        self.game_lookahead = None
         self.game.stage_complete()
+        while not self.game.input_state:
+            self.game.stage_complete()
+
         self.game_rollback = deepcopy(self.game)
         self.game_state_changed()
 
     def revert(self):
         self.game = self.game_rollback
+        self.game_lookahead = None
+
         self.game_rollback = deepcopy(self.game)
         self.game_state_changed()
 
     def game_state_changed(self, prompt=True):
-        if self.rng:
-            while (self.game.input_state.state == InputType.SELECT_RANDOM
-                    and self.game.input_state.reps):
-                choices = list(self.game.input_state.available_options)
-                c = random.choice(choices)
-                self.input_state.recv(c)
-        self.get_options()
+
+        while True:
+
+            if self.auto_rng:
+                # automatically run rng
+                if self.game.input_state.state == InputType.SELECT_RANDOM:
+                    if not self.game.input_state.reps:
+                        # done with the rng, continue on to the next stage
+                        self.game.stage_complete()
+                        self.game_rollback = deepcopy(self.game)
+                    else:
+                        choices = list(self.game.input_state.available_options)
+                        c = random.choice(choices)
+                        # process the input
+                        self.game.input_state.recv(c)
+                    continue
+
+            # see if this stage is done
+            if not self.game.input_state.reps:
+
+                # We will see what the next input required is.
+                self.game_lookahead = deepcopy(self.game)
+                self.game_lookahead.stage_complete()
+                while not self.game_lookahead.input_state:
+                    self.game_lookahead.stage_complete()
+
+                if self.game.input_state.side == self.game_lookahead.input_state.side:
+                    # The same player is up for input again. Don't ask for commit.
+                    self.game_lookahead = None
+                    self.game.stage_complete()
+                    while not self.game.input_state:
+                        self.game.stage_complete()
+                    continue
+                else:
+                    break
+
+            # if we get here it's time for player input. We will break at the end.
+
+            if self.game.input_state.state == InputType.SELECT_CARD_ACTION:
+                self.options = {CardAction[opt].value: opt
+                    for opt in self.input_state.available_options}
+            elif self.game.input_state.state == InputType.SELECT_CARD_IN_HAND:
+                self.options = {CardInfo.ALL[opt].card_index: opt
+                    for opt in self.input_state.available_options}
+            elif self.game.input_state.state == InputType.SELECT_COUNTRY:
+                self.options = {CountryInfo.ALL[opt].country_index: opt
+                    for opt in self.input_state.available_options}
+            elif self.game.input_state.state == InputType.SELECT_MULTIPLE:
+                self.options = {i: opt
+                    for i, opt in enumerate(self.input_state.available_options)}
+            elif self.game.input_state.state == InputType.SELECT_RANDOM:
+                self.options = {i: opt
+                    for i, opt in enumerate(self.input_state.available_options)}
+
+            if self.game.input_state.option_stop_early:
+                self.options[0] = self.game.input_state.option_stop_early
+
+            # time for player input
+            break
+
         if prompt:
             self.prompt()
 
@@ -139,6 +179,8 @@ quit        Exit the game.
                 print('Starting new game.')
                 self.game.start()
                 self.game_rollback = deepcopy(self.game)
+                while not self.game.input_state:
+                    self.game.stage_complete()
                 self.game_state_changed()
 
             elif user_choice[0].lower() == 'dbg':
@@ -146,9 +188,9 @@ quit        Exit the game.
 
             elif user_choice[0].lower() == 'rng':
                 if user_choice[1].lower() == 'on':
-                    self.rng = True
+                    self.auto_rng = True
                 elif user_choice[1].lower() == 'off':
-                    self.rng = False
+                    self.auto_rng = False
                 else:
                     print('Invalid command. Enter ? for help.')
 

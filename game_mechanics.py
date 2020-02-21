@@ -210,8 +210,6 @@ class Game:
         self.map.build_standard()
         self.deal()
 
-        self.stage_complete()
-
     '''
     self.current returns current game stage.
     self.stage_list returns the full list of stages. The list starts with the
@@ -223,7 +221,9 @@ class Game:
         return self.stage_list[-1]
 
     def stage_complete(self):
+        self.input_state = None
         self.stage_list.pop()()
+
 
     '''Output functions'''
 
@@ -367,7 +367,6 @@ class Game:
         any country in which they currently have influence.
         '''
         if self.handicap == 0:
-            self.stage_complete()
             return
 
         if self.handicap < 0:
@@ -404,7 +403,7 @@ class Game:
         Due to UI constraints, USSR player chooses first, then the US player.
         All choices are then displayed.
         '''
-        # TODO account for space race!
+        # TODO account for space race.
         # must append triggers in backwards order
         self.stage_list.append(self.ar_complete)
         self.stage_list.append(self.resolve_headline_order)
@@ -412,7 +411,6 @@ class Game:
         self.stage_list.append(partial(self.choose_headline, Side.USSR))
 
         # continue
-        self.stage_complete()
 
     def resolve_headline_order(self):
         '''
@@ -441,7 +439,6 @@ class Game:
             self.stage_list.append(partial(self.resolve_headline, Side.US))
             self.stage_list.append(partial(self.resolve_headline, Side.USSR))
 
-        self.stage_complete()
 
     def resolve_headline(self, side: Side):
         '''
@@ -459,7 +456,6 @@ class Game:
             self.stage_list.append(
                 partial(self.trigger_event, side, card_name))
             self.headline_bin[side] = ''
-        self.stage_complete()
 
     def ar_complete(self):
         if self.ar_track == Game.ars_by_turn[self.turn_track]:
@@ -476,8 +472,6 @@ class Game:
 
             self.stage_list.append(self.ar_complete)
             self.stage_list.append(partial(self.select_card))
-
-        self.stage_complete()
 
     def can_play_event(self, side: Side, card_name: str, resolve_check=False):
         '''
@@ -757,8 +751,6 @@ class Game:
                 if card_name in ['Arab_Israeli_War', 'Indo_Pakistani_War', 'Korean_War', 'Brush_War', 'Iran_Iraq_War']:
                     self.change_vp(2)
 
-        self.stage_complete()
-
     # Utility functions used in stages
 
     def dispose_card(self, side, card_name: str, event=False):
@@ -785,8 +777,6 @@ class Game:
             else:
                 self.discard_pile.append(card_name)
             self.hand[side].remove(card_name)
-
-        self.stage_complete()
 
     def move_china_card(self, side: Side, made_playable=False):
         '''
@@ -866,18 +856,17 @@ class Game:
         side : Side
             Side of the player whose hand we pick the card from.
         '''
-        options = [i for i, j in enumerate(self.hand[side])]
 
-        def choose_random_card_callback(num: int):
-            self.hand[side][num]
-            self.stage_complete()
+        def choose_random_card_callback(card_name: int):
+            self.hand[side].remove(card_name)
+            self.discard_pile.append(card_name)
             return True
 
         self.input_state = Game.Input(
             Side.NEUTRAL, InputType.SELECT_RANDOM,
             choose_random_card_callback,
-            options,
-            prompt=prompt,
+            self.hand[side],
+            prompt='Randomly pick a card to discard',
         )
 
     '''
@@ -938,8 +927,8 @@ class Game:
         self.input_state.reps -= 1
 
         def realign_dice_callback(num: tuple):
+            self.input_state.reps -= 1
             self.map.realignment(self, name, side, *num)
-            self.stage_complete()
             return True
 
         if reps:
@@ -948,7 +937,6 @@ class Game:
 
         self.stage_list.append(
             partial(self.dice_stage, realign_dice_callback, two_dice=True))
-
         return True
 
     def card_operation_realignment(self, side: Side, card_name: str = None, reps: int = None, restricted_list: Sequence[str] = None, free=False):
@@ -1012,9 +1000,9 @@ class Game:
             local_ops_modifier += 1
 
         def coup_dice_callback(num: tuple):
+            self.input_state.reps -= 1
             self.map.coup(self, country_name, side, effective_ops +
                           local_ops_modifier, num[0], free=free)
-            self.stage_complete()
             return True
         self.stage_list.append(partial(self.dice_stage, coup_dice_callback))
 
@@ -1079,8 +1067,7 @@ class Game:
             print(f'Failure with roll of {roll}.')
 
         self.spaced_turns[side] += 1
-
-        self.stage_complete()  # TODO the die roll in the UI
+        # TODO the die roll in the UI
 
     def event_influence_callback(self, country_function, side: Side, name: str) -> bool:
         '''
@@ -1168,7 +1155,6 @@ class Game:
                         country.influence[side.opp], -country.influence[side.opp])
             print(f'{outcome} with roll of {num[0]}.')
 
-            self.stage_complete()
             return True
 
         self.stage_list.append(
@@ -1387,20 +1373,16 @@ class Game:
     def _Asia_Scoring(self, side):
         # TODO: ADD SHUTTLE DIPLOMACY AND FORMOSAN RESOLUTION
         self.score(MapRegion.ASIA, 3, 7, 9)
-        self.stage_complete()
 
     def _Europe_Scoring(self, side):
         self.score(MapRegion.EUROPE, 3, 7, 120)
-        self.stage_complete()
 
     def _Middle_East_Scoring(self, side):
         self.score(MapRegion.MIDDLE_EAST, 3, 5, 7)
-        self.stage_complete()
 
     def _Duck_and_Cover(self, side):
         self.change_defcon(-1)
         self.change_vp(-(5 - self.defcon_track))
-        self.stage_complete()
 
     def _Five_Year_Plan(self, side):
         random_card = self.choose_random_card(Side.USSR)
@@ -1408,7 +1390,6 @@ class Game:
             self.trigger_event(side, random_card.info.name)
         else:
             self.discard_pile.append(random_card)
-        self.stage_complete()
 
     def _The_China_Card(self, side):
         'No event.'
@@ -1430,14 +1411,12 @@ class Game:
     def _Fidel(self, side):
         cuba = self.map['Cuba']
         cuba.set_influence(max(3, cuba.influence[Side.USSR]), 0)
-        self.stage_complete()
 
     def _Vietnam_Revolts(self, side):
         # TODO: Continuous effect
         self.basket[Side.USSR].append('Vietnam_Revolts')
         self.end_turn_stage_list.append(
             partial(self.basket[Side.USSR].remove, 'Vietnam_Revolts'))
-        self.stage_complete()
 
     def _Blockade(self, side):
         self.input_state = Game.Input(
@@ -1457,12 +1436,10 @@ class Game:
     def _Romanian_Abdication(self, side):
         romania = self.map['Romania']
         romania.set_influence(max(3, romania.influence[Side.USSR]), 0)
-        self.stage_complete()
 
     def _Arab_Israeli_War(self, side):
         if self.can_play_event(side, 'Arab_Israeli_War'):
             self.war_callback('Israel', Side.USSR, country_itself=True)
-        self.stage_complete()
 
     def _COMECON(self, side):
         self.input_state = Game.Input(
@@ -1480,7 +1457,6 @@ class Game:
     def _Nasser(self, side):
         egypt = self.map['Egypt']
         egypt.change_influence(2, -math.ceil(egypt.influence[Side.US] / 2))
-        self.stage_complete()
 
     def _Warsaw_Pact_Formed(self, side):
         # TODO: should aim to remove this as an option (_remove) if it's not available
@@ -1524,11 +1500,9 @@ class Game:
     def _De_Gaulle_Leads_France(self, side):
         self.map['France'].change_influence(1, -2)
         self.basket[Side.USSR].append('De_Gaulle_Leads_France')
-        self.stage_complete()
 
     def _Captured_Nazi_Scientist(self, side):
         self.change_space(side, 1)
-        self.stage_complete()
 
     def _Truman_Doctrine(self, side):
         self.input_state = Game.Input(
@@ -1554,7 +1528,6 @@ class Game:
                 print(
                     f'{outcome} with (Sponsor, Participant) rolls of ({num[0]}, {num[1]}).')
 
-                self.stage_complete()
                 return True
 
             self.stage_list.append(
@@ -1581,7 +1554,6 @@ class Game:
     def _NATO(self, side):
         if self.can_play_event(side, 'NATO'):
             self.basket[Side.USSR].append('NATO')
-        self.stage_complete()
 
     def _Independent_Reds(self, side):
         ireds = ['Yugoslavia', 'Romania',
@@ -1627,7 +1599,6 @@ class Game:
         self.basket[Side.US].append('Containment')
         self.end_turn_stage_list.append(
             partial(self.basket[Side.US].remove, 'Containment'))
-        self.stage_complete()
 
     def _CIA_Created(self, side):
         # TODO: reveal hand
@@ -1640,7 +1611,6 @@ class Game:
         japan = self.map['Japan']
         japan.set_influence(japan.influence[Side.USSR], max(
             japan.influence[Side.USSR] + 4, japan.influence[Side.US]))
-        self.stage_complete()
 
     def _Suez_Crisis(self, side):
         suez = ['France', 'UK', 'Israel']
@@ -1690,7 +1660,6 @@ class Game:
         self.basket[side].append('Red_Scare_Purge')
         self.end_turn_stage_list.append(
             partial(self.basket[side].remove, 'Red_Scare_Purge'))
-        self.stage_complete()
 
     def _UN_Intervention(self, side):
         '''
@@ -1744,11 +1713,9 @@ class Game:
     def _Nuclear_Test_Ban(self, side):
         self.change_vp((self.defcon_track - 2) * side.vp_mult)
         self.change_defcon(2)
-        self.stage_complete()
 
     def _Formosan_Resolution(self, side):
         self.basket[Side.US].append('Formosan_Resolution')
-        self.stage_complete()
 
     def _Defectors(self, side):
         # checks to see if headline bin is empty i.e. in action round
@@ -1757,7 +1724,6 @@ class Game:
             self.headline_bin[Side.USSR] = ''
         if side == Side.USSR and self.ar_track > 0:
             self.change_vp(1)
-        self.stage_complete()
 
     def _The_Cambridge_Five(self, side):
         pass
@@ -1782,8 +1748,6 @@ class Game:
 
     def _NORAD(self, side):
         self.basket[Side.US].append('NORAD')
-        self.stage_complete()
-        pass
 
     def _Brush_War(self, side):
         self.input_state = Game.Input(
@@ -1797,7 +1761,6 @@ class Game:
 
     def _Central_America_Scoring(self, side):
         self.score(MapRegion.CENTRAL_AMERICA, 1, 3, 5)
-        self.stage_complete()
 
     def _Southeast_Asia_Scoring(self, side):
         country_count = [0, 0]
@@ -1813,7 +1776,6 @@ class Game:
             swing -= 1
         self.change_vp(swing)
         print(f'Southeast Asia scores for {swing} VP')
-        self.stage_complete()
 
     def _Arms_Race(self, side):
         if self.milops_track[side] > self.milops_track[side.opp]:
@@ -1821,20 +1783,17 @@ class Game:
                 self.change_vp(3 * side.vp_mult)
             else:
                 self.change_vp(1 * side.vp_mult)
-        self.stage_complete()
 
     def _Cuban_Missile_Crisis(self, side):
         self.change_defcon(2 - self.defcon_track)
         self.basket[side].append('Cuban_Missile_Crisis')
         self.end_turn_stage_list.append(
             partial(self.basket[side].remove, 'Cuban_Missile_Crisis'))
-        self.stage_complete()
 
     def _Nuclear_Subs(self, side):
         self.basket[Side.US].append('Nuclear_Subs')
         self.end_turn_stage_list.append(
             partial(self.basket[Side.US].remove, 'Nuclear_Subs'))
-        self.stage_complete()
 
     def _Quagmire(self, side):
         # need to insert and replace the US Action round with the quagmire_discard stage
@@ -1847,7 +1806,6 @@ class Game:
         self.basket[side].append('Salt_Negotiations')
         self.end_turn_stage_list.append(
             partial(self.basket[side].remove, 'Salt_Negotiations'))
-        self.stage_complete()
 
     def _Bear_Trap(self, side):
         pass
@@ -1890,7 +1848,6 @@ class Game:
         if self.can_play_event(side, 'Kitchen_Debates'):
             print('USSR poked in the chest by US player!')
             self.change_vp(-2)
-        self.stage_complete()
 
     def _Missile_Envy(self, side):
         # if the other player is only holding scoring cards, this effect needs to be pushed
@@ -1904,12 +1861,10 @@ class Game:
         self.basket[Side.USSR].append('Brezhnev_Doctrine')
         self.end_turn_stage_list.append(
             partial(self.basket[Side.USSR].remove, 'Brezhnev_Doctrine'))
-        self.stage_complete()
 
     def _Portuguese_Empire_Crumbles(self, side):
         self.map.change_influence('Angola', Side.USSR, 2)
         self.map.change_influence('SE_African_States', Side.USSR, 2)
-        self.stage_complete()
 
     def _South_African_Unrest(self, side):
 
@@ -1945,13 +1900,11 @@ class Game:
 
     def _Allende(self, side):
         self.map['Chile'].change_influence(2, 0)
-        self.stage_complete()
 
     def _Willy_Brandt(self, side):
         self.change_defcon(1)
         self.map['West_Germany'].change_influence(1, 0)
         self.basket[Side.USSR].append('Willy_Brandt')
-        self.stage_complete()
 
     def _Muslim_Revolution(self, side):
         mr = ['Sudan', 'Iran', 'Iraq', 'Egypt',
@@ -1977,11 +1930,9 @@ class Game:
             self.move_china_card(Side.US, made_playable=True)
         elif 'The_China_Card' in self.hand[Side.USSR]:
             self.change_vp(1)
-        self.stage_complete()
 
     def _Flower_Power(self, side):
         self.basket[Side.USSR].append('Flower_Power')
-        self.stage_complete()
 
     def _U2_Incident(self, side):
         pass
@@ -1992,7 +1943,6 @@ class Game:
         swing = sum(
             Side.USSR.vp_mult for country in opec if self.map[country].control == Side.USSR)
         self.change_vp(swing)
-        self.stage_complete()
 
     def _Lone_Gunman(self, side):
         ops = self.get_global_effective_ops(Side.US, 1)
@@ -2016,7 +1966,6 @@ class Game:
         countries = ['Panama', 'Costa_Rica', 'Venezuela']
         for country in countries:
             self.map[country].change_influence(0, 1)
-        self.stage_complete()
 
     def _Camp_David_Accords(self, side):
         self.change_vp(-1)
@@ -2045,13 +1994,11 @@ class Game:
     def _John_Paul_II_Elected_Pope(self, side):
         self.map['Poland'].change_influence(-2, 1)
         self.basket[Side.US].append('John_Paul_II_Elected_Pope')
-        self.stage_complete()
 
     def _Latin_American_Death_Squads(self, side):
         self.basket[side].append('Latin_American_Death_Squads')
         self.end_turn_stage_list.append(
             partial(self.basket[side].remove, 'Latin_American_Death_Squads'))
-        self.stage_complete()
 
     def _OAS_Founded(self, side):
         self.input_state = Game.Input(
@@ -2070,12 +2017,10 @@ class Game:
             self.move_china_card(Side.USSR)
         elif 'The_China_Card' in self.hand[Side.US]:
             self.change_vp(-2)
-        self.stage_complete()
 
     def _Sadat_Expels_Soviets(self, side):
         self.map.set_influence('Egypt', Side.USSR, 0)  # using alternate syntax
         self.map['Egypt'].change_influence(0, 1)
-        self.stage_complete()
 
     def _Shuttle_Diplomacy(self, side):
         pass
@@ -2131,20 +2076,16 @@ class Game:
         swing = sum(
             Side.US.vp_mult for n in ca if self.map[n].control == Side.US)
         self.change_vp(swing)
-        self.stage_complete()
 
     def _Africa_Scoring(self, side):
         self.score(MapRegion.AFRICA, 1, 4, 6)
-        self.stage_complete()
 
     def _One_Small_Step(self, side):
         if self.can_play_event(side, 'One_Small_Step'):
             self.change_space(side, 2)
-        self.stage_complete()
 
     def _South_America_Scoring(self, side):
         self.score(MapRegion.SOUTH_AMERICA, 2, 5, 6)
-        self.stage_complete()
 
     def _Che(self, side):
         ca_sa_af = chain(CountryInfo.REGION_ALL[MapRegion.CENTRAL_AMERICA],
@@ -2162,7 +2103,6 @@ class Game:
         self.map.set_influence('Iran', Side.US, 0)
         self.map.change_influence('Iran', Side.USSR, 2)
         self.basket[Side.US].append('Iranian_Hostage_Crisis')
-        self.stage_complete()
 
     def _The_Iron_Lady(self, side):
         self.map.change_influence('Argentina', Side.USSR, 1)
@@ -2173,7 +2113,6 @@ class Game:
     def _Reagan_Bombs_Libya(self, side):
         swing = math.floor(self.map['Libya'].influence[Side.USSR] / 2)
         self.change_vp(-swing)
-        self.stage_complete()
 
     def _Star_Wars(self, side):
         if self.can_play_event(side, 'Star_Wars'):
@@ -2242,13 +2181,11 @@ class Game:
             card_name = self.choose_random_card(side.opp)
             self.discard_pile.append(self.hand[side.opp].pop(
                 self.hand[side.opp].index(card_name)))
-        self.stage_complete()
 
     def _Iran_Contra_Scandal(self, side):
         self.basket[Side.USSR].append('Iran_Contra_Scandal')
         self.end_turn_stage_list.append(
             partial(self.basket[Side.USSR].remove, 'Iran_Contra_Scandal'))
-        self.stage_complete()
 
     def _Chernobyl(self, side):
         def add_chernobyl(effect_name: str):
@@ -2333,7 +2270,6 @@ class Game:
         if 'Flower_Power' in self.basket[Side.USSR]:
             self.basket[Side.USSR].remove('Flower_Power')
         self.basket[Side.US].append('An_Evil_Empire')
-        self.stage_complete()
 
     def _Aldrich_Ames_Remix(self, side):
         pass
@@ -2361,7 +2297,6 @@ class Game:
         if self.can_play_event(side, 'Solidarity'):
             self.map['Poland'].change_influence(0, 3)
             self.basket[Side.US].remove('John_Paul_II_Elected_Pope')
-        self.stage_complete()
 
     def _Iran_Iraq_War(self, side):
         option_function_mapping = {
@@ -2380,12 +2315,10 @@ class Game:
         self.basket[Side.USSR].append('Yuri_and_Samantha')
         self.end_turn_stage_list.append(
             partial(self.basket[Side.USSR].remove, 'Yuri_and_Samantha'))
-        self.stage_complete()
 
     def _AWACS_Sale_to_Saudis(self, side):
         self.map.change_influence('Saudi_Arabia', Side.US, 2)
         self.basket[Side.US].append('AWACS_Sale_to_Saudis')
-        self.stage_complete()
 
     card_function_mapping = {
         'Asia_Scoring': _Asia_Scoring,

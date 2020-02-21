@@ -276,7 +276,7 @@ class GameMap:
         if difference > 0:
             country.change_influence(0, -difference)
         elif difference < 0:
-            country.change_influence(-difference, 0)
+            country.change_influence(difference, 0)
         print(
             f'USSR rolled: {ussr_roll}, US rolled: {us_roll}, Modifer = {modifier}, Difference = {difference}')
 
