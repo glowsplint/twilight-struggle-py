@@ -1,5 +1,4 @@
 import math
-import random
 
 from functools import partial
 from itertools import chain
@@ -17,7 +16,7 @@ class Game:
     # objects to deal with hypothetical future/past game states
     # which would be useful for non-committed actions and possibly
     # the AI depending on how you do it.
-    ars_by_turn = [None, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7]
+    ars_by_turn = (None, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7)
 
     class Input:
 
@@ -374,6 +373,7 @@ class Game:
     def headline_callback(self, side: Side, name: str):
         self.input_state.reps -= 1
         self.headline_bin[side] = name
+        self.hand[side].remove(name)
         return True
 
     def choose_headline(self, side: Side):
