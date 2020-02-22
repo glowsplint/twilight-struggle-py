@@ -11,13 +11,14 @@ class UI:
 
     help = '''
 The following commands are available:
-?           Displays this help text.
-s           Displays the overall game state.
-m ?         Shows help on move queries.
-s ?         Shows help on game state queries.
-c ?         Shows help on card information queries.
-dbg ?       Shows help on debugging.
-rng on|off  Toggles automatic random number generation (rng off for debugging).
+?               Displays this help text.
+s               Displays the overall game state.
+m ?             Shows help on move queries.
+s ?             Shows help on game state queries.
+c ?             Shows help on card information queries.
+dbg ?           Shows help on debugging.
+rng on|off      Toggles automatic random number generation (rng off for debugging).
+commit on|off   Toggles commit prompts.
 
 new         Start a new game.
 quit        Exit the game.
@@ -44,12 +45,14 @@ quit        Exit the game.
     def awaiting_commit(self):
         return self.game_lookahead
 
-    def commit(self):
-        self.game_lookahead = None
+    def advance_game(self):
         self.game.stage_complete()
         while not self.game.input_state:
             self.game.stage_complete()
 
+    def commit(self):
+        self.game_lookahead = None
+        self.advance_game()
         self.game_rollback = deepcopy(self.game)
         self.game_state_changed()
 
@@ -83,21 +86,23 @@ quit        Exit the game.
             # see if this stage is done
             if not self.game.input_state.reps:
 
-                # We will see what the next input required is.
-                self.game_lookahead = deepcopy(self.game)
-                self.game_lookahead.stage_complete()
-                while not self.game_lookahead.input_state:
-                    self.game_lookahead.stage_complete()
+                if self.auto_commit:
+                    self.advance_game()
 
-                if self.game.input_state.side == self.game_lookahead.input_state.side:
-                    # The same player is up for input again. Don't ask for commit.
-                    self.game_lookahead = None
-                    self.game.stage_complete()
-                    while not self.game.input_state:
-                        self.game.stage_complete()
-                    continue
                 else:
-                    break
+                    # We will see what the next input required is.
+                    self.game_lookahead = deepcopy(self.game)
+                    self.game_lookahead.stage_complete()
+                    while not self.game_lookahead.input_state:
+                        self.game_lookahead.stage_complete()
+
+                    if self.game.input_state.side == self.game_lookahead.input_state.side:
+                        # The same player is up for input again. Don't ask for commit.
+                        self.game_lookahead = None
+                        self.advance_game()
+                        continue
+                    else:
+                        break
 
             # if we get here it's time for player input. We will break at the end.
 
@@ -189,6 +194,14 @@ quit        Exit the game.
                 self.parse_debug(user_choice[1])
 
             elif user_choice[0].lower() == 'rng':
+                if user_choice[1].lower() == 'on':
+                    self.auto_rng = True
+                elif user_choice[1].lower() == 'off':
+                    self.auto_rng = False
+                else:
+                    print('Invalid command. Enter ? for help.')
+
+            elif user_choice[0].lower() == 'commit':
                 if user_choice[1].lower() == 'on':
                     self.auto_rng = True
                 elif user_choice[1].lower() == 'off':

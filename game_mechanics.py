@@ -17,7 +17,6 @@ class Game:
     # objects to deal with hypothetical future/past game states
     # which would be useful for non-committed actions and possibly
     # the AI depending on how you do it.
-    main = None
     ars_by_turn = [None, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7]
 
     class Input:
@@ -56,7 +55,7 @@ class Game:
             max_per_option : int
                 The maximum number of times a particular option can be selected.
                 Defaults to reps.
-            options_stop_early : str
+            option_stop_early : str
                 If the user is allowed to terminate input before the repetitions
                 have been exhausted, this the option text for the early stopping
                 option.
@@ -174,10 +173,6 @@ class Game:
         self.basket = [[], []]
         self.headline_bin = ['', '']
         self.end_turn_stage_list = []
-
-        # For new set the first created game to be the actual ongoing game.
-        if Game.main is None:
-            Game.main = self
 
     '''
     Starts a new game.
@@ -845,7 +840,7 @@ class Game:
         '''
         Game.card_function_mapping[card_name](self, side)
 
-    def choose_random_card(self, side: Side) -> str:
+    def choose_random_card(self, side: Side):
         '''
         Wrapper for choosing a random card from a player's hand.
         Used in Terrorism, Grain_Sales_to_Soviets, Five_Year_Plan card Events.
@@ -857,7 +852,7 @@ class Game:
             Side of the player whose hand we pick the card from.
         '''
 
-        def choose_random_card_callback(card_name: int):
+        def choose_random_card_callback(card_name: str):
             self.hand[side].remove(card_name)
             self.discard_pile.append(card_name)
             return True
@@ -973,7 +968,7 @@ class Game:
 
     def dice_stage(self, fn: Callable[[str], bool] = None, two_dice=False, reroll_ties=False):
         if not two_dice:
-            options = ((i, None) for i in range(1, 7))
+            options = (str(i) for i in range(1, 7))
             prompt = '1d6 roll'
         elif not reroll_ties:
             options = ((i, j) for i in range(1, 7) for j in range(1, 7))
@@ -999,10 +994,10 @@ class Game:
         if 'Vietnam_Revolts' in self.basket[Side.USSR] and country_name in CountryInfo.REGION_ALL[MapRegion.SOUTHEAST_ASIA]:
             local_ops_modifier += 1
 
-        def coup_dice_callback(num: tuple):
+        def coup_dice_callback(num: str):
             self.input_state.reps -= 1
             self.map.coup(self, country_name, side, effective_ops +
-                          local_ops_modifier, num[0], free=free)
+                          local_ops_modifier, int(num), free=free)
             return True
         self.stage_list.append(partial(self.dice_stage, coup_dice_callback))
 
@@ -1360,7 +1355,7 @@ class Game:
             elif country_count[s] > 0:
                 vps[s] += presence_vps
 
-        swing = vps[Side.USSR] - vps[Side.US]
+        swing = vps[Side.USSR] * Side.USSR.vp_mult + vps[Side.US] * Side.US.vp_mult
         self.change_vp(swing)
 
         if self.map['Taiwan'].info.battleground:
@@ -1389,12 +1384,23 @@ class Game:
         self.change_defcon(-1)
         self.change_vp(-(5 - self.defcon_track))
 
-    def _Five_Year_Plan(self, side):
-        random_card = self.choose_random_card(Side.USSR)
-        if random_card.info.owner == Side.US:
-            self.trigger_event(side, random_card.info.name)
+    def _Five_Year_Plan_callback(self, card_name: str):
+        if self.cards[card_name].info.owner == Side.US:
+            # must append backwards!
+            self.stage_list.append(partial(self.dispose_card, Side.USSR, card_name, event=True))
+            self.stage_list.append(partial(self.trigger_event, Side.USSR, card_name))
         else:
-            self.discard_pile.append(random_card)
+            self.stage_list.append(partial(self.dispose_card, Side.USSR, card_name))
+        return True
+
+    def _Five_Year_Plan(self, side):
+
+        self.input_state = Game.Input(
+            Side.NEUTRAL, InputType.SELECT_RANDOM,
+            self._Five_Year_Plan_callback,
+            (n for n in self.hand[Side.USSR] if n != 'Five_Year_Plan'),
+            prompt='Five Year Plan: USSR randomly discards a card.'
+        )
 
     def _The_China_Card(self, side):
         'No event.'
@@ -1764,17 +1770,13 @@ class Game:
         self.score(MapRegion.CENTRAL_AMERICA, 1, 3, 5)
 
     def _Southeast_Asia_Scoring(self, side):
-        country_count = [0, 0]
+        vps = [0, 0, 0]
         for n in CountryInfo.REGION_ALL[MapRegion.SOUTHEAST_ASIA]:
-            x = Game.main.map[n]
-            country_count[Side.USSR] += (x.control == Side.USSR)
-            country_count[Side.US] += (x.control == Side.US)
-        swing = country_count[Side.USSR] - country_count[Side.US]
+            x = self.map[n]
+            vps[x.control] += 1
+        swing = vps[Side.USSR] * Side.USSR.vp_mult + vps[Side.US] * Side.US.vp_mult
 
-        if Game.main.map['Thailand'].control == Side.USSR:
-            swing += 1
-        if Game.main.map['Thailand'].control == Side.US:
-            swing -= 1
+        swing += self.map['Thailand'].control.vp_mult
         self.change_vp(swing)
         print(f'Southeast Asia scores for {swing} VP')
 
