@@ -20,9 +20,11 @@ c ?             Shows help on card information queries.
 dbg ?           Shows help on debugging.
 rng on|off      Toggles automatic random number generation (rng off for debugging).
 commit on|off   Toggles commit prompts.
+log on|off      Toggles game logging.
+load <filename> Loads <filename> from the log directory.
 
-new         Start a new game.
-quit        Exit the game.
+new             Start a new game.
+quit            Exit the game.
 '''
 
     ussr_prompt = '----- USSR Player: -----'
@@ -487,7 +489,6 @@ dbg rollback                        Restores the state before debugging started.
             self.move(line)
             if not self.input_state.reps:
                 self.advance_game()
+        print('Game loaded.')
         self.game_state_changed()
         f.close()
-
-        print('Game loaded.')

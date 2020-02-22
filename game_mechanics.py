@@ -438,9 +438,18 @@ class Game:
         card_name = self.headline_bin[side]
         if card_name:
             self.stage_list.append(
-                partial(self.dispose_card, side, card_name, event=True))
+                partial(self.dispose_headline, side))
             self.stage_list.append(
                 partial(self.trigger_event, side, card_name))
+            self.headline_bin[side] = ''
+
+    def dispose_headline(self, side):
+        if self.headline_bin[side]:
+            c = self.headline_bin[side]
+            if self.cards[c].info.unique_event:
+                self.removed_pile.append(c)
+            else:
+                self.discard_pile.append(c)
             self.headline_bin[side] = ''
 
     def ar_complete(self):
