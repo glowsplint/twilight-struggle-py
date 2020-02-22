@@ -638,7 +638,7 @@ class Game:
         self.input_state.reps -= 1
         self.stage_list.append(
             partial(self.resolve_card_action, side,
-                    card_name, action_name, is_event_resolved)
+                    card_name, action_name, is_event_resolved=is_event_resolved)
         )
         return True
 
@@ -733,7 +733,7 @@ class Game:
 
             self.stage_list.append(
                 partial(self.dispose_card, side, card_name, event=opp_event))
-            if opp_event:
+            if opp_event and not is_event_resolved:
                 self.stage_list.append(
                     partial(self.trigger_event, side, card_name))
             self.stage_list.append(
@@ -1538,6 +1538,7 @@ class Game:
         def participate(side_opp):
             # NOTE: the _participate inner function receives the opposite side from the main card function
             def participate_dice_callback(num: tuple):
+                self.input_state.reps -= 1
                 outcome = 'Success' if num[0] > num[1] else 'Failure'
                 if outcome:
                     # side_opp is the sponsor
