@@ -108,19 +108,19 @@ quit        Exit the game.
 
             if self.game.input_state.state == InputType.SELECT_CARD_ACTION:
                 self.options = {CardAction[opt].value: opt
-                    for opt in self.input_state.available_options}
+                                for opt in self.input_state.available_options}
             elif self.game.input_state.state == InputType.SELECT_CARD_IN_HAND:
                 self.options = {CardInfo.ALL[opt].card_index: opt
-                    for opt in self.input_state.available_options}
+                                for opt in self.input_state.available_options}
             elif self.game.input_state.state == InputType.SELECT_COUNTRY:
                 self.options = {CountryInfo.ALL[opt].country_index: opt
-                    for opt in self.input_state.available_options}
+                                for opt in self.input_state.available_options}
             elif self.game.input_state.state == InputType.SELECT_MULTIPLE:
                 self.options = {i: opt
-                    for i, opt in enumerate(self.input_state.available_options)}
+                                for i, opt in enumerate(self.input_state.available_options)}
             elif self.game.input_state.state == InputType.SELECT_RANDOM:
                 self.options = {i: opt
-                    for i, opt in enumerate(self.input_state.available_options)}
+                                for i, opt in enumerate(self.input_state.available_options)}
 
             if self.game.input_state.option_stop_early:
                 self.options[0] = self.game.input_state.option_stop_early

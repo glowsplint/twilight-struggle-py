@@ -148,12 +148,12 @@ class Game:
                 self.in_selection = input.selection
 
     def __init__(self):
-        self.vp_track = 0  # positive for ussr
+        self.vp_track = 0
         self.turn_track = 0
         self.ar_track = 0
         self.ar_side = None
         self.defcon_track = 0
-        self.milops_track = [0, 0]  # ussr first
+        self.milops_track = [0, 0]
         self.space_track = [0, 0]  # 0 is start, 1 is earth satellite etc
         self.spaced_turns = [0, 0]
         self.extra_turn = [False, False]
@@ -165,11 +165,10 @@ class Game:
         self.input_state = None
         self.output_queue = [[], []]
 
-        self.hand = [[], []]  # ussr, us hands; list of 2 lists of Card objects
+        self.hand = [[], []]
         self.removed_pile = []
         self.discard_pile = []
         self.draw_pile = []
-        # ussr, us baskets; list of 2 lists of Card objects
         self.basket = [[], []]
         self.headline_bin = ['', '']
         self.end_turn_stage_list = []
@@ -218,7 +217,6 @@ class Game:
     def stage_complete(self):
         self.input_state = None
         self.stage_list.pop()()
-
 
     '''Output functions'''
 
@@ -434,7 +432,6 @@ class Game:
             self.stage_list.append(partial(self.resolve_headline, Side.US))
             self.stage_list.append(partial(self.resolve_headline, Side.USSR))
 
-
     def resolve_headline(self, side: Side):
         '''
         Stage to resolve the headline order.
@@ -497,34 +494,34 @@ class Game:
             return False
         elif card_name == 'Special_Relationship':
             return True if self.map['UK'].control == Side.US else False
-        elif card_name == 'NATO':
+        elif card_name == 'NATO' and side == Side.US:
             return True if 'Warsaw_Pact_Formed' in self.basket[
                 Side.US] or 'Marshall_Plan' in self.basket[Side.US] else False
-        elif card_name == 'Kitchen_Debates':
+        elif card_name == 'Kitchen_Debates' and side == Side.US:
             us_count = sum(1 for n in CountryInfo.ALL if self.map[n].control ==
                            Side.US and self.map[n].info.battleground)
             ussr_count = sum(1 for n in CountryInfo.ALL if self.map[n].control ==
                              Side.USSR and self.map[n].info.battleground)
             return us_count > ussr_count
-        elif card_name == 'Arab_Israeli_War':
+        elif card_name == 'Arab_Israeli_War' and side == Side.USSR:
             return False if 'Camp_David_Accords' in self.basket[Side.US] else True
-        elif card_name == 'The_Cambridge_Five':
+        elif card_name == 'The_Cambridge_Five' and side == Side.USSR:
             return False if self.turn_track >= 8 else True
-        elif card_name == 'Socialist_Governments':
+        elif card_name == 'Socialist_Governments' and side == Side.USSR:
             return False if 'The_Iron_Lady' in self.basket[Side.US] else True
         elif card_name == 'One_Small_Step':
             return True if self.space_track[side] < self.space_track[side.opp] else False
-        elif card_name == 'Muslim_Revolution':
+        elif card_name == 'Muslim_Revolution' and side == Side.USSR:
             return False if 'AWACS_Sale_to_Saudis' in self.basket[Side.US] else True
-        elif card_name == 'Flower_Power':
+        elif card_name == 'Flower_Power' and side == Side.USSR:
             return False if 'An_Evil_Empire' in self.basket[Side.US] else True
-        elif card_name == 'OPEC':
+        elif card_name == 'OPEC' and side == Side.USSR:
             return False if 'North_Sea_Oil' in self.basket[Side.US] or 'North_Sea_Oil' in self.removed_pile else True
-        elif card_name == 'Willy_Brandt':
+        elif card_name == 'Willy_Brandt' and side == Side.USSR:
             return False if 'Tear_Down_This_Wall' in self.basket[Side.US] else True
-        elif card_name == 'Solidarity':
+        elif card_name == 'Solidarity' and side == Side.US:
             return False if 'John_Paul_II_Elected_Pope' in self.basket[Side.US] else True
-        elif card_name == 'Star_Wars':
+        elif card_name == 'Star_Wars' and side == Side.US:
             return True if self.space_track[Side.US] > self.space_track[Side.USSR] else False
         elif card_name == 'Wargames':
             return True if self.defcon_track == 2 else False
@@ -633,7 +630,8 @@ class Game:
         else:
             if card_name == 'The_China_Card' and side == Side.US and 'Formosan_Resolution' in self.basket[Side.US]:
                 self.basket[Side.US].remove('Formosan_Resolution')
-            self.stage_list.append(partial(self.select_action, side, card_name))
+            self.stage_list.append(
+                partial(self.select_action, side, card_name))
         return True
 
     def action_callback(self, side: Side, card_name: str, action_name: str, is_event_resolved=False):
@@ -1047,22 +1045,26 @@ class Game:
             Card object used in the advacement of the space race.
         '''
 
-        if self.space_track[side] in [0, 2, 4, 6]:
-            modifier = 0
-        elif self.space_track[side] in [1, 3, 5]:
-            modifier = -1
-        else:
-            modifier = 1
-        roll = random.randint(1, 6)
+        def space_dice_callback(num: str):
+            self.input_state.reps -= 1
 
-        if roll + modifier <= 3:
-            self.change_space(side, 1)
-            print(f'Success with roll of {roll}.')
-        else:
-            print(f'Failure with roll of {roll}.')
+            if self.space_track[side] in [0, 2, 4, 6]:
+                modifier = 0
+            elif self.space_track[side] in [1, 3, 5]:
+                modifier = -1
+            else:
+                modifier = 1
 
-        self.spaced_turns[side] += 1
-        # TODO the die roll in the UI
+            outcome = 'Success' if int(num) + modifier <= 3 else 'Failure'
+            if outcome == 'Success':
+                self.change_space(side, 1)
+            print(f'{outcome} with roll of {num}.')
+
+            self.spaced_turns[side] += 1
+            return True
+
+        self.stage_list.append(partial(self.dice_stage, space_dice_callback))
+        return True
 
     def event_influence_callback(self, country_function, side: Side, name: str) -> bool:
         '''
@@ -1124,21 +1126,21 @@ class Game:
         self.input_state.reps -= 1
         return True
 
-    def war(self, country_name: str, side: Side, country_itself: bool=False,
-                     lower: int=4, win_vp: int=2, win_milops: int=2):
+    def war(self, country_name: str, side: Side, country_itself: bool = False,
+            lower: int = 4, win_vp: int = 2, win_milops: int = 2):
 
-        def war_dice_callback(num: tuple):
+        def war_dice_callback(num: str):
 
             self.input_state.reps -= 1
             country = self.map[country_name]
 
             modifier = sum(self.map[adjacent_country].control == side.opp
-                for adjacent_country in country.info.adjacent_countries)
+                           for adjacent_country in country.info.adjacent_countries)
 
             if country_itself and country.control == side.opp:  # For Arab-Israeli War
                 modifier += 1
 
-            outcome = 'Success' if num[0] - modifier >= lower else 'Failure'
+            outcome = 'Success' if int(num) - modifier >= lower else 'Failure'
 
             if outcome == 'Success':
                 self.change_vp(win_vp * side.vp_mult)
@@ -1148,15 +1150,15 @@ class Game:
                 country.remove_influence(side.opp)
                 country.increment_influence(side, influence)
 
-            print(f'{outcome} with roll of {num[0]}.')
+            print(f'{outcome} with roll of {num}.')
 
             return True
 
         self.stage_list.append(
             partial(self.dice_stage, war_dice_callback))
 
-    def war_country_callback(self, side: Side, country_name: str, country_itself: bool=False,
-                     lower: int=4, win_vp: int=2, win_milops: int=2):
+    def war_country_callback(self, side: Side, country_name: str, country_itself: bool = False,
+                             lower: int = 4, win_vp: int = 2, win_milops: int = 2):
         self.input_state.reps -= 1
         self.war(country_name, side, country_itself=country_itself,
                  lower=lower, win_vp=win_vp, win_milops=win_milops)
@@ -1355,7 +1357,8 @@ class Game:
             elif country_count[s] > 0:
                 vps[s] += presence_vps
 
-        swing = vps[Side.USSR] * Side.USSR.vp_mult + vps[Side.US] * Side.US.vp_mult
+        swing = vps[Side.USSR] * Side.USSR.vp_mult + \
+            vps[Side.US] * Side.US.vp_mult
         self.change_vp(swing)
 
         if self.map['Taiwan'].info.battleground:
@@ -1387,10 +1390,13 @@ class Game:
     def _Five_Year_Plan_callback(self, card_name: str):
         if self.cards[card_name].info.owner == Side.US:
             # must append backwards!
-            self.stage_list.append(partial(self.dispose_card, Side.USSR, card_name, event=True))
-            self.stage_list.append(partial(self.trigger_event, Side.USSR, card_name))
+            self.stage_list.append(
+                partial(self.dispose_card, Side.USSR, card_name, event=True))
+            self.stage_list.append(
+                partial(self.trigger_event, Side.USSR, card_name))
         else:
-            self.stage_list.append(partial(self.dispose_card, Side.USSR, card_name))
+            self.stage_list.append(
+                partial(self.dispose_card, Side.USSR, card_name))
         return True
 
     def _Five_Year_Plan(self, side):
@@ -1471,7 +1477,7 @@ class Game:
 
     def _Warsaw_Pact_Formed(self, side):
         # TODO: should aim to remove this as an option (_remove) if it's not available
-        def _remove(self):
+        def remove():
             self.input_state = Game.Input(
                 Side.USSR, InputType.SELECT_COUNTRY,
                 partial(self.event_influence_callback,
@@ -1484,7 +1490,7 @@ class Game:
                 max_per_option=1
             )
 
-        def _add(self):
+        def add():
             self.input_state = Game.Input(
                 Side.USSR, InputType.SELECT_COUNTRY,
                 partial(self.event_influence_callback,
@@ -1496,9 +1502,10 @@ class Game:
                 max_per_option=2
             )
 
+        self.basket[Side.US].append('Warsaw_Pact_Formed')
         option_function_mapping = {
-            'Remove all US influence from 4 countries in Eastern Europe': partial(_remove, self),
-            'Add 5 USSR Influence to any countries in Eastern Europe': partial(_add, self)
+            'Remove all US influence from 4 countries in Eastern Europe': remove,
+            'Add 5 USSR Influence to any countries in Eastern Europe': add
         }
 
         self.input_state = Game.Input(
@@ -1527,7 +1534,7 @@ class Game:
         )
 
     def _Olympic_Games(self, side):
-        def _participate(side_opp):
+        def participate(side_opp):
             # NOTE: the _participate inner function receives the opposite side from the main card function
             def participate_dice_callback(num: tuple):
                 outcome = 'Success' if num[0] > num[1] else 'Failure'
@@ -1545,14 +1552,14 @@ class Game:
                 partial(self.dice_stage, participate_dice_callback, two_dice=True, reroll_ties=True))
             return True
 
-        def _boycott(side):
+        def boycott(side):
             self.change_defcon(-1)
             global_ops = self.get_global_effective_ops(side, 4)
             self.select_action(side, f'Blank_{global_ops}_Op_Card')
 
         option_function_mapping = {
-            'Participate and sponsor has modified die roll (+2).': partial(_participate, side),
-            'Boycott: DEFCON level degrades by 1 and sponsor may conduct operations as if they played a 4 op card.': partial(_boycott, side)
+            'Participate and sponsor has modified die roll (+2).': partial(participate, side),
+            'Boycott: DEFCON level degrades by 1 and sponsor may conduct operations as if they played a 4 op card.': partial(boycott, side)
         }
 
         self.input_state = Game.Input(
@@ -1579,6 +1586,7 @@ class Game:
 
     def _Marshall_Plan(self, side):
 
+        self.basket[Side.US].append('Marshall_Plan')
         self.input_state = Game.Input(
             Side.US, InputType.SELECT_COUNTRY,
             partial(self.event_influence_callback,
@@ -1590,7 +1598,6 @@ class Game:
             reps_unit='influence',
             max_per_option=1
         )
-        self.basket[Side.US].append('Marshall Plan')
 
     def _Indo_Pakistani_War(self, side):
 
@@ -1759,7 +1766,7 @@ class Game:
         self.input_state = Game.Input(
             side, InputType.SELECT_COUNTRY,
             partial(self.war_country_callback, side,
-                lower=3, win_vp=1, win_milops=3),
+                    lower=3, win_vp=1, win_milops=3),
             (n for n in self.map.ALL
                 if self.map[n].info.stability <= 2
                 and n not in self.calculate_nato_countries()),
@@ -1774,7 +1781,8 @@ class Game:
         for n in CountryInfo.REGION_ALL[MapRegion.SOUTHEAST_ASIA]:
             x = self.map[n]
             vps[x.control] += 1
-        swing = vps[Side.USSR] * Side.USSR.vp_mult + vps[Side.US] * Side.US.vp_mult
+        swing = vps[Side.USSR] * Side.USSR.vp_mult + \
+            vps[Side.US] * Side.US.vp_mult
 
         swing += self.map['Thailand'].control.vp_mult
         self.change_vp(swing)
@@ -2234,7 +2242,7 @@ class Game:
         self.input_state = Game.Input(
             Side.US, InputType.SELECT_CARD_IN_HAND,
             partial(self.may_discard_callback, Side.US,
-                did_not_discard_fn=partial(self.stage_list.append, did_not_discard_fn)),
+                    did_not_discard_fn=partial(self.stage_list.append, did_not_discard_fn)),
             (n for n in self.hand[Side.US]
                 if n != 'The_China_Card'
                 and self.get_global_effective_ops(side, self.cards[n].info.ops) >= 3),
@@ -2302,7 +2310,6 @@ class Game:
             self.basket[Side.US].remove('John_Paul_II_Elected_Pope')
 
     def _Iran_Iraq_War(self, side):
-
         self.input_state = Game.Input(
             side, InputType.SELECT_COUNTRY,
             partial(self.war_country_callback, side),

@@ -12,11 +12,7 @@ Send, {Enter}
 sleep 50
 
 ; Sets basic USSR influence configuration
-Send, m 16 16 16 17 17 17 16 17 20
-sleep 50
-Send, {Enter}
-sleep 50
-Send, m y
+Send, m 16 17 17 17 17 20
 sleep 50
 Send, {Enter}
 sleep 50
@@ -26,17 +22,9 @@ Send, m 15 15 15 15 12 12 12
 sleep 50
 Send, {Enter}
 sleep 50
-Send, m y
-sleep 50
-Send, {Enter}
-sleep 50
 
 ; Sets US handicap both to Iran
 Send, m 30 30
-sleep 50
-Send, {Enter}
-sleep 50
-Send, m y
 sleep 50
 Send, {Enter}
 sleep 50
@@ -46,20 +34,13 @@ Send, m 1
 sleep 50
 Send, {Enter}
 sleep 50
-Send, m y
-sleep 50
-Send, {Enter}
-sleep 50
 
 ; Headlines 2-Europe Scoring for US
 Send, m 2
 sleep 50
 Send, {Enter}
 sleep 50
-Send, m y
-sleep 50
-Send, {Enter}
-sleep 50
+
 
 ;s::
 ;ExitApp
