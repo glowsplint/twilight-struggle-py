@@ -22,7 +22,7 @@ The following base commands are provided:
 |`rng on\|off`| Toggles automatic random number generation (rng off for debugging).|
 |`quit`| Exit the game.|
 |`m`| Lists all possible moves, along with their respective enum.|
-|`m <name\|enum>` <img width=130/>| Makes the move with the name or with the enum. The name can be abbreviated to the first characters as long as it is unambiguous.|
+|`m <name\|enum>` <img width=140/>| Makes the move with the name or with the enum. The name can be abbreviated to the first characters as long as it is unambiguous.|
 |`m <m1 m2 m3 ...>`| Makes multiple moves in order m1, m2, m3, ...|
 |`s <eu\|as\|me\|af\|na\|sa>` | Displays the scoring state and country data for the given region.|
 |`c`| Display a list of cards in the current player's hand.|
