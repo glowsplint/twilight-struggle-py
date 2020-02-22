@@ -1765,8 +1765,8 @@ class Game:
         if self.headline_bin[Side.USSR]:  # check if there's a headline
             self.discard_pile.append(self.headline_bin[Side.USSR])
             self.headline_bin[Side.USSR] = ''
-        if side == Side.USSR and self.ar_track > 0:
-            self.change_vp(1)
+        if side == Side.USSR and self.ar_side == Side.USSR:
+            self.change_vp(Side.US.vp_mult)
 
     def _The_Cambridge_Five(self, side):
         pass
