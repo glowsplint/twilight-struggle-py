@@ -71,6 +71,8 @@ quit        Exit the game.
                         # done with the rng, continue on to the next stage
                         self.game.stage_complete()
                         self.game_rollback = deepcopy(self.game)
+                        while not self.game.input_state:
+                            self.game.stage_complete()
                     else:
                         choices = list(self.game.input_state.available_options)
                         c = random.choice(choices)

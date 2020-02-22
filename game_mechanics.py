@@ -1129,17 +1129,18 @@ class Game:
         self.input_state.reps -= 1
         return True
 
-    def war_callback(self, country_name: str, side: Side, country_itself: bool = False,
-                     lower: int = 4, win_vp: int = 2, win_milops: int = 2) -> bool:
-
-        self.input_state.reps -= 1
+    def war(self, country_name: str, side: Side, country_itself: bool=False,
+                     lower: int=4, win_vp: int=2, win_milops: int=2):
 
         def war_dice_callback(num: tuple):
-            country = self.map[country_name]
-            modifier = sum([self.map[adjacent_country].control ==
-                            side.opp for adjacent_country in country.info.adjacent_countries])
 
-            if country_itself:  # For Arab-Israeli War
+            self.input_state.reps -= 1
+            country = self.map[country_name]
+
+            modifier = sum(self.map[adjacent_country].control == side.opp
+                for adjacent_country in country.info.adjacent_countries)
+
+            if country_itself and country.control == side.opp:  # For Arab-Israeli War
                 modifier += 1
 
             outcome = 'Success' if num[0] - modifier >= lower else 'Failure'
@@ -1147,12 +1148,11 @@ class Game:
             if outcome == 'Success':
                 self.change_vp(win_vp * side.vp_mult)
                 self.change_milops(side, win_milops)
-                if side == Side.US:
-                    country.change_influence(
-                        -country.influence[side.opp], country.influence[side.opp])
-                if side == Side.USSR:
-                    country.change_influence(
-                        country.influence[side.opp], -country.influence[side.opp])
+
+                influence = country.influence[side.opp]
+                country.remove_influence(side.opp)
+                country.increment_influence(side, influence)
+
             print(f'{outcome} with roll of {num[0]}.')
 
             return True
@@ -1160,6 +1160,11 @@ class Game:
         self.stage_list.append(
             partial(self.dice_stage, war_dice_callback))
 
+    def war_country_callback(self, side: Side, country_name: str, country_itself: bool=False,
+                     lower: int=4, win_vp: int=2, win_milops: int=2):
+        self.input_state.reps -= 1
+        self.war(country_name, side, country_itself=country_itself,
+                 lower=lower, win_vp=win_vp, win_milops=win_milops)
         return True
 
     def norad_influence(self):
@@ -1431,7 +1436,7 @@ class Game:
         )
 
     def _Korean_War(self, side):
-        self.war_callback('South_Korea', Side.USSR)
+        self.war('South_Korea', Side.USSR)
 
     def _Romanian_Abdication(self, side):
         romania = self.map['Romania']
@@ -1439,7 +1444,7 @@ class Game:
 
     def _Arab_Israeli_War(self, side):
         if self.can_play_event(side, 'Arab_Israeli_War'):
-            self.war_callback('Israel', Side.USSR, country_itself=True)
+            self.war('Israel', Side.USSR, country_itself=True)
 
     def _COMECON(self, side):
         self.input_state = Game.Input(
@@ -1583,15 +1588,10 @@ class Game:
 
     def _Indo_Pakistani_War(self, side):
 
-        option_function_mapping = {
-            'India': partial(self.stage_list.append, partial(self.war_callback, 'India', side)),
-            'Pakistan': partial(self.stage_list.append, partial(self.war_callback, 'Pakistan', side)),
-        }
-
         self.input_state = Game.Input(
-            side, InputType.SELECT_MULTIPLE,
-            partial(self.select_multiple_callback, option_function_mapping),
-            option_function_mapping.keys(),
+            side, InputType.SELECT_COUNTRY,
+            partial(self.war_country_callback, side),
+            ['India', 'Pakistan'],
             prompt='Indo-Pakistani War: Choose between two options.'
         )
 
@@ -1752,10 +1752,11 @@ class Game:
     def _Brush_War(self, side):
         self.input_state = Game.Input(
             side, InputType.SELECT_COUNTRY,
-            partial(self.war_callback, side=side,
-                    lower=3, win_vp=1, win_milops=3),
-            [n for n in self.map.ALL if self.map[n].info.stability <=
-             2 and n not in self.calculate_nato_countries()],
+            partial(self.war_country_callback, side,
+                lower=3, win_vp=1, win_milops=3),
+            (n for n in self.map.ALL
+                if self.map[n].info.stability <= 2
+                and n not in self.calculate_nato_countries()),
             prompt='Brush War: Choose a target country.'
         )
 
@@ -2231,10 +2232,10 @@ class Game:
         self.input_state = Game.Input(
             Side.US, InputType.SELECT_CARD_IN_HAND,
             partial(self.may_discard_callback, Side.US,
-                    did_not_discard_fn=did_not_discard_fn),
+                did_not_discard_fn=partial(self.stage_list.append, did_not_discard_fn)),
             (n for n in self.hand[Side.US]
-             if n != 'The_China_Card'
-             and self.get_global_effective_ops(side, self.cards[n].info.ops) >= 3),
+                if n != 'The_China_Card'
+                and self.get_global_effective_ops(side, self.cards[n].info.ops) >= 3),
             prompt='You may discard a card. If you choose not to discard, USSR chooses two countries in South America to double USSR influence.',
             option_stop_early='Do Not Discard'
         )
@@ -2299,16 +2300,12 @@ class Game:
             self.basket[Side.US].remove('John_Paul_II_Elected_Pope')
 
     def _Iran_Iraq_War(self, side):
-        option_function_mapping = {
-            'Iran': partial(self.war_callback, 'Iran'),
-            'Iraq': partial(self.war_callback, 'Iraq')
-        }
 
         self.input_state = Game.Input(
-            side, InputType.SELECT_MULTIPLE,
-            partial(self.select_multiple_callback, option_function_mapping),
-            option_function_mapping.keys(),
-            prompt='Iran Iraq War: Choose between two options.'
+            side, InputType.SELECT_COUNTRY,
+            partial(self.war_country_callback, side),
+            ['Iran', 'Iraq'],
+            prompt='Iran/Iraq War: Choose target of war.'
         )
 
     def _Yuri_and_Samantha(self, side):
