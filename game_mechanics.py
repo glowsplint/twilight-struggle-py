@@ -1388,6 +1388,7 @@ class Game:
         self.change_vp(-(5 - self.defcon_track))
 
     def _Five_Year_Plan_callback(self, card_name: str):
+        self.input_state.reps -= 1
         if self.cards[card_name].info.owner == Side.US:
             # must append backwards!
             self.stage_list.append(

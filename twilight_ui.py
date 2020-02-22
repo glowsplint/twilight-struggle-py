@@ -88,6 +88,7 @@ quit        Exit the game.
 
                 if self.auto_commit:
                     self.advance_game()
+                    continue
 
                 else:
                     # We will see what the next input required is.
