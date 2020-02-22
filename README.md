@@ -9,25 +9,26 @@ We're creating a python port of Twilight Struggle which will be a barebones (com
 Run the python file within a command window via `python struggler.py`, or open the Jupyter notebook `struggler.ipynb`.
 
 The following base commands are provided:
-Command 	            | Description
-------------------------|------------
-`new`		            | Start a new game.
-`?`		    	        | Displays help text.
-`s`		    	        | Displays the overall game state.
-`m ?`		            | Shows help on move queries.
-`s ?`		            | Shows help on game state queries.
-`c ?`		            | Shows help on card information queries.
-`dbg ?`		            | Shows help on debugging.
-`rng on|off`            | Toggles automatic random number generation (rng off for debugging).
-`quit`                  | Exit the game.
-`m`                     | Lists all possible moves, along with their respective enum.
-`m <name|enum>`         | Makes the move with the name or with the enum. The name can be abbreviated to the first characters as long as it is unambiguous.
-`m <m1 m2 m3 ...>`      | Makes multiple moves in order m1, m2, m3, ...
-`s <eu|as|me|af|na|sa>` | Displays the scoring state and country data for the given region.
-`c`                     | Display a list of cards in the current player's hand.
-`c <ID#>`               | Display information about the card with the given ID number.
-`c dis`                 | Display a list of cards in the discard pile
-`c rem`                 | Display a list of removed cards.
-`c dec`                 | Returns the number of cards in the draw deck.
+
+|Command | Description|
+|------------------------|-----------------------------|
+|`new`| Start a new game.|
+|`?`| Displays help text.|
+|`s`| Displays the overall game state.|
+|`m ?`| Shows help on move queries.|
+|`s ?`| Shows help on game state queries.|
+|`c ?`| Shows help on card information queries.|
+|`dbg ?`| Shows help on debugging.|
+|`rng on\|off`| Toggles automatic random number generation (rng off for debugging).|
+|`quit`| Exit the game.|
+|`m`| Lists all possible moves, along with their respective enum.|
+|`m <name\|enum>` <img width=130/>| Makes the move with the name or with the enum. The name can be abbreviated to the first characters as long as it is unambiguous.|
+|`m <m1 m2 m3 ...>`| Makes multiple moves in order m1, m2, m3, ...|
+|`s <eu\|as\|me\|af\|na\|sa>` | Displays the scoring state and country data for the given region.|
+|`c`| Display a list of cards in the current player's hand.|
+|`c <ID#>`| Display information about the card with the given ID number.|
+|`c dis`| Display a list of cards in the discard pile.|
+|`c rem`| Display a list of removed cards.|
+|`c dec` | Returns the number of cards in the draw deck.|
 
 This repo is a work-in-progress so expect a constant flow of updates.
