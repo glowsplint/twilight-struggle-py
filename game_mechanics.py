@@ -72,13 +72,6 @@ class Game:
             self.selection = {k: 0 for k in options}
             self.discarded_options = set()
 
-        # Following here are some factory methods for standard required inputs.
-        @staticmethod
-        def DiceRoll(side: Side, callback: Callable[[str], bool]):
-            return Game.Input(side, InputType.SELECT_RANDOM, callback,
-                              ['Yes', 'No'],
-                              'Commit your actions and roll the dice?')
-
         def recv(self, input_str):
             '''
             This method is called by the user to select an option.
@@ -194,6 +187,8 @@ class Game:
         self.handicap = handicap  # positive in favour of ussr
 
         self.stage_list = [
+            self.expand_deck,
+            self.deal,
             self.put_start_USSR,
             self.put_start_US,
             self.put_start_extra,
@@ -202,7 +197,6 @@ class Game:
         self.stage_list.reverse()
 
         self.map.build_standard()
-        self.deal()
 
     '''
     self.current returns current game stage.
@@ -333,7 +327,7 @@ class Game:
         self.input_state = Game.Input(
             Side.USSR, InputType.SELECT_COUNTRY,
             partial(self.event_influence_callback,
-                    Country.increment_influence, Side.USSR),
+                Country.increment_influence, Side.USSR),
             CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE],
             prompt='Place starting influence.',
             reps=6,
@@ -347,7 +341,7 @@ class Game:
         self.input_state = Game.Input(
             Side.US, InputType.SELECT_COUNTRY,
             partial(self.event_influence_callback,
-                    Country.increment_influence, Side.US),
+                Country.increment_influence, Side.US),
             CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE],
             prompt='Place starting influence.',
             reps=7,
@@ -370,7 +364,7 @@ class Game:
         self.input_state = Game.Input(
             side, InputType.SELECT_COUNTRY,
             partial(self.event_influence_callback,
-                    Country.increment_influence, side),
+                Country.increment_influence, side),
             self.map.has_influence(side),
             prompt='Place additional starting influence.',
             reps=side.vp_mult * self.handicap,
@@ -384,7 +378,7 @@ class Game:
 
     def choose_headline(self, side: Side):
         self.input_state = Game.Input(
-            side, InputType.SELECT_CARD_IN_HAND,
+            side, InputType.SELECT_CARD,
             partial(self.headline_callback, side),
             (c for c in self.hand[side] if self.cards[c].info.can_headline),
             prompt='Select headline.'
@@ -614,7 +608,7 @@ class Game:
             side = self.ar_side
 
         self.input_state = Game.Input(
-            side, InputType.SELECT_CARD_IN_HAND,
+            side, InputType.SELECT_CARD,
             partial(self.card_callback, side),
             (c for c in self.hand[side] if self.cards[c].is_playable),
             prompt='Select a card in hand to play.'
@@ -856,7 +850,7 @@ class Game:
             return True
 
         self.input_state = Game.Input(
-            Side.NEUTRAL, InputType.SELECT_RANDOM,
+            Side.NEUTRAL, InputType.ROLL_DICE,
             choose_random_card_callback,
             self.hand[side],
             prompt='Randomly pick a card to discard',
@@ -977,7 +971,7 @@ class Game:
             prompt = '2d6 roll (Sponsor roll, Participant roll), no ties'
 
         self.input_state = Game.Input(
-            Side.NEUTRAL, InputType.SELECT_RANDOM,
+            Side.NEUTRAL, InputType.ROLL_DICE,
             fn,
             options,
             prompt=prompt,
@@ -1197,37 +1191,60 @@ class Game:
     def cuba_missile_remove(self):
         pass
 
-    def deal(self):
+    def shuffle_callback(self, card_name):
+        self.input_state.reps -= 1
+        self.draw_pile.append(card_name)
+        return True
+
+    def shuffle_draw_pile_stage(self):
+
+        shuffler_pile = self.draw_pile
+        self.draw_pile = []
+
+        self.input_state = Game.Input(
+            Side.NEUTRAL, InputType.SELECT_CARD,
+            self.shuffle_callback,
+            shuffler_pile,
+            'Shuffle the deck.  Select the next card.',
+            reps = len(shuffler_pile),
+            reps_unit='cards',
+            max_per_option=1
+        )
+
+    def expand_deck(self):
 
         if self.turn_track == 1:
             # TEST CODE BELOW -- remove when done
-            '''For testing early-war cards'''
-            self.hand[Side.USSR].extend([self.cards.early_war.pop(i)
-                                         for i in range(20)])
-            self.hand[Side.US].extend([self.cards.early_war.pop(0)
-                                       for i in range(19)])
-            '''For testing mid-war cards'''
-            self.hand[Side.US].extend([self.cards.mid_war.pop(i)
-                                       for i in range(24)])
-            self.hand[Side.USSR].extend([self.cards.mid_war.pop(0)
-                                         for i in range(24)])
-            '''For testing late-war cards'''
-            self.hand[Side.US].extend([self.cards.late_war.pop(i)
-                                       for i in range(12)])
-            self.hand[Side.USSR].extend([self.cards.late_war.pop(0)
-                                         for i in range(11)])
+            # '''For testing early-war cards'''
+            # self.hand[Side.USSR].extend([self.cards.early_war.pop(i)
+            #                              for i in range(20)])
+            # self.hand[Side.US].extend([self.cards.early_war.pop(0)
+            #                            for i in range(19)])
+            # '''For testing mid-war cards'''
+            # self.hand[Side.US].extend([self.cards.mid_war.pop(i)
+            #                            for i in range(24)])
+            # self.hand[Side.USSR].extend([self.cards.mid_war.pop(0)
+            #                              for i in range(24)])
+            # '''For testing late-war cards'''
+            # self.hand[Side.US].extend([self.cards.late_war.pop(i)
+            #                            for i in range(12)])
+            # self.hand[Side.USSR].extend([self.cards.late_war.pop(0)
+            #                              for i in range(11)])
             # TEST CODE ABOVE -- remove when done
             self.draw_pile.extend(self.cards.early_war)
             self.cards.early_war = []
-            random.shuffle(self.draw_pile)
-        if self.turn_track == 4:
+            self.shuffle_draw_pile_stage()
+        elif self.turn_track == 4:
             self.draw_pile.extend(self.cards.mid_war)
             self.cards.mid_war = []
-            random.shuffle(self.draw_pile)
-        if self.turn_track == 8:
+            self.shuffle_draw_pile_stage()
+        elif self.turn_track == 8:
             self.draw_pile.extend(self.cards.late_war)
             self.cards.late_war = []
-            random.shuffle(self.draw_pile)
+            self.shuffle_draw_pile_stage()
+
+
+    def deal(self, first_side=Side.USSR):
 
         if 1 <= self.turn_track <= 3:
             handsize_target = [8, 8]
@@ -1240,7 +1257,7 @@ class Game:
         elif 'The_China_Card' in self.hand[Side.US]:
             handsize_target[Side.US] += 1
 
-        next_side = Side.USSR
+        next_side = first_side
         while any(len(h) < t for h, t in zip(self.hand, handsize_target)):
             if len(self.hand[next_side]) >= handsize_target[next_side]:
                 next_side = next_side.opp
@@ -1253,7 +1270,9 @@ class Game:
                 # if draw pile exhausted, shuffle the discard pile and put it as the new draw pile
                 self.draw_pile = self.discard_pile
                 self.discard_pile = []
-                random.shuffle(self.draw_pile)
+                self.stage_list.append(partial(self.deal, first_side=next_side))
+                self.shuffle_draw_pile_stage()
+                return
 
     # need to make sure next_turn is only called after all extra rounds
     def end_of_turn(self):
@@ -1325,6 +1344,7 @@ class Game:
         advance_turn_marker(self)  # turn marker advanced before final scoring
         final_scoring(self)
         self.change_defcon(1)
+        self.expand_deck()
         self.deal()  # turn marker advanced before dealing
         self.process_headline()
 
@@ -1403,7 +1423,7 @@ class Game:
     def _Five_Year_Plan(self, side):
 
         self.input_state = Game.Input(
-            Side.NEUTRAL, InputType.SELECT_RANDOM,
+            Side.NEUTRAL, InputType.ROLL_DICE,
             self._Five_Year_Plan_callback,
             (n for n in self.hand[Side.USSR] if n != 'Five_Year_Plan'),
             prompt='Five Year Plan: USSR randomly discards a card.'
@@ -1438,7 +1458,7 @@ class Game:
 
     def _Blockade(self, side):
         self.input_state = Game.Input(
-            Side.US, InputType.SELECT_CARD_IN_HAND,
+            Side.US, InputType.SELECT_CARD,
             partial(self.may_discard_callback, Side.US,
                     did_not_discard_fn=partial(self.map['West_Germany'].remove_influence, Side.US)),
             (n for n in self.hand[Side.US]
@@ -2241,7 +2261,7 @@ class Game:
             )
 
         self.input_state = Game.Input(
-            Side.US, InputType.SELECT_CARD_IN_HAND,
+            Side.US, InputType.SELECT_CARD,
             partial(self.may_discard_callback, Side.US,
                     did_not_discard_fn=partial(self.stage_list.append, did_not_discard_fn)),
             (n for n in self.hand[Side.US]

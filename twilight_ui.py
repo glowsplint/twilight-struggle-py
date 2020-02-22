@@ -69,7 +69,7 @@ quit        Exit the game.
 
             if self.auto_rng:
                 # automatically run rng
-                if self.game.input_state.state == InputType.SELECT_RANDOM:
+                if self.game.input_state.side == Side.NEUTRAL:
                     if not self.game.input_state.reps:
                         # done with the rng, continue on to the next stage
                         self.game.stage_complete()
@@ -110,7 +110,7 @@ quit        Exit the game.
             if self.game.input_state.state == InputType.SELECT_CARD_ACTION:
                 self.options = {CardAction[opt].value: opt
                                 for opt in self.input_state.available_options}
-            elif self.game.input_state.state == InputType.SELECT_CARD_IN_HAND:
+            elif self.game.input_state.state == InputType.SELECT_CARD:
                 self.options = {CardInfo.ALL[opt].card_index: opt
                                 for opt in self.input_state.available_options}
             elif self.game.input_state.state == InputType.SELECT_COUNTRY:
@@ -119,7 +119,7 @@ quit        Exit the game.
             elif self.game.input_state.state == InputType.SELECT_MULTIPLE:
                 self.options = {i: opt
                                 for i, opt in enumerate(self.input_state.available_options)}
-            elif self.game.input_state.state == InputType.SELECT_RANDOM:
+            elif self.game.input_state.state == InputType.ROLL_DICE:
                 self.options = {i: opt
                                 for i, opt in enumerate(self.input_state.available_options)}
 
@@ -163,6 +163,10 @@ quit        Exit the game.
             print('Commit your actions? (Yes/No)')
         else:
             print('Available options:')
+            # if self.input_state.state == InputType.ROLL_DICE:
+            #     for v in sorted(self.options.values()):
+            #         print(v)
+            # else:
             for k, v in sorted(self.options.items()):
                 print(f'{k:5} {v}')
 
