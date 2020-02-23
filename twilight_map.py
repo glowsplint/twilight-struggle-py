@@ -1,3 +1,4 @@
+from itertools import chain
 from twilight_enums import Side, MapRegion, InputType, CardAction
 
 
@@ -163,20 +164,17 @@ class GameMap:
             modifier -= 1
 
         difference = die_roll + effective_ops + modifier - country.info.stability * 2
+        outcome = 'success' if difference > 0 else 'failure'
 
-        if difference > 0:
+        if outcome == 'success':
             if side == Side.USSR:
-                # subtract from opposing first.. and then add to yours
                 country.change_influence(max(
                     0, difference - country.influence[Side.US]), -min(difference, country.influence[Side.US]))
 
             if side == Side.US:
                 country.change_influence(-min(difference, country.influence[Side.USSR]), max(
                     0, difference - country.influence[Side.USSR]))
-            print(
-                f'Coup successful with roll of {die_roll}. Difference: {difference}')
-        else:
-            print(f'Coup failed with roll of {die_roll}.')
+        print(f'Coup {outcome} with roll of {die_roll}. Difference: {difference}')
 
         # Cuban Missile Crisis overrides Nuclear Subs
         if 'Cuban_Missile_Crisis' in game_instance.basket[side.opp]:

@@ -162,6 +162,7 @@ class Game:
         self.removed_pile = []
         self.discard_pile = []
         self.draw_pile = []
+        self.limbo = []
         self.basket = [[], []]
         self.headline_bin = ['', '']
         self.end_turn_stage_list = []
@@ -763,6 +764,9 @@ class Game:
         '''
         if card_name == 'The_China_Card':
             self.move_china_card(side)
+        elif card_name == 'Shuttle_Diplomacy':
+            self.limbo.append('Shuttle_Diplomacy')
+            self.hand[side].remove(card_name)
         elif card_name in (f'Blank_{n}_Op_Card' for n in range(1, 5)):
             pass
         else:
@@ -966,7 +970,6 @@ class Game:
             prompt=prompt,
         )
 
-
     def coup_dice_callback(self, name, side, ops, free, num: str):
         self.input_state.reps -= 1
         self.map.coup(self, name, side, ops, int(num), free=free)
@@ -980,6 +983,7 @@ class Game:
             local_ops_modifier += 1
         if 'Vietnam_Revolts' in self.basket[Side.USSR] and country_name in CountryInfo.REGION_ALL[MapRegion.SOUTHEAST_ASIA]:
             local_ops_modifier += 1
+
         self.stage_list.append(partial(
             self.dice_stage,
             partial(self.coup_dice_callback, country_name, side,
@@ -1071,7 +1075,7 @@ class Game:
         For Voice Of America, specify max_per_option in input_state as 2, then use
             partial(Country.decrement_influence, Side.USSR).
         For a card like Junta you want to get an increment by 2 function, so use
-            partial(Country.increment_influence, side, amt=2).
+            partial(Country.increment_influence, amt=2).
         For a card like Warsaw Pact / Muslim_Revolution / Truman Doctrine use
             partial(Country.remove_influence, Side.US).
         '''
@@ -1389,6 +1393,8 @@ class Game:
         if 'Formosan_Resolution' in self.basket[Side.US]:
             self.map['Taiwan'].info.battleground = True
 
+        shuttle_modifier = 1 if 'Shuttle_Diplomacy' in self.basket[Side.US] else 0
+
         bg_count = [0, 0, 0]  # USSR, US, NEUTRAL
         country_count = [0, 0, 0]
         vps = [0, 0]
@@ -1400,6 +1406,10 @@ class Game:
             country_count[x.control] += 1
             if x.control.opp.name in x.info.adjacent_countries:
                 vps[x.control] += 1
+
+        if region in [MapRegion.ASIA, MapRegion.MIDDLE_EAST]:
+            bg_count[Side.USSR] -= shuttle_modifier
+            country_count[Side.USSR] -= shuttle_modifier
 
         for s in [Side.USSR, Side.US]:
             vps[s] += bg_count[s]
@@ -1432,12 +1442,18 @@ class Game:
     def _Asia_Scoring(self, side):
         # TODO: ADD SHUTTLE DIPLOMACY AND FORMOSAN RESOLUTION
         self.score(MapRegion.ASIA, 3, 7, 9)
+        if 'Shuttle_Diplomacy' in self.limbo:
+            self.discard_pile.append('Shuttle_Diplomacy')
+            self.limbo.clear()
 
     def _Europe_Scoring(self, side):
         self.score(MapRegion.EUROPE, 3, 7, 120)
 
     def _Middle_East_Scoring(self, side):
         self.score(MapRegion.MIDDLE_EAST, 3, 5, 7)
+        if 'Shuttle_Diplomacy' in self.limbo:
+            self.discard_pile.append('Shuttle_Diplomacy')
+            self.limbo.clear()
 
     def _Duck_and_Cover(self, side):
         self.change_defcon(-1)
@@ -1501,7 +1517,7 @@ class Game:
                 if n != 'The_China_Card'
                 and self.get_global_effective_ops(side, self.cards[n].info.ops) >= 3),
             prompt='You may discard a card. If you choose not to discard a card, US loses all influence in West Germany.',
-            option_stop_early='Do Not Discard'
+            option_stop_early='Do not discard.'
         )
 
     def _Korean_War(self, side):
@@ -1870,7 +1886,7 @@ class Game:
             self.basket[Side.US].remove('NORAD')
         pass
 
-    def _Salt_Negotiations_callback(self, side: Side, card_name: str, option_stop_early: str=''):
+    def _Salt_Negotiations_callback(self, side: Side, card_name: str, option_stop_early: str = ''):
         self.input_state.reps -= 1
         if card_name != option_stop_early:
             self.discard_pile.remove(card_name)
@@ -1888,7 +1904,8 @@ class Game:
 
         self.input_state = Game.Input(
             side, InputType.SELECT_CARD,
-            partial(self._Salt_Negotiations_callback, side, option_stop_early=option_stop_early),
+            partial(self._Salt_Negotiations_callback, side,
+                    option_stop_early=option_stop_early),
             (n for n in self.discard_pile if self.cards[n].info.ops >= 1),
             prompt=f'You may pick a non-scoring card from the discard pile.',
             option_stop_early=option_stop_early
@@ -1919,17 +1936,42 @@ class Game:
 
         self.change_milops(side, 5)
 
+    def _Junta_stage_2(self, side, ca_sa):
+        def coup(self, side, ca_sa):
+            self.card_operation_coup(
+                side, 'Junta', restricted_list=ca_sa, free=True)
+
+        def realignment(self, side, ca_sa):
+            self.card_operation_realignment(
+                side, 'Junta', restricted_list=ca_sa, free=True)
+
+        option_function_mapping = {
+            'Free coup attempt': partial(coup, self, side, ca_sa),
+            'Free realignment rolls': partial(realignment, self, side, ca_sa)
+        }
+
+        self.input_state = Game.Input(
+            side.opp, InputType.SELECT_MULTIPLE,
+            partial(self.select_multiple_callback, option_function_mapping),
+            option_function_mapping.keys(),
+            prompt='Junta: Player may make free Coup attempts or realignment rolls in Central America or South America.'
+        )
+
     def _Junta(self, side):
+        ca_sa = list(CountryInfo.REGION_ALL[MapRegion.CENTRAL_AMERICA]) + list(
+            CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA])
+
         self.input_state = Game.Input(
             Side.USSR, InputType.SELECT_COUNTRY,
             partial(self.event_influence_callback,
-                    partial(Country.increment_influence, side, amt=2), side),
-            [n for n in chain(CountryInfo.REGION_ALL[MapRegion.CENTRAL_AMERICA],
-                              CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA])],
+                    partial(Country.increment_influence, amt=2), side),
+            ca_sa,
             prompt='Junta: Add 2 influence to a single country in Central America or South America.',
             reps_unit='influence'
         )
-        pass
+
+        self.stage_list.append(
+            partial(self._Junta_stage_2, side, ca_sa))
 
     def _Kitchen_Debates(self, side):
         if self.can_play_event(side, 'Kitchen_Debates'):
@@ -2110,7 +2152,7 @@ class Game:
         self.map['Egypt'].change_influence(0, 1)
 
     def _Shuttle_Diplomacy(self, side):
-        pass
+        self.basket[Side.US].append('Shuttle_Diplomacy')
 
     def _The_Voice_Of_America(self, side):
         self.input_state = Game.Input(
@@ -2153,8 +2195,30 @@ class Game:
                 max_per_option=2
             )
 
+    def _Ask_Not_callback(self, option_stop_early, card_name: str):
+        self.input_state.reps -= 1
+        if card_name != option_stop_early:
+            self.hand[Side.US].remove(card_name)
+            self.discard_pile.append(card_name)
+        else:
+            self.input_state.reps = 0
+        return True
+
     def _Ask_Not_What_Your_Country_Can_Do_For_You(self, side):
-        pass
+
+        option_stop_early = 'Do not discard.'
+        reps_modifier = 1 if 'The_China_Card' in self.hand[Side.US] else 0
+        reps = len(self.hand[Side.US]) - reps_modifier
+
+        self.input_state = Game.Input(
+            Side.US, InputType.SELECT_CARD,
+            partial(self._Ask_Not_callback, option_stop_early),
+            (n for n in self.hand[Side.US] if n != 'The_China_Card'),
+            prompt='You may discard any number of cards.',
+            reps=reps,
+            max_per_option=1,
+            option_stop_early=option_stop_early
+        )
 
     def _Alliance_for_Progress(self, side):
         ca = list(CountryInfo.REGION_ALL[MapRegion.CENTRAL_AMERICA])
@@ -2181,6 +2245,7 @@ class Game:
 
         self.card_operation_coup(Side.USSR, 'Che', restricted_list=[
                                  n for n in ca_sa_af if not self.map[n].info.battleground])
+
         pass
 
     def _Our_Man_In_Tehran(self, side):
@@ -2334,7 +2399,7 @@ class Game:
                 if n != 'The_China_Card'
                 and self.get_global_effective_ops(side, self.cards[n].info.ops) >= 3),
             prompt='You may discard a card. If you choose not to discard, USSR chooses two countries in South America to double USSR influence.',
-            option_stop_early='Do Not Discard'
+            option_stop_early='Do not discard.'
         )
 
     def _Tear_Down_This_Wall(self, side):
@@ -2343,17 +2408,17 @@ class Game:
         self.change_vp(1)
         self.map['West_Germany'].change_influence(0, 3)
 
-        def _coup(self, side):
+        def coup(self, side):
             self.card_operation_coup(side, 'Tear_Down_This_Wall', restricted_list=list(
                 CountryInfo.REGION_ALL[MapRegion.EUROPE]), free=True)
 
-        def _realignment(self, side):
+        def realignment(self, side):
             self.card_operation_realignment(side, 'Tear_Down_This_Wall', restricted_list=list(
                 CountryInfo.REGION_ALL[MapRegion.EUROPE]), free=True)
 
         option_function_mapping = {
-            'Free coup attempt': _coup,
-            'Free realignment rolls': _realignment
+            'Free coup attempt': partial(coup, side),
+            'Free realignment rolls': partial(realignment, side)
         }
 
         self.input_state = Game.Input(
