@@ -16,7 +16,8 @@ class Game:
     # objects to deal with hypothetical future/past game states
     # which would be useful for non-committed actions and possibly
     # the AI depending on how you do it.
-    ars_by_turn = (None, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7)
+    ARS_BY_TURN = (None, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7)
+    SPACE_ROLL_MAX = (3, 4, 3, 4, 3, 4, 3, 2)
 
     class Input:
 
@@ -453,7 +454,7 @@ class Game:
             self.headline_bin[side] = ''
 
     def ar_complete(self):
-        if self.ar_track == Game.ars_by_turn[self.turn_track]:
+        if self.ar_track == Game.ARS_BY_TURN[self.turn_track]:
             # TODO do next turn
             self.stage_list.append(self.end_of_turn)
         else:
@@ -841,30 +842,6 @@ class Game:
         '''
         Game.card_function_mapping[card_name](self, side)
 
-    def choose_random_card(self, side: Side):
-        '''
-        Wrapper for choosing a random card from a player's hand.
-        Used in Terrorism, Grain_Sales_to_Soviets, Five_Year_Plan card Events.
-        Returns a string representation of a random card from the player's hand.
-
-        Parameters
-        ----------
-        side : Side
-            Side of the player whose hand we pick the card from.
-        '''
-
-        def choose_random_card_callback(card_name: str):
-            self.hand[side].remove(card_name)
-            self.discard_pile.append(card_name)
-            return True
-
-        self.input_state = Game.Input(
-            Side.NEUTRAL, InputType.ROLL_DICE,
-            choose_random_card_callback,
-            self.hand[side],
-            prompt='Randomly pick a card to discard',
-        )
-
     '''
     Here we have different stages for card uses. These include the use of influence,
     operations points for coup or realignment, and also on the space race.
@@ -918,21 +895,24 @@ class Game:
             reps_unit='operations'
         )
 
+    def realign_dice_callback(self, name, side, num: tuple):
+        self.input_state.reps -= 1
+        self.map.realignment(self, name, side, *num)
+        return True
+
     def realignment_callback(self, side: Side, name: str, card_name: str, reps: int = None) -> bool:
         reps -= 1
         self.input_state.reps -= 1
-
-        def realign_dice_callback(num: tuple):
-            self.input_state.reps -= 1
-            self.map.realignment(self, name, side, *num)
-            return True
 
         if reps:
             self.stage_list.append(
                 partial(self.card_operation_realignment, side, card_name=card_name, reps=reps))
 
-        self.stage_list.append(
-            partial(self.dice_stage, realign_dice_callback, two_dice=True))
+        self.stage_list.append(partial(
+            self.dice_stage,
+            partial(self.realign_dice_callback, name, side),
+            two_dice=True
+        ))
         return True
 
     def card_operation_realignment(self, side: Side, card_name: str, reps: int=None, restricted_list: Sequence[str]=None, free=False):
@@ -989,6 +969,12 @@ class Game:
             prompt=prompt,
         )
 
+
+    def coup_dice_callback(self, name, side, ops, free, num: str):
+        self.input_state.reps -= 1
+        self.map.coup(self, name, side, ops, int(num), free=free)
+        return True
+
     def coup_callback(self, side: Side, effective_ops: int, card_name: str, country_name, free=False) -> bool:
         self.input_state.reps -= 1
 
@@ -997,13 +983,11 @@ class Game:
             local_ops_modifier += 1
         if 'Vietnam_Revolts' in self.basket[Side.USSR] and country_name in CountryInfo.REGION_ALL[MapRegion.SOUTHEAST_ASIA]:
             local_ops_modifier += 1
-
-        def coup_dice_callback(num: str):
-            self.input_state.reps -= 1
-            self.map.coup(self, country_name, side, effective_ops +
-                          local_ops_modifier, int(num), free=free)
-            return True
-        self.stage_list.append(partial(self.dice_stage, coup_dice_callback))
+        self.stage_list.append(partial(
+            self.dice_stage,
+            partial(self.coup_dice_callback, country_name, side,
+                    effective_ops + local_ops_modifier, free)
+        ))
 
         return True
 
@@ -1039,6 +1023,20 @@ class Game:
             prompt=f'Select a country to coup using operations from {card_name}.',
         )
 
+    def space_dice_callback(self, side, num: str):
+
+        self.input_state.reps -= 1
+
+        curr_stage = self.space_track[side]
+
+        if int(num) <= Game.SPACE_ROLL_MAX[curr_stage]:
+            self.change_space(side, 1)
+            print(f'Success with roll of {num}.')
+        else:
+            print(f'Failure with roll of {num}.')
+        self.spaced_turns[side] += 1
+        return True
+
     def space(self, side: Side, card_name: str):
         '''
         The action of spacing a card after you have selected a card.
@@ -1051,25 +1049,10 @@ class Game:
             Card object used in the advacement of the space race.
         '''
 
-        def space_dice_callback(num: str):
-            self.input_state.reps -= 1
-
-            if self.space_track[side] in [0, 2, 4, 6]:
-                modifier = 0
-            elif self.space_track[side] in [1, 3, 5]:
-                modifier = -1
-            else:
-                modifier = 1
-
-            outcome = 'Success' if int(num) + modifier <= 3 else 'Failure'
-            if outcome == 'Success':
-                self.change_space(side, 1)
-            print(f'{outcome} with roll of {num}.')
-
-            self.spaced_turns[side] += 1
-            return True
-
-        self.stage_list.append(partial(self.dice_stage, space_dice_callback))
+        self.stage_list.append(partial(
+            self.dice_stage,
+            partial(self.space_dice_callback, side)
+        ))
         return True
 
     def event_influence_callback(self, country_function, side: Side, name: str) -> bool:
@@ -1132,36 +1115,44 @@ class Game:
         self.input_state.reps -= 1
         return True
 
+    def war_dice_callback(self, name, side, modifier, min_roll, win_vp, win_milops, num: str):
+
+        self.input_state.reps -= 1
+        if int(num) - modifier >= min_roll:
+            self.change_vp(win_vp * side.vp_mult)
+            self.change_milops(side, win_milops)
+
+            influence = self.map[name].influence[side.opp]
+            self.map[name].remove_influence(side.opp)
+            self.map[name].increment_influence(side, influence)
+            print(f'Success with roll of {num}.')
+        else:
+            print(f'Failure with roll of {num}.')
+
+        return True
+
     def war(self, country_name: str, side: Side, country_itself: bool = False,
             lower: int = 4, win_vp: int = 2, win_milops: int = 2):
+        country = self.map[country_name]
 
-        def war_dice_callback(num: str):
+        modifier = sum(self.map[adjacent_country].control == side.opp
+                       for adjacent_country in country.info.adjacent_countries)
 
-            self.input_state.reps -= 1
-            country = self.map[country_name]
+        if country_itself and country.control == side.opp:  # For Arab-Israeli War
+            modifier += 1
 
-            modifier = sum(self.map[adjacent_country].control == side.opp
-                           for adjacent_country in country.info.adjacent_countries)
-
-            if country_itself and country.control == side.opp:  # For Arab-Israeli War
-                modifier += 1
-
-            outcome = 'Success' if int(num) - modifier >= lower else 'Failure'
-
-            if outcome == 'Success':
-                self.change_vp(win_vp * side.vp_mult)
-                self.change_milops(side, win_milops)
-
-                influence = country.influence[side.opp]
-                country.remove_influence(side.opp)
-                country.increment_influence(side, influence)
-
-            print(f'{outcome} with roll of {num}.')
-
-            return True
-
-        self.stage_list.append(
-            partial(self.dice_stage, war_dice_callback))
+        self.stage_list.append(partial(
+            self.dice_stage,
+            partial(
+                self.war_dice_callback,
+                country_name,
+                side,
+                modifier,
+                lower,
+                win_vp,
+                win_milops
+            )
+        ))
 
     def war_country_callback(self, side: Side, country_name: str, country_itself: bool = False,
                              lower: int = 4, win_vp: int = 2, win_milops: int = 2):
@@ -2218,13 +2209,24 @@ class Game:
         self.card_operation_coup(side, 'Ortega_Elected_in_Nicaragua', restricted_list=[
                                  n for n in self.map['Nicaragua'].info.adjacent_countries], free=True)
 
+    def _Terrorism_callback(self, side, card_name: str):
+        self.input_state.reps -= 1
+        self.hand[side.opp].remove(card_name)
+        self.discard_pile.append(card_name)
+        return True
+
     def _Terrorism(self, side):
         reps = 2 if 'Iranian_Hostage_Crisis' in self.basket[Side.USSR] and side == Side.USSR else 1
 
-        for _ in range(reps):
-            card_name = self.choose_random_card(side.opp)
-            self.discard_pile.append(self.hand[side.opp].pop(
-                self.hand[side.opp].index(card_name)))
+        self.input_state = Game.Input(
+            Side.NEUTRAL, InputType.SELECT_CARD,
+            self._Terrorism_callback,
+            self.hand[side.opp],
+            prompt='Randomly discard a card.',
+            reps=reps,
+            reps_unit='cards to discard',
+            max_per_option=1
+        )
 
     def _Iran_Contra_Scandal(self, side):
         self.basket[Side.USSR].append('Iran_Contra_Scandal')
