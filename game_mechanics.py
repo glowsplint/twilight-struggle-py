@@ -509,6 +509,8 @@ class Game:
             return False if 'Camp_David_Accords' in self.basket[Side.US] else True
         elif card_name == 'The_Cambridge_Five' and side == Side.USSR:
             return False if self.turn_track >= 8 else True
+        elif card_name == 'Our_Man_In_Tehran' and side == Side.US:
+            return any(self.map[n].control == Side.US for n in CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST])
         elif card_name == 'Socialist_Governments' and side == Side.USSR:
             return False if 'The_Iron_Lady' in self.basket[Side.US] else True
         elif card_name == 'One_Small_Step':
@@ -575,7 +577,6 @@ class Game:
         Checks if the player of <side> can use their selected <card> to advance
         their space race marker.
         '''
-        # first check that player has an available space slot
 
         def available_space_turn(self, side: Side):
             if self.spaced_turns[side] == 2:
@@ -587,7 +588,6 @@ class Game:
             else:
                 return False
 
-        # then check if the card ops fulfills space criterion
         def enough_ops(self, side: Side, card_name: str):
             if self.space_track[side] == 8:
                 return False
@@ -1188,13 +1188,67 @@ class Game:
     def select_take_8_rounds(self):
         pass
 
-    def quagmire_discard(self):
-        # '''
-        # The player must discard a card if they are holding suitable discards.
-        # Player is given a list of suitable discards. Card has to be at least
-        # 2 effective ops. If there are only scoring cards left..
-        # '''
-        pass
+    def qbt_dice_callback(self, side: Side, trap_name: str, num: str):
+        self.input_state.reps -= 1
+        if int(num) <= 4:
+            self.basket[side].remove(trap_name)
+        else:
+            pass
+            # TODO: append this stage again because failure to break out
+        return True
+
+    def qbt_discard_callback(self, side: Side, trap_name: str, card_name: str):
+        self.input_state.reps -= 1
+        self.stage_list.append(partial(self.dice_stage, partial(
+            self.qbt_dice_callback, side, trap_name)))
+        return True
+
+    def qbt_discard(self, side: Side, trap_name: str) -> bool:
+        '''
+        Discarding stage for Quagmire/Bear Trap.
+
+        Parameters
+        ----------
+        side : Side
+            Side of the player who is encountering the discard stage.
+        trap_name: str
+            Name of the basket effect. Can be either 'Quagmire' or 'Bear_Trap'.
+
+        Returns
+        -------
+        bool
+            True if there was a suitable discard/scoring card played, false if not.
+        '''
+
+        suitable_cards = [n for n in self.hand[side] if n != 'The_China_Card' and self.get_global_effective_ops(
+            side, self.cards[n].info.ops) >= 2]
+
+        scoring_cards = [n for n in self.hand[side]
+                         if self.cards[n].info.type == 'Scoring']
+
+        # If we have as many scoring cards as action rounds, then we must play
+        # a scoring card. Q/BT stays in basket.
+        if len(scoring_cards) == Game.ARS_BY_TURN[self.turn_track]:
+            self.input_state = Game.Input(
+                side, InputType.SELECT_CARD,
+                partial(self.trigger_event, side),
+                scoring_cards,
+                prompt='You must play a scoring card.',
+            )
+        # TODO: append this stage again because failure to break out
+
+        # Otherwise, if there are discardable cards, you have to discard from these.
+        elif suitable_cards:
+            self.input_state = Game.Input(
+                side, InputType.SELECT_CARD,
+                partial(self.qbt_discard_callback, side, trap_name),
+                suitable_cards,
+                prompt='You must discard a card to be released.',
+            )
+        # If you don't have suitable discards, then you can't play anything.
+        else:
+            # TODO: append this stage again because failure to break out
+            return False
 
     def cuban_missile_remove(self, side: Side):
         '''
@@ -1440,7 +1494,6 @@ class Game:
     '''
 
     def _Asia_Scoring(self, side):
-        # TODO: ADD SHUTTLE DIPLOMACY AND FORMOSAN RESOLUTION
         self.score(MapRegion.ASIA, 3, 7, 9)
         if 'Shuttle_Diplomacy' in self.limbo:
             self.discard_pile.append('Shuttle_Diplomacy')
@@ -1486,17 +1539,18 @@ class Game:
         pass
 
     def _Socialist_Governments(self, side):
-        self.input_state = Game.Input(
-            Side.USSR, InputType.SELECT_COUNTRY,
-            partial(self.event_influence_callback,
-                    Country.decrement_influence, Side.US),
-            (n for n in CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE]
-                if self.map[n].has_us_influence),
-            prompt='Socialist Governments: Remove a total of 3 US Influence from any countries in Western Europe (limit 2 per country)',
-            reps=3,
-            reps_unit='influence',
-            max_per_option=2
-        )
+        if self.can_play_event(Side.USSR, 'Socialist_Governments'):
+            self.input_state = Game.Input(
+                Side.USSR, InputType.SELECT_COUNTRY,
+                partial(self.event_influence_callback,
+                        Country.decrement_influence, Side.US),
+                (n for n in CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE]
+                    if self.map[n].has_us_influence),
+                prompt='Socialist Governments: Remove a total of 3 US Influence from any countries in Western Europe (limit 2 per country)',
+                reps=3,
+                reps_unit='influence',
+                max_per_option=2
+            )
 
     def _Fidel(self, side):
         cuba = self.map['Cuba']
@@ -1528,7 +1582,7 @@ class Game:
         romania.set_influence(max(3, romania.influence[Side.USSR]), 0)
 
     def _Arab_Israeli_War(self, side):
-        if self.can_play_event(side, 'Arab_Israeli_War'):
+        if self.can_play_event(Side.USSR, 'Arab_Israeli_War'):
             self.war('Israel', Side.USSR, country_itself=True)
 
     def _COMECON(self, side):
@@ -1611,7 +1665,7 @@ class Game:
             # NOTE: the _participate inner function receives the opposite side from the main card function
             def participate_dice_callback(num: tuple):
                 self.input_state.reps -= 1
-                outcome = 'Success' if num[0] > num[1] else 'Failure'
+                outcome = 'Success' if num[Side.USSR] > num[Side.US] else 'Failure'
                 if outcome:
                     # side_opp is the sponsor
                     self.change_vp(2 * side_opp.vp_mult)
@@ -1644,7 +1698,7 @@ class Game:
         )
 
     def _NATO(self, side):
-        if self.can_play_event(side, 'NATO'):
+        if self.can_play_event(Side.US, 'NATO'):
             self.basket[Side.USSR].append('NATO')
 
     def _Independent_Reds(self, side):
@@ -1813,7 +1867,8 @@ class Game:
             self.change_vp(Side.US.vp_mult)
 
     def _The_Cambridge_Five(self, side):
-        pass
+        if self.can_play_event(Side.USSR, 'The_Cambridge_Five'):
+            pass
 
     def _Special_Relationship(self, side):
         if self.can_play_event(Side.US, 'Special_Relationship'):
@@ -1914,8 +1969,68 @@ class Game:
     def _Bear_Trap(self, side):
         pass
 
+    def _Summit_choices(self, side: Side):
+        '''
+        Allows the winner of the Summit roll to change the DEFCON level.
+
+        Parameters
+        ----------
+        side : Side
+            Side of the winner.
+        '''
+        self.change_vp(2*side.vp_mult)
+
+        option_function_mapping = {
+            'DEFCON -1': partial(self.change_defcon, -1),
+            'DEFCON +1': partial(self.change_defcon, 1),
+        }
+
+        self.input_state = Game.Input(
+            side, InputType.SELECT_MULTIPLE,
+            partial(self.select_multiple_callback, option_function_mapping),
+            option_function_mapping.keys(),
+            prompt='Summit: Change DEFCON level by 1 in either direction.'
+        )
+
+    def _Summit_dice_callback(self, ussr_advantage: int, num: tuple):
+        self.input_state.reps -= 1
+        outcome = 'USSR success' if num[Side.USSR] + \
+            ussr_advantage > num[Side.US] else 'US success'
+
+        if outcome == 'USSR Success':
+            self._Summit_choices(Side.USSR)
+        else:
+            self._Summit_choices(Side.US)
+        print(
+            f'{outcome} with (USSR, US) rolls of ({num[0]}, {num[1]}). ussr_advantage is {ussr_advantage}.')
+        return True
+
     def _Summit(self, side):
-        pass
+        dominate_or_control = [0, 0]
+
+        for region in [i for i in MapRegion if i <= 5]:
+            bg_count = [0, 0, 0]  # USSR, US, NEUTRAL
+            country_count = [0, 0, 0]
+
+            for n in CountryInfo.REGION_ALL[region]:
+                x = self.map[n]
+                if x.info.battleground:
+                    bg_count[x.control] += 1
+                country_count[x.control] += 1
+
+            for s in [Side.USSR, Side.US]:
+                if country_count[s] > country_count[s.opp]:
+                    if bg_count[s] == sum(bg_count):
+                        dominate_or_control[s] += 1
+                    elif bg_count[s] > bg_count[s.opp] and country_count[s] > bg_count[s]:
+                        dominate_or_control[s] += 1
+
+        ussr_advantage = dominate_or_control[Side.USSR] - \
+            dominate_or_control[Side.US]
+
+        self.stage_list.append(partial(
+            self.dice_stage,
+            partial(self._Summit_dice_callback, ussr_advantage), two_dice=True))
 
     def _How_I_Learned_to_Stop_Worrying(self, side):
 
@@ -1974,7 +2089,7 @@ class Game:
             partial(self._Junta_stage_2, side, ca_sa))
 
     def _Kitchen_Debates(self, side):
-        if self.can_play_event(side, 'Kitchen_Debates'):
+        if self.can_play_event(Side.US, 'Kitchen_Debates'):
             print('USSR poked in the chest by US player!')
             self.change_vp(-2)
 
@@ -2031,23 +2146,25 @@ class Game:
         self.map['Chile'].change_influence(2, 0)
 
     def _Willy_Brandt(self, side):
-        self.change_defcon(1)
-        self.map['West_Germany'].change_influence(1, 0)
-        self.basket[Side.USSR].append('Willy_Brandt')
+        if self.can_play_event(Side.USSR, 'Willy_Brandt'):
+            self.change_defcon(1)
+            self.map['West_Germany'].change_influence(1, 0)
+            self.basket[Side.USSR].append('Willy_Brandt')
 
     def _Muslim_Revolution(self, side):
-        mr = ['Sudan', 'Iran', 'Iraq', 'Egypt',
-              'Libya', 'Saudi_Arabia', 'Syria', 'Jordan']
-        self.input_state = Game.Input(
-            Side.USSR, InputType.SELECT_COUNTRY,
-            partial(self.event_influence_callback,
-                    Country.remove_influence, Side.US),
-            (n for n in mr if self.map[n].has_us_influence),
-            prompt='Muslim Revolution: Select countries in which to remove all US influence.',
-            reps=2,
-            reps_unit='countries',
-            max_per_option=1
-        )
+        if self.can_play_event(Side.USSR, 'Muslim_Revolution'):
+            mr = ['Sudan', 'Iran', 'Iraq', 'Egypt',
+                  'Libya', 'Saudi_Arabia', 'Syria', 'Jordan']
+            self.input_state = Game.Input(
+                Side.USSR, InputType.SELECT_COUNTRY,
+                partial(self.event_influence_callback,
+                        Country.remove_influence, Side.US),
+                (n for n in mr if self.map[n].has_us_influence),
+                prompt='Muslim Revolution: Select countries in which to remove all US influence.',
+                reps=2,
+                reps_unit='countries',
+                max_per_option=1
+            )
 
     def _ABM_Treaty(self, side):
         self.change_defcon(1)
@@ -2061,17 +2178,19 @@ class Game:
             self.change_vp(1)
 
     def _Flower_Power(self, side):
-        self.basket[Side.USSR].append('Flower_Power')
+        if self.can_play_event(Side.USSR, 'Flower_Power'):
+            self.basket[Side.USSR].append('Flower_Power')
 
     def _U2_Incident(self, side):
         pass
 
     def _OPEC(self, side):
-        opec = ['Egypt', 'Iran', 'Libya', 'Saudi_Arabia',
-                'Iraq', 'Gulf_States', 'Venezuela']
-        swing = sum(
-            Side.USSR.vp_mult for country in opec if self.map[country].control == Side.USSR)
-        self.change_vp(swing)
+        if self.can_play_event(Side.USSR, 'OPEC'):
+            opec = ['Egypt', 'Iran', 'Libya', 'Saudi_Arabia',
+                    'Iraq', 'Gulf_States', 'Venezuela']
+            swing = sum(
+                Side.USSR.vp_mult for country in opec if self.map[country].control == Side.USSR)
+            self.change_vp(swing)
 
     def _Lone_Gunman(self, side):
         ops = self.get_global_effective_ops(Side.US, 1)
@@ -2118,6 +2237,7 @@ class Game:
         )
 
     def _Grain_Sales_to_Soviets(self, side):
+        # if received card is Side.USSR, then offer to use UN intervention if holding
         pass
 
     def _John_Paul_II_Elected_Pope(self, side):
@@ -2249,7 +2369,8 @@ class Game:
         pass
 
     def _Our_Man_In_Tehran(self, side):
-        pass
+        if self.can_play_event(Side.US, 'Our_Man_In_Tehran'):
+            pass
 
     def _Iranian_Hostage_Crisis(self, side):
         self.map.set_influence('Iran', Side.US, 0)
@@ -2266,13 +2387,22 @@ class Game:
         swing = math.floor(self.map['Libya'].influence[Side.USSR] / 2)
         self.change_vp(-swing)
 
+    def _Star_Wars_callback(self, side: Side, card_name: str):
+        self.input_state.reps -= 1
+        if card_name != option_stop_early:
+            self.discard_pile.remove(card_name)
+            # TODO: reveal card to opponent
+            self.hand[side].append(card_name)
+        return True
+
     def _Star_Wars(self, side):
-        if self.can_play_event(side, 'Star_Wars'):
-            # self.pick_from_discarded(side)
-            pass
-        else:
-            # return self.discard_pile
-            pass
+        if self.can_play_event(Side.US, 'Star_Wars'):
+            self.input_state = Game.Input(
+                side, InputType.SELECT_CARD,
+                partial(self._Star_Wars_callback, side),
+                (n for n in self.discard_pile if self.cards[n].info.ops >= 1),
+                prompt=f'Pick a non-scoring card from the discard pile.'
+            )
 
     def _North_Sea_Oil(self, side):
         self.basket[Side.US].append('North_Sea_Oil')
@@ -2457,7 +2587,7 @@ class Game:
         pass
 
     def _Solidarity(self, side):
-        if self.can_play_event(side, 'Solidarity'):
+        if self.can_play_event(Side.US, 'Solidarity'):
             self.map['Poland'].change_influence(0, 3)
             self.basket[Side.US].remove('John_Paul_II_Elected_Pope')
 

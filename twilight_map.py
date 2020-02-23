@@ -148,22 +148,23 @@ class GameMap:
         assert(self.can_coup(game_instance, name, side))
         country = self[name]
 
-        modifier = 0
+        ussr_advantage = 0
 
         # Latin American Death Squads
         ca = list(CountryInfo.REGION_ALL[MapRegion.CENTRAL_AMERICA])
         sa = list(CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA])
         if name in ca or name in sa:
             if 'Latin_American_Death_Squads' in game_instance.basket[side]:
-                modifier += 1
+                ussr_advantage += 1
             elif 'Latin_American_Death_Squads' in game_instance.basket[side.opp]:
-                modifier -= 1
+                ussr_advantage -= 1
 
         # SALT Negotiations
         if 'SALT_Negotiations' in game_instance.basket[side] or 'SALT_Negotiations' in game_instance.basket[side]:
-            modifier -= 1
+            ussr_advantage -= 1
 
-        difference = die_roll + effective_ops + modifier - country.info.stability * 2
+        difference = die_roll + effective_ops + \
+            ussr_advantage - country.info.stability * 2
         outcome = 'success' if difference > 0 else 'failure'
 
         if outcome == 'success':
@@ -174,7 +175,8 @@ class GameMap:
             if side == Side.US:
                 country.change_influence(-min(difference, country.influence[Side.USSR]), max(
                     0, difference - country.influence[Side.USSR]))
-        print(f'Coup {outcome} with roll of {die_roll}. Difference: {difference}')
+        print(
+            f'Coup {outcome} with roll of {die_roll}. Difference: {difference}')
 
         # Cuban Missile Crisis overrides Nuclear Subs
         if 'Cuban_Missile_Crisis' in game_instance.basket[side.opp]:
@@ -256,25 +258,25 @@ class GameMap:
         assert(self.can_realignment(game_instance, name, side))
         country = self[name]
 
-        modifier = 0  # net positive is in favour of USSR
+        ussr_advantage = 0  # net positive is in favour of USSR
         if 'Iran_Contra_Scandal' in game_instance.basket[Side.USSR] and side == Side.US:
-            modifier += 1
+            ussr_advantage += 1
 
         for adjacent_name in country.info.adjacent_countries:
-            modifier -= ((self[adjacent_name]).control == Side.US)
-            modifier += ((self[adjacent_name]).control == Side.USSR)
+            ussr_advantage -= ((self[adjacent_name]).control == Side.US)
+            ussr_advantage += ((self[adjacent_name]).control == Side.USSR)
         if country.influence[Side.USSR] > country.influence[Side.US]:
-            modifier += 1
+            ussr_advantage += 1
         elif country.influence[Side.USSR] < country.influence[Side.US]:
-            modifier -= 1
+            ussr_advantage -= 1
 
-        difference = ussr_roll - us_roll + modifier
+        difference = ussr_roll - us_roll + ussr_advantage
         if difference > 0:
             country.change_influence(0, -difference)
         elif difference < 0:
             country.change_influence(difference, 0)
         print(
-            f'USSR rolled: {ussr_roll}, US rolled: {us_roll}, Modifer = {modifier}, Difference = {difference}')
+            f'USSR rolled: {ussr_roll}, US rolled: {us_roll}, ussr_advantage = {ussr_advantage}, Difference = {difference}')
 
     def can_place_influence(self, game_instance, name: str, side: Side, effective_ops: int) -> bool:
         '''
