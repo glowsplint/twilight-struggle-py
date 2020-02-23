@@ -197,19 +197,25 @@ class Game:
 
         self.map.build_standard()
 
-    '''
-    self.current returns current game stage.
-    self.stage_list returns the full list of stages. The list starts with the
-    last possible event, and ends with the current event. We pop items off the
-    list when they are resolved.
-    '''
-    @property
-    def current(self):
-        return self.stage_list[-1]
-
     def stage_complete(self):
         self.input_state = None
         self.stage_list.pop()()
+
+    def terminate(self, side: Side = Side.NEUTRAL):
+        '''
+        Terminates the game prematurely, due to DEFCON 1, held scoring cards, or Wargames.
+
+        Parameters
+        ----------
+        side : Side, optional
+            Side of the winner - used only when holding scoring cards, by default Side.NEUTRAL
+        '''
+        self.stage_list.clear()
+        if side != Side.NEUTRAL:
+            winner = side.toStr()
+        else:
+            winner = 'USSR' if self.vp_track > 0 else 'US'
+        print(f'{winner} victory!')
 
     '''Output functions'''
 
@@ -261,9 +267,7 @@ class Game:
             if self.space_track[side.opp] < 8:
                 self.change_vp(2 * y)
 
-    # to add game terminate functionality EndGame()
-
-    def change_vp(self, n: int):  # positive for ussr
+    def change_vp(self, n: int):
         '''
         Changes the number of VPs. Positive values are in favour of the USSR player.
 
@@ -273,12 +277,8 @@ class Game:
             Number of VPs to change by.
         '''
         self.vp_track += n
-        if self.vp_track >= 20:
-            print('USSR victory')
-            # EndGame()
-        if self.vp_track <= -20:
-            print('US victory')
-            # EndGame()
+        if self.vp_track >= 20 or self.vp_track <= -20:
+            self.terminate()
         print(f'Current VP: {self.vp_track}')
 
     def change_defcon(self, n: int):
@@ -295,15 +295,12 @@ class Game:
         self.defcon_track += min(n, 5 - self.defcon_track)
         if self.defcon_track < 2:
             print('Game ended by thermonuclear war')
-            # EndGame()
+            self.terminate()
         if previous_defcon > 2 and self.defcon_track == 2 and self.ar_track != 0 and 'NORAD' in self.basket[Side.US]:
             self.norad_influence()
-        if n > 0:
-            print(f'DEFCON level improved to {self.defcon_track}.')
-        else:
-            print(f'DEFCON level degraded to {self.defcon_track}.')
 
-        # EndGame()
+        verb = 'improved' if n > 0 else 'degraded'
+        print(f'DEFCON level {verb} to {self.defcon_track}.')
 
     def change_milops(self, side, n: int):
         '''
@@ -326,7 +323,7 @@ class Game:
         self.input_state = Game.Input(
             Side.USSR, InputType.SELECT_COUNTRY,
             partial(self.event_influence_callback,
-                Country.increment_influence, Side.USSR),
+                    Country.increment_influence, Side.USSR),
             CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE],
             prompt='Place starting influence.',
             reps=6,
@@ -340,7 +337,7 @@ class Game:
         self.input_state = Game.Input(
             Side.US, InputType.SELECT_COUNTRY,
             partial(self.event_influence_callback,
-                Country.increment_influence, Side.US),
+                    Country.increment_influence, Side.US),
             CountryInfo.REGION_ALL[MapRegion.WESTERN_EUROPE],
             prompt='Place starting influence.',
             reps=7,
@@ -363,7 +360,7 @@ class Game:
         self.input_state = Game.Input(
             side, InputType.SELECT_COUNTRY,
             partial(self.event_influence_callback,
-                Country.increment_influence, side),
+                    Country.increment_influence, side),
             self.map.has_influence(side),
             prompt='Place additional starting influence.',
             reps=side.vp_mult * self.handicap,
@@ -1014,7 +1011,7 @@ class Game:
         Parameters
         ----------
         side : Side
-            Side of the player who is placing influence.
+            Side of the player who is couping.
         card_name : str
             String representation of the card used for the coup.
         restricted_list : Sequence[str], default=None
@@ -1028,13 +1025,20 @@ class Game:
         if restricted_list is None:
             restricted_list = CountryInfo.ALL
 
-        self.input_state = Game.Input(
-            side, InputType.SELECT_COUNTRY,
-            partial(self.coup_callback, side, effective_ops, card_name),
-            (n for n in CountryInfo.ALL
-                if self.map.can_coup(self, n, side) and n in restricted_list),
-            prompt=f'Select a country to coup using operations from {card_name}.',
-        )
+        # Cuban Missile Crisis
+        if 'Cuban_Missile_Crisis' in self.basket[side.opp]:
+            self.cuban_missile_remove(side)
+
+        def choose_coup_country():
+            self.input_state = Game.Input(
+                side, InputType.SELECT_COUNTRY,
+                partial(self.coup_callback, side, effective_ops, card_name),
+                (n for n in CountryInfo.ALL
+                    if self.map.can_coup(self, n, side) and n in restricted_list),
+                prompt=f'Select a country to coup using operations from {card_name}.',
+            )
+
+        self.stage_list.append(choose_coup_country)
 
     def space(self, side: Side, card_name: str):
         '''
@@ -1197,8 +1201,44 @@ class Game:
         # '''
         pass
 
-    def cuba_missile_remove(self):
-        pass
+    def cuban_missile_remove(self, side: Side):
+        '''
+        Gives an opportunity to the couping player to remove 2 influence from
+        Cuba/(West Germany/Turkey) if USSR/US respectively. This stage triggers
+        only when a coup is initiated, rather than 'any time' as mentioned by the
+        card event text.
+
+        Parameters
+        ----------
+        side : Side
+            Side of couping player
+        '''
+        if side == Side.USSR:
+            countries = ['Cuba']
+        elif side == Side.US:
+            countries = ['West_Germany', 'Turkey']
+        options = [n for n in countries if self.map[n].influence[side] >= 2]
+
+        if len(options) == 0:
+            return False
+
+        def cuban_callback(self, opt: str):
+            if opt != self.input_state.option_stop_early:
+                self.event_influence_callback(
+                    partial(Country.decrement_influence, amt=2), side, opt)
+                self.basket[side.opp].remove('Cuban_Missile_Crisis')
+            else:
+                self.input_state.reps -= 1
+            return True
+
+        self.input_state = Game.Input(
+            Side.US, InputType.SELECT_COUNTRY,
+            partial(cuban_callback, self),
+            options,
+            prompt='Cuban Missile Crisis: Remove 2 influence to de-escalate.',
+            reps_unit='influence',
+            option_stop_early='Do not remove influence.'
+        )
 
     def shuffle_callback(self, card_name):
         self.input_state.reps -= 1
@@ -1206,7 +1246,6 @@ class Game:
         return True
 
     def shuffle_draw_pile_stage(self):
-
         shuffler_pile = self.draw_pile
         self.draw_pile = []
 
@@ -1215,7 +1254,7 @@ class Game:
             self.shuffle_callback,
             shuffler_pile,
             'Shuffle the deck.  Select the next card.',
-            reps = len(shuffler_pile),
+            reps=len(shuffler_pile),
             reps_unit='cards',
             max_per_option=1
         )
@@ -1224,23 +1263,27 @@ class Game:
 
         if self.turn_track == 1:
             # TEST CODE BELOW -- remove when done
-            # '''For testing early-war cards'''
-            # self.hand[Side.USSR].extend([self.cards.early_war.pop(i)
-            #                              for i in range(20)])
-            # self.hand[Side.US].extend([self.cards.early_war.pop(0)
-            #                            for i in range(19)])
-            # '''For testing mid-war cards'''
-            # self.hand[Side.US].extend([self.cards.mid_war.pop(i)
-            #                            for i in range(24)])
-            # self.hand[Side.USSR].extend([self.cards.mid_war.pop(0)
-            #                              for i in range(24)])
-            # '''For testing late-war cards'''
-            # self.hand[Side.US].extend([self.cards.late_war.pop(i)
-            #                            for i in range(12)])
-            # self.hand[Side.USSR].extend([self.cards.late_war.pop(0)
-            #                              for i in range(11)])
+            '''For testing early-war cards'''
+            self.hand[Side.USSR].extend([self.cards.early_war.pop(i)
+                                         for i in range(20)])
+            self.hand[Side.US].extend([self.cards.early_war.pop(0)
+                                       for i in range(19)])
+            '''For testing mid-war cards'''
+            self.hand[Side.US].extend([self.cards.mid_war.pop(i)
+                                       for i in range(24)])
+            self.hand[Side.USSR].extend([self.cards.mid_war.pop(0)
+                                         for i in range(24)])
+            '''For testing late-war cards'''
+            self.hand[Side.US].extend([self.cards.late_war.pop(i)
+                                       for i in range(12)])
+            self.hand[Side.USSR].extend([self.cards.late_war.pop(0)
+                                         for i in range(11)])
             # TEST CODE ABOVE -- remove when done
             self.draw_pile.extend(self.cards.early_war)
+            # # WORKING CODE BELOW -- uncomment if not using test code
+            # self.hand[Side.USSR].append(self.draw_pile.pop(
+            #     self.draw_pile.index('The_China_Card')))
+            # # WORKING CODE ABOVE -- uncomment if not using test code
             self.cards.early_war = []
             self.shuffle_draw_pile_stage()
         elif self.turn_track == 4:
@@ -1251,7 +1294,6 @@ class Game:
             self.draw_pile.extend(self.cards.late_war)
             self.cards.late_war = []
             self.shuffle_draw_pile_stage()
-
 
     def deal(self, first_side=Side.USSR):
 
@@ -1279,7 +1321,8 @@ class Game:
                 # if draw pile exhausted, shuffle the discard pile and put it as the new draw pile
                 self.draw_pile = self.discard_pile
                 self.discard_pile = []
-                self.stage_list.append(partial(self.deal, first_side=next_side))
+                self.stage_list.append(
+                    partial(self.deal, first_side=next_side))
                 self.shuffle_draw_pile_stage()
                 return
 
@@ -1308,20 +1351,13 @@ class Game:
                                             'Central_America_Scoring', 'Southeast_Asia_Scoring', 'Africa_Scoring', 'South_America_Scoring']
             scoring_cards = [self.cards[y] for y in scoring_list]
             if any(True for x in scoring_cards if x in self.hand[Side.US]):
-                print('USSR Victory!')
-                # EndGame()
+                self.terminate(Side.USSR)
             elif any(True for x in scoring_cards if x in self.hand[Side.USSR]):
-                print('US Victory!')
-                # EndGame()
+                self.terminate(Side.USSR)
 
         # 3. Flip China Card
         def flip_china_card(self):
-            if 'The_China_Card' in self.hand[Side.USSR]:
-                self.hand[Side.USSR][self.hand[Side.USSR].index(
-                    'The_China_Card')].is_playable = True
-            elif 'The_China_Card' in self.hand[Side.US]:
-                self.hand[Side.US][self.hand[Side.US].index(
-                    'The_China_Card')].is_playable = True
+            self.cards['The_China_Card'].is_playable = True
 
         # 4. Advance turn marker
         def advance_turn_marker(self):

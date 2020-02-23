@@ -1,12 +1,14 @@
+import random
+
+from os import path
 from copy import deepcopy
+from datetime import datetime
 
 from game_mechanics import Game
 from twilight_enums import Side, InputType, CardAction
 from twilight_map import MapRegion, CountryInfo
 from twilight_cards import CardInfo
-from datetime import datetime
-import random
-from os import path
+
 
 class UI:
 
@@ -58,14 +60,16 @@ quit            Exit the game.
         self.log_filepath = f'log{path.sep}game-{datetime.utcnow().strftime("%Y-%m-%d-%H-%M-%S-UTC")}.tsg'
 
     def log_write_out(self):
-        if not self.temp_log: return
+        if not self.temp_log:
+            return
         out = '\n'.join(self.temp_log) + '\n'
         with open(self.log_filepath, 'a') as f:
             f.write(out)
         self.temp_log.clear()
 
     def new_game(self):
-        if self.logging: self.log_generate_filepath()
+        if self.logging:
+            self.log_generate_filepath()
         self.game_in_progress = True
         self.game.start()
         self.advance_game()
@@ -78,14 +82,16 @@ quit            Exit the game.
             self.game.stage_complete()
 
     def commit(self):
-        if self.logging: self.log_write_out()
+        if self.logging:
+            self.log_write_out()
         self.game_lookahead = None
         self.advance_game()
         self.game_rollback = deepcopy(self.game)
         self.game_state_changed()
 
     def revert(self):
-        if self.logging: self.temp_log.clear()
+        if self.logging:
+            self.temp_log.clear()
         self.game = self.game_rollback
         self.game_lookahead = None
         self.game_rollback = deepcopy(self.game)
@@ -93,7 +99,8 @@ quit            Exit the game.
 
     def move(self, move):
         self.game.input_state.recv(move)
-        if self.logging: self.temp_log.append(move)
+        if self.logging:
+            self.temp_log.append(move)
 
     def generate_options(self):
         if self.game.input_state.state == InputType.SELECT_CARD_ACTION:
@@ -219,7 +226,8 @@ quit            Exit the game.
                 print(UI.help)
 
             elif user_choice[0] == 'quit' or user_choice[0] == 'exit' or user_choice[0].lower() == 'q':
-                if self.logging: self.log_write_out()
+                if self.logging:
+                    self.log_write_out()
                 break
 
             elif user_choice[0].lower() == 'new':

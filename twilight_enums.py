@@ -22,10 +22,10 @@ class Side(enum.IntEnum):
         else:
             raise NameError('Invalid string for Side.fromStr')
 
-    def toStr(self, s):
-        if s == Side.US:
+    def toStr(self):
+        if self == Side.US:
             return 'US'
-        elif s == Side.USSR:
+        elif self == Side.USSR:
             return 'USSR'
         else:
             return 'NEUTRAL'

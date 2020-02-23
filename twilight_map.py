@@ -1,4 +1,3 @@
-import random
 from twilight_enums import Side, MapRegion, InputType, CardAction
 
 
@@ -130,6 +129,7 @@ class GameMap:
         - Vietnam_Revolts
         - Cuban_Missile_Crisis
         - SALT Negotiations
+        - Cuban Missile Crisis
 
         Parameters
         ----------
@@ -142,7 +142,7 @@ class GameMap:
         effective_ops : int
             The number of effective operations used in the coup.
         die_roll: int
-            The die roll of the coup. Should be bounded within [1,6].
+            The die roll of the coup. Should be bounded within range(1,7).
         '''
         assert(self.can_coup(game_instance, name, side))
         country = self[name]
@@ -178,17 +178,15 @@ class GameMap:
         else:
             print(f'Coup failed with roll of {die_roll}.')
 
-        # Nuclear Subs
-        if country.info.battleground:
+        # Cuban Missile Crisis overrides Nuclear Subs
+        if 'Cuban_Missile_Crisis' in game_instance.basket[side.opp]:
+            game_instance.change_defcon(1-game_instance.defcon_track)
+        elif country.info.battleground:
             if side == Side.US:
                 if 'Nuclear_Subs' not in game_instance.basket[Side.US]:
                     game_instance.change_defcon(-1)
             else:
                 game_instance.change_defcon(-1)
-
-        # Cuban Missile Crisis
-        if 'Cuban_Missile_Crisis' in game_instance.basket[side.opp]:
-            game_instance.change_defcon(1-game_instance.defcon_track)
 
         # Yuri and Samantha
         if side == Side.US and 'Yuri_and_Samantha' in game_instance.basket[Side.USSR]:
@@ -255,7 +253,7 @@ class GameMap:
         side : Side
             Player side which we are checking. Can be Side.US or Side.USSR.
         us_roll, us_roll: ints
-            The respective dice rolls of the realignment. Should be bounded within [1,6].
+            The respective dice rolls of the realignment. Should be bounded within range(1,7).
         '''
         assert(self.can_realignment(game_instance, name, side))
         country = self[name]
