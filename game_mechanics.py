@@ -932,7 +932,7 @@ class Game:
             partial(self.dice_stage, realign_dice_callback, two_dice=True))
         return True
 
-    def card_operation_realignment(self, side: Side, card_name: str, reps: int=None, restricted_list: Sequence[str]=None, free=False):
+    def card_operation_realignment(self, side: Side, card_name: str, reps: int = None, restricted_list: Sequence[str] = None, free=False):
         '''
         Stage when a player is given the opportunity to use realignment. Provides a list
         of countries where realignment can take place and waits for player input.
@@ -1183,9 +1183,6 @@ class Game:
             prompt='Place NORAD influence.',
             reps_unit='influence'
         )
-
-    def pick_from_discarded(self):
-        pass
 
     def forced_to_missile_envy(self):
         # check first if the player has as many scoring cards as turns
@@ -1686,7 +1683,7 @@ class Game:
     def _CIA_Created(self, side):
         # TODO: reveal hand
         ops = self.get_global_effective_ops(Side.US, 1)
-        self.select_action(side, f'Blank_{ops}_Op_Card')
+        self.select_action(Side.US, f'Blank_{ops}_Op_Card')
         pass
 
     def _US_Japan_Mutual_Defense_Pact(self, side):
@@ -1882,11 +1879,29 @@ class Game:
             self.basket[Side.US].remove('NORAD')
         pass
 
+    def _Salt_Negotiations_callback(self, side: Side, card_name: str, option_stop_early: str=''):
+        self.input_state.reps -= 1
+        if card_name != option_stop_early:
+            self.discard_pile.remove(card_name)
+            # TODO: reveal card to opponent
+            self.hand[side].append(card_name)
+        return True
+
     def _Salt_Negotiations(self, side):
         self.change_defcon(2)
         self.basket[side].append('Salt_Negotiations')
         self.end_turn_stage_list.append(
             partial(self.basket[side].remove, 'Salt_Negotiations'))
+
+        option_stop_early = 'Do not take a card.'
+
+        self.input_state = Game.Input(
+            side, InputType.SELECT_CARD,
+            partial(self._Salt_Negotiations_callback, side, option_stop_early=option_stop_early),
+            (n for n in self.discard_pile if self.cards[n].info.ops >= 1),
+            prompt=f'You may pick a non-scoring card from the discard pile.',
+            option_stop_early=option_stop_early
+        )
 
     def _Bear_Trap(self, side):
         pass
@@ -2027,7 +2042,7 @@ class Game:
 
     def _Lone_Gunman(self, side):
         ops = self.get_global_effective_ops(Side.US, 1)
-        self.select_action(side, f'Blank_{ops}_Op_Card')
+        self.select_action(Side.USSR, f'Blank_{ops}_Op_Card')
         pass
 
     def _Colonial_Rear_Guards(self, side):
@@ -2173,8 +2188,8 @@ class Game:
                          CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA],
                          CountryInfo.REGION_ALL[MapRegion.AFRICA])
 
-        self.card_operation_coup(side, 'Che', restricted_list=[
-                                 n for n in ca_sa_af if self.map[n].info.battleground])
+        self.card_operation_coup(Side.USSR, 'Che', restricted_list=[
+                                 n for n in ca_sa_af if not self.map[n].info.battleground])
         pass
 
     def _Our_Man_In_Tehran(self, side):
