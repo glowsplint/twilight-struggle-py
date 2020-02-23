@@ -465,7 +465,12 @@ class Game:
                 self.ar_side = self.ar_side.opp
 
             self.stage_list.append(self.ar_complete)
-            self.stage_list.append(partial(self.select_card))
+            if self.ar_side == Side.US and 'Quagmire' in self.basket[Side.US]:
+                self.stage_list.append(partial(self.qbt_discard ,Side.US, 'Quagmire'))
+            elif self.ar_side == Side.USSR and 'Bear_Trap' in self.basket[Side.USSR]:
+                self.stage_list.append(partial(self.qbt_discard ,Side.USSR, 'Bear_Trap'))
+            else:
+                self.stage_list.append(self.select_card)
 
     def can_play_event(self, side: Side, card_name: str, resolve_check=False):
         '''
@@ -1192,9 +1197,6 @@ class Game:
         self.input_state.reps -= 1
         if int(num) <= 4:
             self.basket[side].remove(trap_name)
-        else:
-            pass
-            # TODO: append this stage again because failure to break out
         return True
 
     def qbt_discard_callback(self, side: Side, trap_name: str, card_name: str):
@@ -1203,7 +1205,7 @@ class Game:
             self.qbt_dice_callback, side, trap_name)))
         return True
 
-    def qbt_discard(self, side: Side, trap_name: str) -> bool:
+    def qbt_discard(self, side: Side, trap_name: str):
         '''
         Discarding stage for Quagmire/Bear Trap.
 
@@ -1220,22 +1222,22 @@ class Game:
             True if there was a suitable discard/scoring card played, false if not.
         '''
 
-        suitable_cards = [n for n in self.hand[side] if n != 'The_China_Card' and self.get_global_effective_ops(
-            side, self.cards[n].info.ops) >= 2]
+        suitable_cards = [n for n in self.hand[side]
+            if n != 'The_China_Card'
+            and self.get_global_effective_ops(side, self.cards[n].info.ops) >= 2]
 
         scoring_cards = [n for n in self.hand[side]
                          if self.cards[n].info.type == 'Scoring']
 
         # If we have as many scoring cards as action rounds, then we must play
         # a scoring card. Q/BT stays in basket.
-        if len(scoring_cards) == Game.ARS_BY_TURN[self.turn_track]:
+        if len(scoring_cards) == Game.ARS_BY_TURN[self.turn_track] - self.ar_track + 1:
             self.input_state = Game.Input(
                 side, InputType.SELECT_CARD,
                 partial(self.trigger_event, side),
                 scoring_cards,
                 prompt='You must play a scoring card.',
             )
-        # TODO: append this stage again because failure to break out
 
         # Otherwise, if there are discardable cards, you have to discard from these.
         elif suitable_cards:
@@ -1247,8 +1249,7 @@ class Game:
             )
         # If you don't have suitable discards, then you can't play anything.
         else:
-            # TODO: append this stage again because failure to break out
-            return False
+            print("AR skipped due to lack of suitable cards.")
 
     def cuban_missile_remove(self, side: Side):
         '''
@@ -1939,7 +1940,7 @@ class Game:
         # need to insert and replace the US Action round with the quagmire_discard stage
         if 'NORAD' in self.basket[Side.US]:
             self.basket[Side.US].remove('NORAD')
-        pass
+        self.basket[Side.US].append('Quagmire')
 
     def _Salt_Negotiations_callback(self, side: Side, card_name: str, option_stop_early: str = ''):
         self.input_state.reps -= 1
@@ -1967,7 +1968,7 @@ class Game:
         )
 
     def _Bear_Trap(self, side):
-        pass
+        self.basket[Side.USSR].append('Bear_Trap')
 
     def _Summit_choices(self, side: Side):
         '''
