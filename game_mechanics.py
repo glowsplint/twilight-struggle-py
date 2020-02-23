@@ -935,7 +935,7 @@ class Game:
             partial(self.dice_stage, realign_dice_callback, two_dice=True))
         return True
 
-    def card_operation_realignment(self, side: Side, card_name: str = None, reps: int = None, restricted_list: Sequence[str] = None, free=False):
+    def card_operation_realignment(self, side: Side, card_name: str, reps: int=None, restricted_list: Sequence[str]=None, free=False):
         '''
         Stage when a player is given the opportunity to use realignment. Provides a list
         of countries where realignment can take place and waits for player input.
@@ -952,8 +952,10 @@ class Game:
         card = self.cards[card_name]
         if not reps:
             effective_ops = self.get_global_effective_ops(side, card.info.ops)
+            can_stop_now = ''
         else:
             effective_ops = reps
+            can_stop_now = 'Stop realignments.'
 
         if restricted_list is None:
             restricted_list = CountryInfo.ALL
@@ -964,7 +966,8 @@ class Game:
                     card_name=card_name, reps=effective_ops),
             (n for n in CountryInfo.ALL if self.map.can_realignment(
                 self, n, side) and n in restricted_list),
-            prompt=f'Select a country for realignment using operations from {card_name}.',
+            prompt=f'Select a country for realignment using operations from {card_name}. {effective_ops} realignments remaining.',
+            option_stop_early=can_stop_now
         )
 
     def dice_stage(self, fn: Callable[[str], bool] = None, two_dice=False, reroll_ties=False):
