@@ -29,7 +29,7 @@ The following base commands are provided:
 |`m <m1 m2 m3 ...>`|                    Makes multiple moves in order m1, m2, m3, ...|
 |`s <eu\|as\|me\|af\|na\|sa>` |         Displays the scoring state and country data for the given region.|
 |`c`|                                   Display a list of cards in the current player's hand.|
-|`c <name|ID#>`|                        Display information about the card with the given name or card index.|
+|`c <name\|ID#>`|                       Display information about the card with the given name or card index.|
 |`c opp`|                               Returns the number cards in the opponent's hand.|
 |`c dis`|                               Display a list of cards in the discard pile.|
 |`c rem`|                               Display a list of removed cards.|
