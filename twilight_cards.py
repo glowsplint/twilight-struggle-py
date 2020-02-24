@@ -14,6 +14,7 @@ class CardInfo:
     '''
 
     ALL = dict()
+    index = dict()
 
     def __init__(self, name='', type='', stage='', card_index=0,
                  optional_card=False, ops=0,
@@ -37,6 +38,7 @@ class CardInfo:
         self.can_headline = can_headline
 
         CardInfo.ALL[self.name] = self
+        CardInfo.index[card_index] = self
 
     def __repr__(self):
         if self.ops == 0:
@@ -569,7 +571,7 @@ Central_America_Scoring = {
     'stage': 'Mid War',
     'card_index': 37,
     'scoring_region': 'Central America',
-    'event_text': 'Both sides score: Presence: 1, Domination: 3, Control: 5, +1 per controlled Battleground Country in Region, +1 per Country controlled that is adjacent to enemy superpower',
+    'event_text': 'Both sides score: Presence: 1, Domination: 3, Control: 5. +1 per controlled Battleground Country in Region, +1 per Country controlled that is adjacent to enemy superpower',
     'may_be_held': False,
 }
 
@@ -1058,7 +1060,7 @@ Africa_Scoring = {
     'stage': 'Mid War',
     'card_index': 79,
     'scoring_region': 'Africa',
-    'event_text': 'Both sides score: Presence: 1, Domination: 4, Control: 6, +1 per controlled Battleground Country in Region',
+    'event_text': 'Both sides score: Presence: 1, Domination: 4, Control: 6. +1 per controlled Battleground Country in Region',
     'may_be_held': False,
 }
 
@@ -1080,7 +1082,7 @@ South_America_Scoring = {
     'stage': 'Mid War',
     'card_index': 81,
     'scoring_region': 'South America',
-    'event_text': 'Both sides score: Presence: 2, Domination: 5, Control: 6, +1 per controlled Battleground Country in Region',
+    'event_text': 'Both sides score: Presence: 2, Domination: 5, Control: 6. +1 per controlled Battleground Country in Region',
     'may_be_held': False,
 }
 
