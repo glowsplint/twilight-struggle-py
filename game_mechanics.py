@@ -158,11 +158,11 @@ class Game:
         self.input_state = None
         self.output_queue = [[], []]
 
-        self.hand = [[], []]
+        self.hand = [[], [], []]
         self.removed_pile = []
         self.discard_pile = []
         self.draw_pile = []
-        self.limbo = []
+        self.limbo = []  # 0 index strictly for shuttle_diplomacy
         self.basket = [[], []]
         self.headline_bin = ['', '']
         self.end_turn_stage_list = []
@@ -466,9 +466,11 @@ class Game:
 
             self.stage_list.append(self.ar_complete)
             if self.ar_side == Side.US and 'Quagmire' in self.basket[Side.US]:
-                self.stage_list.append(partial(self.qbt_discard ,Side.US, 'Quagmire'))
+                self.stage_list.append(
+                    partial(self.qbt_discard, Side.US, 'Quagmire'))
             elif self.ar_side == Side.USSR and 'Bear_Trap' in self.basket[Side.USSR]:
-                self.stage_list.append(partial(self.qbt_discard ,Side.USSR, 'Bear_Trap'))
+                self.stage_list.append(
+                    partial(self.qbt_discard, Side.USSR, 'Bear_Trap'))
             else:
                 self.stage_list.append(self.select_card)
 
@@ -1223,8 +1225,8 @@ class Game:
         '''
 
         suitable_cards = [n for n in self.hand[side]
-            if n != 'The_China_Card'
-            and self.get_global_effective_ops(side, self.cards[n].info.ops) >= 2]
+                          if n != 'The_China_Card'
+                          and self.get_global_effective_ops(side, self.cards[n].info.ops) >= 2]
 
         scoring_cards = [n for n in self.hand[side]
                          if self.cards[n].info.type == 'Scoring']
@@ -1347,6 +1349,8 @@ class Game:
 
     def deal(self, first_side=Side.USSR):
 
+        if first_side == Side.NEUTRAL:
+            handsize_target = [3, 2]
         if 1 <= self.turn_track <= 3:
             handsize_target = [8, 8]
         else:
@@ -2009,7 +2013,7 @@ class Game:
     def _Summit(self, side):
         dominate_or_control = [0, 0]
 
-        for region in [i for i in MapRegion if i <= 5]:
+        for region in [i for i in MapRegion.main_regions()]:
             bg_count = [0, 0, 0]  # USSR, US, NEUTRAL
             country_count = [0, 0, 0]
 
@@ -2369,9 +2373,29 @@ class Game:
 
         pass
 
+    def _Our_Man_In_Tehran_stage_2(self):
+        self.draw_pile.extend(self.hand[Side.NEUTRAL])
+        self.hand[Side.NEUTRAL] = []
+        return True
+
+    def _Our_Man_In_Tehran_callback(self, opt: str):
+        self.input_state.reps -= 1
+        self.discard_pile.append(opt)
+        self.hand[Side.NEUTRAL].remove(opt)
+        self.stage_list.append(self._Our_Man_In_Tehran_stage_2)
+        # post-choice card reveal to USSR not done
+        return True
+
     def _Our_Man_In_Tehran(self, side):
         if self.can_play_event(Side.US, 'Our_Man_In_Tehran'):
-            pass
+            self.deal(first_side=Side.NEUTRAL)
+
+            self.input_state = Game.Input(
+                side, InputType.SELECT_CARD,
+                self._Our_Man_In_Tehran_callback,
+                (n for n in self.hand[Side.NEUTRAL]),
+                prompt=f'Our Man In Tehran: Discard any of these cards.'
+            )
 
     def _Iranian_Hostage_Crisis(self, side):
         self.map.set_influence('Iran', Side.US, 0)

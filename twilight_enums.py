@@ -1,8 +1,5 @@
 import enum
 from typing import Iterable, Callable
-# you can now refer to USSR and US as Side.USSR / Side.US / Side.NEUTRAL
-# without concern about which is 0 and which is 1; also robust to
-# change any time.
 
 
 class Side(enum.IntEnum):
@@ -85,6 +82,10 @@ class MapRegion(enum.IntEnum):
             return MapRegion.SOUTHEAST_ASIA
         else:
             raise NameError('Invalid string for MapRegion.fromStr')
+
+    @classmethod
+    def main_regions(self):
+        return [MapRegion.EUROPE, MapRegion.ASIA, MapRegion.MIDDLE_EAST, MapRegion.AFRICA, MapRegion.CENTRAL_AMERICA, MapRegion.SOUTH_AMERICA]
 
 
 class InputType(enum.IntEnum):

@@ -3,6 +3,7 @@ import random
 from os import path
 from copy import deepcopy
 from datetime import datetime
+from textwrap import wrap
 
 from game_mechanics import Game
 from twilight_enums import Side, InputType, CardAction
@@ -32,6 +33,7 @@ quit            Exit the game.
     ussr_prompt = '----- USSR Player: -----'
     us_prompt = '----- US Player: -----'
     rng_prompt = '----- RNG: -----'
+    left_margin = 25
 
     def __init__(self):
         self.game_lookahead = None
@@ -342,11 +344,12 @@ m <m1 m2 m3 ...>    Makes multiple moves in order m1, m2, m3, ...
                 self.prompt()
 
     help_card = '''
-c           Display a list of cards in the current player's hand.
-c <ID#>     Display information about the card with the given ID number.
-c dis       Display a list of cards in the discard pile
-c rem       Display a list of removed cards.
-c dec       Returns the number of cards in the draw deck.
+c               Display a list of cards in the current player's hand.
+c <name|ID#>    Display information about the card with the given name or card index.
+c opp           Returns the number cards in the opponent's hand.
+c dis           Display a list of cards in the discard pile.
+c rem           Display a list of removed cards.
+c dec           Returns the number of cards in the draw deck.
 '''
     def parse_card(self, comd):
 
@@ -358,7 +361,7 @@ c dec       Returns the number of cards in the draw deck.
             print(
                 f'Listing {len(self.game.hand[self.input_state.side])} cards in hand.')
             for c in sorted(self.game.hand[self.input_state.side]):
-                print(c)
+                print(f'{CardInfo.ALL[c].card_index:5} {c}')
         elif comd == '?':
             print(UI.help_card)
         elif comd == 'opp':
@@ -375,7 +378,39 @@ c dec       Returns the number of cards in the draw deck.
         elif comd == 'dec':
             print(f'Cards in draw pile: {len(self.game.draw_pile)}.')
         else:
-            print('Invalid command. Enter ? for help.')
+            matched = None
+            ambiguous = False
+
+            def _print_card_info(comd, text: bool = True):
+                if not text:
+                    items = CardInfo.index[int(comd)].__dict__.items()
+                else:
+                    items = CardInfo.ALL[matched].__dict__.items()
+
+                print(f'Displaying information on card {comd}:')
+                for k, v in items:
+                    v = wrap(str(v), width=110)
+                    indent = '\n'+(UI.left_margin+1)*' '
+                    v = indent.join(v)
+                    if str(v):
+                        print(f'{k:>{UI.left_margin}} {v}')
+
+            if comd.isdigit():
+                if int(comd) in CardInfo.index.keys():
+                    _print_card_info(comd, text=False)
+            else:
+                for opt in CardInfo.ALL.keys():
+                    if opt.lower().startswith(comd):
+                        if matched:
+                            ambiguous = True
+                            break
+                        matched = opt
+                if ambiguous:
+                    print(f'Error: multiple matching options for {comd}!')
+                elif matched:
+                    _print_card_info(matched, text=True)
+                else:
+                    print('Invalid command. Enter ? for help.')
 
     help_state = '''
 s <eu|as|me|af|na|sa>   Displays the scoring state and country data for the given region.
