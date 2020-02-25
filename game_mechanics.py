@@ -643,15 +643,18 @@ class Game:
                 partial(self.select_action, side, card_name))
         return True
 
-    def action_callback(self, side: Side, card_name: str, action_name: str, is_event_resolved=False):
+    def action_callback(self, side: Side, card_name: str, action_name: str,
+                        is_event_resolved: bool = False, un_intervention: bool = False, grain_sales: bool = False):
         self.input_state.reps -= 1
         self.stage_list.append(
             partial(self.resolve_card_action, side,
-                    card_name, action_name, is_event_resolved=is_event_resolved)
+                    card_name, action_name, is_event_resolved=is_event_resolved,
+                    un_intervention=un_intervention, grain_sales=grain_sales)
         )
         return True
 
-    def select_action(self, side: Side, card_name: str, is_event_resolved: bool = False, can_coup=True, free_coup_realignment=False):
+    def select_action(self, side: Side, card_name: str, is_event_resolved: bool = False,
+                      un_intervention: bool = False, grain_sales: bool = False, can_coup=True, free_coup_realignment=False):
         '''
         Stage where the player has already chosen a card and now chooses an action to do with the card.
         Checks are made to ensure that the actions made available to the player are feasible actions,
@@ -672,8 +675,9 @@ class Game:
         and this stage will be triggered again with the 'Resolve Event first' removed.
         '''
         bool_arr = [
-            not is_event_resolved and self.can_play_event(side, card_name),
-            not is_event_resolved and self.can_resolve_event_first(
+            not un_intervention and not is_event_resolved and self.can_play_event(
+                side, card_name),
+            not un_intervention and not is_event_resolved and self.can_resolve_event_first(
                 side, card_name),
             self.can_place_influence(side, card_name),
             self.can_realign_at_all(side),
@@ -684,12 +688,15 @@ class Game:
         self.input_state = Game.Input(
             side, InputType.SELECT_CARD_ACTION,
             partial(self.action_callback, side, card_name,
-                    is_event_resolved=is_event_resolved),
+                    is_event_resolved=is_event_resolved,
+                    un_intervention=un_intervention,
+                    grain_sales=grain_sales),
             (CardAction(i).name for i, b in enumerate(bool_arr) if b),
             prompt=f'Select an action for {card_name}.'
         )
 
-    def resolve_card_action(self, side: Side, card_name: str, action_name: str, is_event_resolved=False):
+    def resolve_card_action(self, side: Side, card_name: str, action_name: str,
+                            is_event_resolved: bool = False, un_intervention: bool = False, grain_sales: bool = False):
         '''
         This function should lead to card_operation_realignment, card_operation_coup,
         or card_operation_influence, or a space race function.
@@ -701,8 +708,12 @@ class Game:
 
         if action == CardAction.PLAY_EVENT:
 
-            self.stage_list.append(
-                partial(self.dispose_card, side, card_name, event=True))
+            if grain_sales:
+                self.stage_list.append(
+                    partial(self.dispose_card, Side.USSR, card_name, event=True))
+            else:
+                self.stage_list.append(
+                    partial(self.dispose_card, side, card_name, event=True))
             self.stage_list.append(
                 partial(self.trigger_event, side, card_name))
 
@@ -715,14 +726,23 @@ class Game:
 
         elif action == CardAction.SPACE:
 
-            self.stage_list.append(partial(self.dispose_card, side, card_name))
+            if grain_sales:
+                self.stage_list.append(
+                    partial(self.dispose_card, Side.USSR, card_name))
+            else:
+                self.stage_list.append(
+                    partial(self.dispose_card, side, card_name))
             self.stage_list.append(partial(self.space, side, card_name))
 
         elif action == CardAction.INFLUENCE:
 
-            self.stage_list.append(
-                partial(self.dispose_card, side, card_name, event=opp_event))
-            if opp_event and not is_event_resolved:
+            if grain_sales:
+                self.stage_list.append(
+                    partial(self.dispose_card, Side.USSR, card_name, event=opp_event))
+            else:
+                self.stage_list.append(
+                    partial(self.dispose_card, side, card_name, event=opp_event))
+            if opp_event and not is_event_resolved and not un_intervention:
                 self.stage_list.append(
                     partial(self.trigger_event, side, card_name))
             self.stage_list.append(
@@ -730,9 +750,13 @@ class Game:
 
         elif action == CardAction.REALIGNMENT:
 
-            self.stage_list.append(
-                partial(self.dispose_card, side, card_name, event=opp_event))
-            if opp_event and not is_event_resolved:
+            if grain_sales:
+                self.stage_list.append(
+                    partial(self.dispose_card, Side.USSR, card_name, event=opp_event))
+            else:
+                self.stage_list.append(
+                    partial(self.dispose_card, side, card_name, event=opp_event))
+            if opp_event and not is_event_resolved and not un_intervention:
                 self.stage_list.append(
                     partial(self.trigger_event, side, card_name))
             self.stage_list.append(
@@ -740,9 +764,10 @@ class Game:
 
         elif action == CardAction.COUP:
 
+            side = Side.USSR if grain_sales else side
             self.stage_list.append(
                 partial(self.dispose_card, side, card_name, event=opp_event))
-            if opp_event and not is_event_resolved:
+            if opp_event and not is_event_resolved and not un_intervention:
                 self.stage_list.append(
                     partial(self.trigger_event, side, card_name))
             self.stage_list.append(
@@ -1532,11 +1557,16 @@ class Game:
 
     def _Five_Year_Plan(self, side):
 
+        # check that USSR player has enough cards
+        reps = len(self.hand[Side.USSR]) if len(
+            self.hand[Side.USSR]) <= 1 else 1
+
         self.input_state = Game.Input(
             Side.NEUTRAL, InputType.ROLL_DICE,
             self._Five_Year_Plan_callback,
             (n for n in self.hand[Side.USSR] if n != 'Five_Year_Plan'),
-            prompt='Five Year Plan: USSR randomly discards a card.'
+            prompt='Five Year Plan: USSR randomly discards a card.',
+            reps=reps
         )
 
     def _The_China_Card(self, side):
@@ -1670,7 +1700,7 @@ class Game:
             # NOTE: the _participate inner function receives the opposite side from the main card function
             def participate_dice_callback(num: tuple):
                 self.input_state.reps -= 1
-                outcome = 'Success' if num[Side.USSR] > num[Side.US] else 'Failure'
+                outcome = 'Success' if num[0] > num[1] else 'Failure'
                 if outcome:
                     # side_opp is the sponsor
                     self.change_vp(2 * side_opp.vp_mult)
@@ -1807,17 +1837,19 @@ class Game:
         self.end_turn_stage_list.append(
             partial(self.basket[side].remove, 'Red_Scare_Purge'))
 
+    def _UN_Intervention_callback(self, side, card_name: str):
+        self.input_state.reps -= 1
+        self.select_action(side, f'{card_name}', un_intervention=True)
+        return True
+
     def _UN_Intervention(self, side):
-        '''
         self.input_state = Game.Input(
-            side, InputType.SELECT_COUNTRY,
-            partial(self.event_influence_callback,
-                    Country.increment_influence, Side.USSR),
-            (c for c in self.hand[side] if self.cards[c].info.owner == side.opp),
-            prompt=f'Select a card with an opponent event to use for operations with UN Intervention.'
+            side, InputType.SELECT_CARD,
+            partial(self._UN_Intervention_callback, side),
+            (n for n in self.hand[side]
+             if self.cards[n].info.owner == side.opp),
+            prompt=f'You may pick a opponent-owned card from your hand to use with UN Intervention.',
         )
-        '''
-        pass
 
     def _De_Stalinization(self, side):
 
@@ -1946,7 +1978,7 @@ class Game:
             self.basket[Side.US].remove('NORAD')
         self.basket[Side.US].append('Quagmire')
 
-    def _Salt_Negotiations_callback(self, side: Side, card_name: str, option_stop_early: str = ''):
+    def _Salt_Negotiations_callback(self, side: Side, option_stop_early: str, card_name: str):
         self.input_state.reps -= 1
         if card_name != option_stop_early:
             self.discard_pile.remove(card_name)
@@ -1960,15 +1992,14 @@ class Game:
         self.end_turn_stage_list.append(
             partial(self.basket[side].remove, 'Salt_Negotiations'))
 
-        option_stop_early = 'Do not take a card.'
+        can_stop_now = 'Do not take a card.'
 
         self.input_state = Game.Input(
             side, InputType.SELECT_CARD,
-            partial(self._Salt_Negotiations_callback, side,
-                    option_stop_early=option_stop_early),
+            partial(self._Salt_Negotiations_callback, side, option_stop_early),
             (n for n in self.discard_pile if self.cards[n].info.ops >= 1),
             prompt=f'You may pick a non-scoring card from the discard pile.',
-            option_stop_early=option_stop_early
+            option_stop_early=can_stop_now
         )
 
     def _Bear_Trap(self, side):
@@ -1987,6 +2018,7 @@ class Game:
 
         option_function_mapping = {
             'DEFCON -1': partial(self.change_defcon, -1),
+            'No change': partial(lambda: None),
             'DEFCON +1': partial(self.change_defcon, 1),
         }
 
@@ -1994,7 +2026,7 @@ class Game:
             side, InputType.SELECT_MULTIPLE,
             partial(self.select_multiple_callback, option_function_mapping),
             option_function_mapping.keys(),
-            prompt='Summit: Change DEFCON level by 1 in either direction.'
+            prompt='Summit: You may change DEFCON level by 1 in either direction.'
         )
 
     def _Summit_dice_callback(self, ussr_advantage: int, num: tuple):
@@ -2007,7 +2039,7 @@ class Game:
         else:
             self._Summit_choices(Side.US)
         print(
-            f'{outcome} with (USSR, US) rolls of ({num[0]}, {num[1]}). ussr_advantage is {ussr_advantage}.')
+            f'{outcome} with (USSR, US) rolls of ({num[Side.USSR]}, {num[Side.US]}). ussr_advantage is {ussr_advantage}.')
         return True
 
     def _Summit(self, side):
@@ -2241,9 +2273,45 @@ class Game:
             max_per_option=1
         )
 
-    def _Grain_Sales_to_Soviets(self, side):
+    # GRAIN SALES + UN INT: make sure everything goes into the discard pile
+    def _Grain_Sales_callback(self, card_name: str):
+        print(f'{card_name} was selected by Grain Sales to Soviets.')
         # if received card is Side.USSR, then offer to use UN intervention if holding
-        pass
+
+        def use_un_intervention():
+            self.stage_list.append(
+                partial(self.dispose_card, Side.US, 'UN_Intervention'))
+            self.select_action(Side.US, card_name,
+                               un_intervention=True, grain_sales=True)
+
+        option_function_mapping = {
+            'Use card normally': partial(self.select_action, Side.US, card_name, grain_sales=True),
+            'Return card to USSR': partial(self.select_action, Side.US, 'Grain_Sales_to_Soviets', un_intervention=True)
+        }
+
+        if 'UN_Intervention' in self.hand[Side.US] and self.cards[card_name].info.owner == Side.USSR:
+            option_function_mapping['Use card with UN Intervention'] = use_un_intervention
+
+        self.input_state = Game.Input(
+            Side.US, InputType.SELECT_MULTIPLE,
+            partial(self.select_multiple_callback,
+                    option_function_mapping),
+            option_function_mapping.keys(),
+            prompt='You may use UN Intervention on the card selected by Grain Sales to Soviets.'
+        )
+
+    def _Grain_Sales_to_Soviets(self, side):
+        reps = len(self.hand[side.opp]) if len(self.hand[side.opp]) <= 1 else 1
+        viable_ussr_hand = self.hand[Side.USSR] if 'Grain_Sales_to_Soviets' not in self.hand[Side.USSR] else set(
+            self.hand[Side.USSR]) - set('Grain_Sales_to_Soviets')
+
+        self.input_state = Game.Input(
+            Side.NEUTRAL, InputType.SELECT_CARD,
+            self._Grain_Sales_callback,
+            viable_ussr_hand,
+            prompt='Grain Sales to Soviets: US player randomly selects a card from USSR player\'s hand.',
+            reps=reps,
+        )
 
     def _John_Paul_II_Elected_Pope(self, side):
         self.map['Poland'].change_influence(-2, 1)
@@ -2412,12 +2480,10 @@ class Game:
         swing = math.floor(self.map['Libya'].influence[Side.USSR] / 2)
         self.change_vp(-swing)
 
-    def _Star_Wars_callback(self, side: Side, card_name: str):
+    def _Star_Wars_callback(self, card_name: str):
         self.input_state.reps -= 1
-        if card_name != option_stop_early:
-            self.discard_pile.remove(card_name)
-            # TODO: reveal card to opponent
-            self.hand[side].append(card_name)
+        # TODO: reveal card to opponent
+        self.trigger_event(Side.US, card_name)
         return True
 
     def _Star_Wars(self, side):
@@ -2426,7 +2492,7 @@ class Game:
                 side, InputType.SELECT_CARD,
                 partial(self._Star_Wars_callback, side),
                 (n for n in self.discard_pile if self.cards[n].info.ops >= 1),
-                prompt=f'Pick a non-scoring card from the discard pile.'
+                prompt=f'Pick a non-scoring card from the discard pile for Event use immediately.'
             )
 
     def _North_Sea_Oil(self, side):
@@ -2489,6 +2555,8 @@ class Game:
 
     def _Terrorism(self, side):
         reps = 2 if 'Iranian_Hostage_Crisis' in self.basket[Side.USSR] and side == Side.USSR else 1
+        reps = len(self.hand[side.opp]) if len(
+            self.hand[side.opp]) <= reps else reps
 
         self.input_state = Game.Input(
             Side.NEUTRAL, InputType.SELECT_CARD,
