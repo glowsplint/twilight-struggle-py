@@ -434,7 +434,7 @@ s <eu|as|me|af|na|sa>   Displays the scoring state and country data for the give
             print(f'State of {region.name}:')
             for n in sorted(CountryInfo.REGION_ALL[region]):
                 print(self.game.map[n].get_state_str())
-            print('Score state currently unimplemented')
+            self.game.score(region, check_only=True)
 
     help_debug = '''
 dbg                                 Starts debugging mode.

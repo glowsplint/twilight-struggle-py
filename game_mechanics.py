@@ -211,6 +211,7 @@ class Game:
         ----------
         side : Side, optional
             Side of the winner - used only when holding scoring cards, by default Side.NEUTRAL
+            If side is Side.NEUTRAL, determine winner as the player with more VPs.
         '''
         self.stage_list.clear()
         if side != Side.NEUTRAL:
@@ -1472,7 +1473,20 @@ class Game:
         self.deal()  # turn marker advanced before dealing
         self.process_headline()
 
-    def score(self, region: MapRegion, presence_vps: int, domination_vps: int, control_vps: int):
+    def score(self, region: MapRegion, check_only=False):
+
+        if region == MapRegion.ASIA:
+            presence_vps, domination_vps, control_vps = 3, 7, 9
+        if region == MapRegion.EUROPE:
+            presence_vps, domination_vps, control_vps = 3, 7, 120
+        if region == MapRegion.MIDDLE_EAST:
+            presence_vps, domination_vps, control_vps = 3, 5, 7
+        if region == MapRegion.CENTRAL_AMERICA:
+            presence_vps, domination_vps, control_vps = 1, 3, 5
+        if region == MapRegion.SOUTH_AMERICA:
+            presence_vps, domination_vps, control_vps = 2, 5, 6
+        if region == MapRegion.AFRICA:
+            presence_vps, domination_vps, control_vps = 1, 4, 6
 
         if 'Formosan_Resolution' in self.basket[Side.US]:
             self.map['Taiwan'].info.battleground = True
@@ -1507,14 +1521,17 @@ class Game:
             elif country_count[s] > 0:
                 vps[s] += presence_vps
 
-        swing = vps[Side.USSR] * Side.USSR.vp_mult + \
-            vps[Side.US] * Side.US.vp_mult
-        self.change_vp(swing)
+        if not check_only:
+            swing = vps[Side.USSR] * Side.USSR.vp_mult + \
+                vps[Side.US] * Side.US.vp_mult
+            self.change_vp(swing)
+            print(f'{region.name} scores for {swing} VP')
+        else:
+            print(
+                f'USSR:US = {vps[Side.USSR]}:{vps[Side.US]}')
 
         if self.map['Taiwan'].info.battleground:
             self.map['Taiwan'].info.battleground = False
-
-        print(f'{region.name} scores for {swing} VP')
 
     '''
     Card functions will come here. We also create a card dictionary, which ties
@@ -1524,16 +1541,16 @@ class Game:
     '''
 
     def _Asia_Scoring(self, side):
-        self.score(MapRegion.ASIA, 3, 7, 9)
+        self.score(MapRegion.ASIA)
         if 'Shuttle_Diplomacy' in self.limbo:
             self.discard_pile.append('Shuttle_Diplomacy')
             self.limbo.clear()
 
     def _Europe_Scoring(self, side):
-        self.score(MapRegion.EUROPE, 3, 7, 120)
+        self.score(MapRegion.EUROPE)
 
     def _Middle_East_Scoring(self, side):
-        self.score(MapRegion.MIDDLE_EAST, 3, 5, 7)
+        self.score(MapRegion.MIDDLE_EAST)
         if 'Shuttle_Diplomacy' in self.limbo:
             self.discard_pile.append('Shuttle_Diplomacy')
             self.limbo.clear()
@@ -1940,7 +1957,7 @@ class Game:
         )
 
     def _Central_America_Scoring(self, side):
-        self.score(MapRegion.CENTRAL_AMERICA, 1, 3, 5)
+        self.score(MapRegion.CENTRAL_AMERICA)
 
     def _Southeast_Asia_Scoring(self, side):
         vps = [0, 0, 0]
@@ -2286,7 +2303,7 @@ class Game:
 
         option_function_mapping = {
             'Use card normally': partial(self.select_action, Side.US, card_name, grain_sales=True),
-            'Return card to USSR': partial(self.select_action, Side.US, 'Grain_Sales_to_Soviets', un_intervention=True)
+            'Return card to USSR': partial(self.select_action, Side.US, 'Grain_Sales_to_Soviets', is_event_resolved=True)
         }
 
         if 'UN_Intervention' in self.hand[Side.US] and self.cards[card_name].info.owner == Side.USSR:
@@ -2422,14 +2439,14 @@ class Game:
         self.change_vp(swing)
 
     def _Africa_Scoring(self, side):
-        self.score(MapRegion.AFRICA, 1, 4, 6)
+        self.score(MapRegion.AFRICA)
 
     def _One_Small_Step(self, side):
         if self.can_play_event(side, 'One_Small_Step'):
             self.change_space(side, 2)
 
     def _South_America_Scoring(self, side):
-        self.score(MapRegion.SOUTH_AMERICA, 2, 5, 6)
+        self.score(MapRegion.SOUTH_AMERICA)
 
     def _Che(self, side):
         ca_sa_af = chain(CountryInfo.REGION_ALL[MapRegion.CENTRAL_AMERICA],
@@ -2676,8 +2693,8 @@ class Game:
 
     def _Wargames(self, side):
         if self.can_play_event(side, 'Wargames'):
-            pass
-        pass
+            self.change_vp(6*side.opp.vp_mult)
+            self.terminate()
 
     def _Solidarity(self, side):
         if self.can_play_event(Side.US, 'Solidarity'):
