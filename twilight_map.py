@@ -517,15 +517,16 @@ class Country:
             return f'{self.info.name} [Superpower]'
         else:
             ctrl = self.control
-            stab_str = f'{self.info.name}[{self.info.stability}]'
+            bg_str = '\033[105mBG\033[0m ' if self.info.battleground else ''
+            stab_str = f'{self.info.name} {self.info.stability}'
             if ctrl == Side.US:
-                name_str = f'\033[104m{stab_str:23}\033[0m'
+                name_str = f'{bg_str:3}\033[104m{stab_str:23}\033[0m'
                 ctrl_str = f'[{ctrl.name} control]'
             elif ctrl == Side.USSR:
-                name_str = f'\033[101m{stab_str:23}\033[0m'
+                name_str = f'{bg_str:3}\033[101m{stab_str:23}\033[0m'
                 ctrl_str = f'[{ctrl.name} control]'
             else:
-                name_str = f'{stab_str:23}'
+                name_str = f'{bg_str:3}{stab_str:23}'
                 ctrl_str = ''
 
             return f'{name_str}US {self.influence[Side.US]}:{self.influence[Side.USSR]} USSR {ctrl_str}'

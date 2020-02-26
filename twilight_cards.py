@@ -1,7 +1,6 @@
 from twilight_map import MapRegion, CountryInfo
 from twilight_enums import Side, MapRegion, InputType, CardAction
 
-
 class CardInfo:
     '''
     Cards should be able to be used for:
@@ -75,7 +74,9 @@ class GameCards:
         return self.ALL[item]
 
 
+
 class Card():
+
     def __init__(self, name):
         self.info = CardInfo.ALL[name]
         self.is_playable = True

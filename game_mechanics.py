@@ -277,6 +277,8 @@ class Game:
         special_case = False
         for s in [Side.USSR, Side.US]:
             if self.space_track[s] >= 4 and self.space_track[s.opp] < 4:
+                self.stage_list.append(self.ar_complete)
+                self.stage_list.append(self.resolve_headline_order)
                 self.stage_list.append(partial(self.show_headline, s))
                 self.stage_list.append(partial(self.choose_headline, s))
                 self.stage_list.append(partial(self.show_headline, s.opp))

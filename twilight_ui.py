@@ -437,7 +437,6 @@ s turn                  Displays information on the current turn and action roun
                 'Milops': self.game.milops_track,
                 'Space': self.game.space_track,
                 'Spaced turns': self.game.spaced_turns,
-                'Extra turns': self.game.extra_turn,
                 'US Basket': self.game.basket[Side.US],
                 'USSR Basket': self.game.basket[Side.USSR],
                 'ARs this turn': (self.game.ars_by_turn[0][self.game.turn_track], self.game.ars_by_turn[1][self.game.turn_track])
