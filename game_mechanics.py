@@ -550,6 +550,8 @@ class Game:
         else:
             if card_name == 'The_China_Card' and side == Side.US and 'Formosan_Resolution' in self.basket[Side.US]:
                 self.basket[Side.US].remove('Formosan_Resolution')
+            if card_name == 'UN_Intervention' and 'U2_Incident' in self.basket[Side.USSR]:
+                self.change_vp(1)
             self.stage_list.append(
                 partial(self.select_action, side, card_name))
         return True
@@ -616,6 +618,11 @@ class Game:
         action = CardAction[action_name]
         card = self.cards[card_name]
         opp_event = (card.info.owner == side.opp)
+
+        if 'We_Will_Bury_You' in self.basket[Side.USSR]:
+            if card_name != 'UN_Intervention' and action == CardAction.PLAY_EVENT:
+                self.change_vp(3)
+            self.basket[Side.USSR].remove('We_Will_Bury_You')
 
         if action == CardAction.PLAY_EVENT:
 
@@ -912,12 +919,25 @@ class Game:
             prompt=prompt,
         )
 
-    def coup_dice_callback(self, name, side, ops, free, num: str):
+    def coup_dice_callback(self, name, side, ops, free, num: str, che=False):
         self.input_state.reps -= 1
+
+        if che:
+            before_us_inf = self.map[name].influence[Side.US]
+            ca_sa_af = chain(CountryInfo.REGION_ALL[MapRegion.CENTRAL_AMERICA],
+                             CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA],
+                             CountryInfo.REGION_ALL[MapRegion.AFRICA])
+
         self.map.coup(self, name, side, ops, int(num), free=free)
+
+        if che and self.map[name].influence[Side.US] < before_us_inf:
+            print('You are allowed a second coup from Che.')
+            self.card_operation_coup(Side.USSR, 'Che', restricted_list=[
+                n for n in ca_sa_af if not self.map[n].info.battleground], che=False)
+
         return True
 
-    def coup_callback(self, side: Side, effective_ops: int, card_name: str, country_name, free=False) -> bool:
+    def coup_callback(self, side: Side, effective_ops: int, card_name: str, country_name: str, free=False, che=False) -> bool:
         self.input_state.reps -= 1
 
         local_ops_modifier = 0
@@ -929,12 +949,12 @@ class Game:
         self.stage_list.append(partial(
             self.dice_stage,
             partial(self.coup_dice_callback, country_name, side,
-                    effective_ops + local_ops_modifier, free)
+                    effective_ops + local_ops_modifier, free, che=che)
         ))
 
         return True
 
-    def card_operation_coup(self, side: Side, card_name: str, restricted_list: Sequence[str] = None, free=False):
+    def card_operation_coup(self, side: Side, card_name: str, restricted_list: Sequence[str] = None, free=False, che=False):
         '''
         Stage when a player is given the opportunity to coup. Provides a list
         of countries which can be couped and waits for player input.
@@ -965,7 +985,8 @@ class Game:
         def choose_coup_country():
             self.input_state = Game.Input(
                 side, InputType.SELECT_COUNTRY,
-                partial(self.coup_callback, side, effective_ops, card_name),
+                partial(self.coup_callback, side,
+                        effective_ops, card_name, che=che),
                 (n for n in CountryInfo.ALL
                     if self.map.can_coup(self, n, side) and n in restricted_list),
                 prompt=f'Select a country to coup using operations from {card_name}.',
@@ -2065,7 +2086,7 @@ class Game:
 
     def _We_Will_Bury_You(self, side):
         self.change_defcon(-1)
-        pass
+        self.basket[Side.USSR].append('We_Will_Bury_You')
 
     def _Brezhnev_Doctrine(self, side):
         self.basket[Side.USSR].append('Brezhnev_Doctrine')
@@ -2149,7 +2170,8 @@ class Game:
 
     def _U2_Incident(self, side):
         self.basket[Side.USSR].append('U2_Incident')
-        pass
+        self.end_turn_stage_list.append(
+            partial(self.basket[Side.USSR].remove, 'U2_Incident'))
 
     def _OPEC(self, side):
         if self.can_play_event(Side.USSR, 'OPEC'):
@@ -2209,10 +2231,14 @@ class Game:
         # if received card is Side.USSR, then offer to use UN intervention if holding
 
         def use_un_intervention():
+            # the only exception where UN intervention is used out of place without calling card_callback
             self.stage_list.append(
                 partial(self.dispose_card, Side.US, 'UN_Intervention'))
             self.select_action(Side.US, card_name,
                                un_intervention=True, grain_sales=True)
+            if 'U2_Incident' in self.basket[Side.USSR]:
+                self.change_vp(1)
+                self.basket[Side.USSR].remove('U2_Incident')
 
         option_function_mapping = {
             'Use card normally': partial(self.select_action, Side.US, card_name, grain_sales=True),
@@ -2365,9 +2391,7 @@ class Game:
                          CountryInfo.REGION_ALL[MapRegion.AFRICA])
 
         self.card_operation_coup(Side.USSR, 'Che', restricted_list=[
-                                 n for n in ca_sa_af if not self.map[n].info.battleground])
-
-        pass
+                                 n for n in ca_sa_af if not self.map[n].info.battleground], che=True)
 
     def _Our_Man_In_Tehran_stage_2(self):
         self.draw_pile.extend(self.hand[Side.NEUTRAL])
