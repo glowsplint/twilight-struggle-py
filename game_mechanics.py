@@ -7,22 +7,30 @@ from twilight_map import GameMap, CountryInfo, Country
 from twilight_enums import Side, MapRegion, InputType, CardAction
 from twilight_cards import GameCards, CardInfo, Card
 
+
 class Game:
 
     class Default:
         ARS_BY_TURN = (None, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7)
         SPACE_ROLL_MAX = (3, 4, 3, 4, 3, 4, 3, 2)
         AR_ORDER = [Side.USSR, Side.US]
+        SCORING = {
+            MapRegion.ASIA: (3, 7, 9),
+            MapRegion.EUROPE: (3, 7, 120),
+            MapRegion.MIDDLE_EAST: (3, 5, 7),
+            MapRegion.CENTRAL_AMERICA: (1, 3, 5),
+            MapRegion.SOUTH_AMERICA: (2, 5, 6),
+            MapRegion.AFRICA: (1, 4, 6)
+        }
 
     def __init__(self):
 
         self.vp_track = 0
-
         self.turn_track = 0
         self.ar_track = 0
         self.ar_side = None
-        self.ars_by_turn : Tuple[Sequence[int], Sequence[int]] = ([], [])
-        self.ar_side_done : Sequence[bool] = [False, False]
+        self.ars_by_turn: Tuple[Sequence[int], Sequence[int]] = ([], [])
+        self.ar_side_done: Sequence[bool] = [False, False]
         self.defcon_track = 0
         self.milops_track = [0, 0]
         self.space_track = [0, 0]  # 0 is start, 1 is earth satellite etc
@@ -32,15 +40,14 @@ class Game:
         self.map = None
         self.cards = None
 
-        # interfacing with the UI
         self.input_state = None
         self.output_queue = [[], []]
 
-        self.hand = [[], [], []]
+        self.hand = [[], [], []]  # neutral hand necessary
         self.removed_pile = []
         self.discard_pile = []
         self.draw_pile = []
-        self.limbo = []  # 0 index strictly for shuttle_diplomacy
+        self.limbo = []  # strictly for shuttle_diplomacy
         self.basket = [[], []]
         self.headline_bin = ['', '']
         self.end_turn_stage_list = []
@@ -56,8 +63,9 @@ class Game:
         self.turn_track = 1
         self.ar_track = 0
         self.ar_side = Side.USSR
-        self.ars_by_turn = [list(Game.Default.ARS_BY_TURN), list(Game.Default.ARS_BY_TURN)]
-        self.ar_side_done : Sequence[bool] = [False, False]
+        self.ars_by_turn = [list(Game.Default.ARS_BY_TURN),
+                            list(Game.Default.ARS_BY_TURN)]
+        self.ar_side_done: Sequence[bool] = [False, False]
         self.defcon_track = 5
         self.milops_track = [0, 0]  # ussr first
         self.space_track = [0, 0]  # 0 is start, 1 is earth satellite etc
@@ -99,8 +107,6 @@ class Game:
         else:
             winner = 'USSR' if self.vp_track > 0 else 'US'
         print(f'{winner} victory!')
-
-    '''Output functions'''
 
     '''Here are functions used to manipulate the various tracks.'''
 
@@ -145,6 +151,7 @@ class Game:
         elif self.space_track[side] == 8:
             if self.space_track[side.opp] < 8:
                 self.change_vp(2 * y)
+            self.ars_by_turn[side][self.turn_track] = 8
 
     def change_vp(self, n: int):
         '''
@@ -266,20 +273,40 @@ class Game:
         Due to UI constraints, USSR player chooses first, then the US player.
         All choices are then displayed.
         '''
-        # TODO account for space race.
-        # must append triggers in backwards order
-        self.stage_list.append(self.ar_complete)
-        self.stage_list.append(self.resolve_headline_order)
-        self.stage_list.append(partial(self.choose_headline, Side.US))
-        self.stage_list.append(partial(self.choose_headline, Side.USSR))
+        special_case = False
+        for s in [Side.USSR, Side.US]:
+            if self.space_track[s] >= 4 and self.space_track[s.opp] < 4:
+                self.stage_list.append(partial(self.show_headline, s))
+                self.stage_list.append(partial(self.choose_headline, s))
+                self.stage_list.append(partial(self.show_headline, s.opp))
+                self.stage_list.append(partial(self.choose_headline, s.opp))
+                special_case = True
+                break
 
-        # continue
+        if not special_case:
+            self.stage_list.append(self.ar_complete)
+            self.stage_list.append(self.resolve_headline_order)
+            self.stage_list.append(partial(self.show_headline, Side.US))
+            self.stage_list.append(partial(self.show_headline, Side.USSR))
+            self.stage_list.append(partial(self.choose_headline, Side.US))
+            self.stage_list.append(partial(self.choose_headline, Side.USSR))
+
+    def show_headline(self, side: Side):
+        '''
+        Stage to show the headline to the other player.
+
+        Parameters
+        ----------
+        side : Side, optional
+            Side's headline is displayed
+        '''
+        print(
+            f'{side.toStr()} selected {self.headline_bin[side]} for headline.')
 
     def resolve_headline_order(self):
         '''
-        Stage to resolve the headline order.
+        Stage to trigger the headlines.
         '''
-
         ussr_hl = self.headline_bin[Side.USSR]
         us_hl = self.headline_bin[Side.US]
 
@@ -336,7 +363,8 @@ class Game:
                 # check if just ended headline or
                 # if AR should be incremented
                 self.ar_track += 1
-                self.ar_side_done = [not self.ars_remaining(s) for s in Game.Default.AR_ORDER]
+                self.ar_side_done = [not self.ars_remaining(
+                    s) for s in Game.Default.AR_ORDER]
                 self.ar_side = Game.Default.AR_ORDER[0]
                 if all(self.ar_side_done):
                     # End the turn since all players have no more ARs
@@ -946,16 +974,14 @@ class Game:
         self.stage_list.append(choose_coup_country)
 
     def space_dice_callback(self, side, num: str):
-
         self.input_state.reps -= 1
-
         curr_stage = self.space_track[side]
 
-        if int(num) <= Game.SPACE_ROLL_MAX[curr_stage]:
+        outcome = 'Success' if int(
+            num) <= Game.Default.SPACE_ROLL_MAX[curr_stage] else 'Failure'
+        if outcome == 'Success':
             self.change_space(side, 1)
-            print(f'Success with roll of {num}.')
-        else:
-            print(f'Failure with roll of {num}.')
+        print(f'{outcome} with roll of {num}.')
         self.spaced_turns[side] += 1
         return True
 
@@ -1158,7 +1184,7 @@ class Game:
             )
         # If you don't have suitable discards, then you can't play anything.
         else:
-            print("AR skipped due to lack of suitable cards.")
+            print('AR skipped due to lack of suitable cards.')
 
     def cuban_missile_remove(self, side: Side):
         '''
@@ -1289,6 +1315,30 @@ class Game:
 
     # need to make sure next_turn is only called after all extra rounds
     def end_of_turn(self):
+        # 2. Check for held scoring card (originally #2. but moved up to prevent held scoring cards)
+        def check_for_scoring_cards(self):
+            scoring_list = ['Asia_Scoring', 'Europe_Scoring', 'Middle_East_Scoring',
+                                            'Central_America_Scoring', 'Southeast_Asia_Scoring', 'Africa_Scoring', 'South_America_Scoring']
+            scoring_cards = [self.cards[y] for y in scoring_list]
+            if any(True for x in scoring_cards if x in self.hand[Side.US]):
+                self.terminate(Side.USSR)
+            elif any(True for x in scoring_cards if x in self.hand[Side.USSR]):
+                self.terminate(Side.USSR)
+
+        # -1. Check if any player may discard held cards
+        def space_discard(self):
+            # Will hardcode to prevent discarding The China Card via Eagle/Bear has landed
+            for s in [Side.USSR, Side.US]:
+                if self.space_track[s] >= 6 and self.space_track[s.opp] < 6:
+                    self.input_state = Game.Input(
+                        s, InputType.SELECT_CARD,
+                        partial(self.may_discard_callback, s),
+                        (n for n in self.hand[s] if n != 'The_China_Card'),
+                        prompt='You may discard a held card via Eagle/Bear has landed.',
+                        option_stop_early='Do not discard.'
+                    )
+                    break
+
         # 0. Clear all events that only last until the end of turn.
         def clear_baskets(self):
             for function in self.end_turn_stage_list:
@@ -1305,16 +1355,6 @@ class Game:
             for s in [Side.USSR, Side.US]:
                 swing += s.vp_mult * milops_vp_change[s]
             self.change_vp(swing)
-
-        # 2. Check for held scoring card
-        def check_for_scoring_cards(self):
-            scoring_list = ['Asia_Scoring', 'Europe_Scoring', 'Middle_East_Scoring',
-                                            'Central_America_Scoring', 'Southeast_Asia_Scoring', 'Africa_Scoring', 'South_America_Scoring']
-            scoring_cards = [self.cards[y] for y in scoring_list]
-            if any(True for x in scoring_cards if x in self.hand[Side.US]):
-                self.terminate(Side.USSR)
-            elif any(True for x in scoring_cards if x in self.hand[Side.USSR]):
-                self.terminate(Side.USSR)
 
         # 3. Flip China Card
         def flip_china_card(self):
@@ -1343,9 +1383,10 @@ class Game:
         # 8. Headline Phase
 
         # 9. Action Rounds (advance round marker) -- action rounds are not considered between turns
-        clear_baskets(self)
-        check_milops(self)
         check_for_scoring_cards(self)
+        clear_baskets(self)
+        space_discard(self)
+        check_milops(self)
         flip_china_card(self)
         advance_turn_marker(self)  # turn marker advanced before final scoring
         final_scoring(self)
@@ -1356,18 +1397,8 @@ class Game:
 
     def score(self, region: MapRegion, check_only=False):
 
-        if region == MapRegion.ASIA:
-            presence_vps, domination_vps, control_vps = 3, 7, 9
-        if region == MapRegion.EUROPE:
-            presence_vps, domination_vps, control_vps = 3, 7, 120
-        if region == MapRegion.MIDDLE_EAST:
-            presence_vps, domination_vps, control_vps = 3, 5, 7
-        if region == MapRegion.CENTRAL_AMERICA:
-            presence_vps, domination_vps, control_vps = 1, 3, 5
-        if region == MapRegion.SOUTH_AMERICA:
-            presence_vps, domination_vps, control_vps = 2, 5, 6
-        if region == MapRegion.AFRICA:
-            presence_vps, domination_vps, control_vps = 1, 4, 6
+        (presence_vps, domination_vps,
+         control_vps) = Game.Default.SCORING[region]
 
         if 'Formosan_Resolution' in self.basket[Side.US]:
             self.map['Taiwan'].info.battleground = True
@@ -1405,8 +1436,8 @@ class Game:
         if not check_only:
             swing = vps[Side.USSR] * Side.USSR.vp_mult + \
                 vps[Side.US] * Side.US.vp_mult
-            self.change_vp(swing)
             print(f'{region.name} scores for {swing} VP')
+            self.change_vp(swing)
         else:
             print(
                 f'USSR:US = {vps[Side.USSR]}:{vps[Side.US]}')
@@ -1849,8 +1880,8 @@ class Game:
             vps[Side.US] * Side.US.vp_mult
 
         swing += self.map['Thailand'].control.vp_mult
-        self.change_vp(swing)
         print(f'Southeast Asia scores for {swing} VP')
+        self.change_vp(swing)
 
     def _Arms_Race(self, side):
         if self.milops_track[side] > self.milops_track[side.opp]:
@@ -1894,7 +1925,7 @@ class Game:
 
         self.input_state = Game.Input(
             side, InputType.SELECT_CARD,
-            partial(self._Salt_Negotiations_callback, side, option_stop_early),
+            partial(self._Salt_Negotiations_callback, side, can_stop_now),
             (n for n in self.discard_pile if self.cards[n].info.ops >= 1),
             prompt=f'You may pick a non-scoring card from the discard pile.',
             option_stop_early=can_stop_now
@@ -2117,6 +2148,7 @@ class Game:
             self.basket[Side.USSR].append('Flower_Power')
 
     def _U2_Incident(self, side):
+        self.basket[Side.USSR].append('U2_Incident')
         pass
 
     def _OPEC(self, side):
@@ -2396,7 +2428,6 @@ class Game:
     def _North_Sea_Oil(self, side):
         self.basket[Side.US].append('North_Sea_Oil')
         self.ars_by_turn[Side.US][self.turn_track] = 8
-        pass
 
     def _The_Reformer(self, side):
         reps = 6 if self.vp_track > 0 else 4
@@ -2839,12 +2870,9 @@ class Game:
                 if input.side == Side.US or input.side == Side.USSR:
                     msg = f'{input.side} selected '
 
-
-
                 return Game.Output.Notification(
                     turn, ar, ar_side,
                 )
-
 
         def output_both(self, out):
             self.output_queue[Side.USSR].append(out)
