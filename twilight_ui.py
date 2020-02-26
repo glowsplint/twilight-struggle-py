@@ -133,7 +133,7 @@ quit            Exit the game.
             if self.auto_rng:
                 # automatically run rng
                 if self.game.input_state.side == Side.NEUTRAL:
-                    if not self.game.input_state.reps:
+                    if self.game.input_state.complete:
                         # done with the rng, continue on to the next stage
                         self.advance_game()
                         self.game_rollback = deepcopy(self.game)
@@ -145,7 +145,7 @@ quit            Exit the game.
                     continue
 
             # see if this stage is done
-            if not self.game.input_state.reps:
+            if self.game.input_state.complete:
 
                 if self.auto_commit:
                     self.advance_game()
@@ -530,7 +530,7 @@ dbg rollback                        Restores the state before debugging started.
                 print(f'Invalid move on line {i}:{line}')
                 break
             self.move(line)
-            if not self.input_state.reps:
+            if self.game.input_state.complete:
                 self.advance_game()
         print('Game loaded.')
         self.game_state_changed()
