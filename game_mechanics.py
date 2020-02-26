@@ -35,7 +35,6 @@ class Game:
         self.milops_track = [0, 0]
         self.space_track = [0, 0]  # 0 is start, 1 is earth satellite etc
         self.spaced_turns = [0, 0]
-        self.extra_turn = [False, False]
 
         self.map = None
         self.cards = None
@@ -70,7 +69,6 @@ class Game:
         self.milops_track = [0, 0]  # ussr first
         self.space_track = [0, 0]  # 0 is start, 1 is earth satellite etc
         self.spaced_turns = [0, 0]
-        self.extra_turn = [False, False]
         self.map = GameMap()
         self.cards = GameCards()
         self.handicap = handicap  # positive in favour of ussr
@@ -188,7 +186,7 @@ class Game:
         verb = 'improved' if n > 0 else 'degraded'
         print(f'DEFCON level {verb} to {self.defcon_track}.')
 
-    def change_milops(self, side, n: int):
+    def change_milops(self, side: Side, n: int):
         '''
         Changes the level of military operations (milops) for a given side. Keeps milops level between 0-5.
 
@@ -200,6 +198,9 @@ class Game:
             Number of levels to change by.
         '''
         self.milops_track[side] += min(n, 5 - self.milops_track[side])
+
+    def reset_milops(self):
+        self.milops_track = [0, 0]
 
     # Here, we have the game initialisation stages.
     def put_start_USSR(self):
@@ -362,7 +363,7 @@ class Game:
             if not self.ar_track or self.ar_side == len(Game.Default.AR_ORDER):
                 # check if just ended headline or
                 # if AR should be incremented
-                self.ar_track += 1
+                self.ar_track += 1  # ars increase from 0(HL), 1, 1.5, 2..
                 self.ar_side_done = [not self.ars_remaining(
                     s) for s in Game.Default.AR_ORDER]
                 self.ar_side = Game.Default.AR_ORDER[0]
@@ -541,7 +542,7 @@ class Game:
 
     def card_callback(self, side: Side, card_name: str):
         self.input_state.reps -= 1
-        if self.cards[card_name].info.type == 'Scoring':
+        if self.cards[card_name].info.card_type == 'Scoring':
             self.stage_list.append(
                 partial(self.resolve_card_action, side,
                         card_name, CardAction.PLAY_EVENT.name)
@@ -729,8 +730,8 @@ class Game:
             Side of the player who plays the China Card.
         '''
         receipient = self.hand[side.opp]
-        receipient.append('The China Card')
-        self.cards['The China Card'].is_playable = made_playable
+        receipient.append('The_China_Card')
+        self.cards['The_China_Card'].is_playable = made_playable
 
     def get_global_effective_ops(self, side: Side, raw_ops: int):
         '''
@@ -738,8 +739,7 @@ class Game:
         only global effects like Containment, Brezhnev_Doctrine and Red_Scare_Purge.
 
         Does not account for local effects like additional operations points from the use
-        of the China Card in Asia, or the use of operations points in SEA when Vietnam Revolts
-        is active.
+        of the China Card in Asia, or in SEA when Vietnam Revolts is active.
 
         Parameters
         ----------
@@ -1162,7 +1162,7 @@ class Game:
                           and self.get_global_effective_ops(side, self.cards[n].info.ops) >= 2]
 
         scoring_cards = [n for n in self.hand[side]
-                         if self.cards[n].info.type == 'Scoring']
+                         if self.cards[n].info.card_type == 'Scoring']
 
         # If we have as many scoring cards as action rounds, then we must play
         # a scoring card. Q/BT stays in basket.
@@ -1315,7 +1315,10 @@ class Game:
 
     # need to make sure next_turn is only called after all extra rounds
     def end_of_turn(self):
+
+        print('-------------------- End of turn --------------------')
         # 2. Check for held scoring card (originally #2. but moved up to prevent held scoring cards)
+
         def check_for_scoring_cards(self):
             scoring_list = ['Asia_Scoring', 'Europe_Scoring', 'Middle_East_Scoring',
                                             'Central_America_Scoring', 'Southeast_Asia_Scoring', 'Africa_Scoring', 'South_America_Scoring']
@@ -1325,7 +1328,7 @@ class Game:
             elif any(True for x in scoring_cards if x in self.hand[Side.USSR]):
                 self.terminate(Side.USSR)
 
-        # -1. Check if any player may discard held cards
+        # -1. Check if any player may discard held cards, also resets space turns
         def space_discard(self):
             # Will hardcode to prevent discarding The China Card via Eagle/Bear has landed
             for s in [Side.USSR, Side.US]:
@@ -1338,6 +1341,7 @@ class Game:
                         option_stop_early='Do not discard.'
                     )
                     break
+            self.spaced_turns = [0, 0]
 
         # 0. Clear all events that only last until the end of turn.
         def clear_baskets(self):
@@ -1355,6 +1359,7 @@ class Game:
             for s in [Side.USSR, Side.US]:
                 swing += s.vp_mult * milops_vp_change[s]
             self.change_vp(swing)
+            self.reset_milops()
 
         # 3. Flip China Card
         def flip_china_card(self):
@@ -1366,7 +1371,6 @@ class Game:
             self.ar_track = 0  # headline phase
 
         # 5. Final scoring (end T10)
-        # TODO: Add 1 VP for China Card holder
         def final_scoring(self):
             if self.turn_track == 10 and (self.ar_track in [15, 16, 17]):
                 self._Asia_Scoring()
@@ -1375,8 +1379,11 @@ class Game:
                 self._Central_America_Scoring()
                 self._South_America_Scoring()
                 self._Africa_Scoring()
+            for s in [Side.USSR, Side.US]:
+                if 'The_China_Card' in self.hand[s]:
+                    self.change_vp(1*s.vp_mult)
             print(f'Final scoring complete.')
-            # EndGame()
+            self.terminate()
 
         # 6. Increase DEFCON status
         # 7. Deal Cards -- written outside the next_turn function
@@ -1473,6 +1480,7 @@ class Game:
 
     def _Five_Year_Plan_callback(self, card_name: str):
         self.input_state.reps -= 1
+        print(f'{card_name} was selected by Five_Year_Plan.')
         if self.cards[card_name].info.owner == Side.US:
             # must append backwards!
             self.stage_list.append(
@@ -1935,14 +1943,6 @@ class Game:
         self.basket[Side.USSR].append('Bear_Trap')
 
     def _Summit_choices(self, side: Side):
-        '''
-        Allows the winner of the Summit roll to change the DEFCON level.
-
-        Parameters
-        ----------
-        side : Side
-            Side of the winner.
-        '''
         self.change_vp(2*side.vp_mult)
 
         option_function_mapping = {
@@ -2232,13 +2232,11 @@ class Game:
 
     def _Grain_Sales_to_Soviets(self, side):
         reps = len(self.hand[side.opp]) if len(self.hand[side.opp]) <= 1 else 1
-        viable_ussr_hand = self.hand[Side.USSR] if 'Grain_Sales_to_Soviets' not in self.hand[Side.USSR] else set(
-            self.hand[Side.USSR]) - set('Grain_Sales_to_Soviets')
 
         self.input_state = Game.Input(
             Side.NEUTRAL, InputType.SELECT_CARD,
             self._Grain_Sales_callback,
-            viable_ussr_hand,
+            (n for n in self.hand[Side.USSR] if n != 'Grain_Sales_to_Soviets'),
             prompt='Grain Sales to Soviets: US player randomly selects a card from USSR player\'s hand.',
             reps=reps,
         )
@@ -2389,7 +2387,7 @@ class Game:
             self.deal(first_side=Side.NEUTRAL)
 
             self.input_state = Game.Input(
-                side, InputType.SELECT_CARD,
+                Side.US, InputType.SELECT_CARD,
                 self._Our_Man_In_Tehran_callback,
                 (n for n in self.hand[Side.NEUTRAL]),
                 prompt=f'Our Man In Tehran: Discard any of these cards.'
@@ -2412,7 +2410,6 @@ class Game:
 
     def _Star_Wars_callback(self, card_name: str):
         self.input_state.reps -= 1
-        # TODO: reveal card to opponent
         self.trigger_event(Side.US, card_name)
         return True
 

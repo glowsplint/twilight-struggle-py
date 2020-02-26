@@ -428,8 +428,8 @@ s turn                  Displays information on the current turn and action roun
             # eventually needs to be ported to access PlayerView
             print('=== Game state ===')
             ar_output = 'Headline phase' if self.game.ar_track == 0 else 'AR' + \
-                str(self.game.ar_track // 2)
-            side = Side.USSR.toStr() if self.game.ar_track % 2 == 1 else Side.US.toStr()
+                str(self.game.ar_track)
+            side = self.game.ar_side.toStr()
 
             game_values = {
                 'VP': self.game.vp_track,
@@ -440,6 +440,7 @@ s turn                  Displays information on the current turn and action roun
                 'Extra turns': self.game.extra_turn,
                 'US Basket': self.game.basket[Side.US],
                 'USSR Basket': self.game.basket[Side.USSR],
+                'ARs this turn': (self.game.ars_by_turn[0][self.game.turn_track], self.game.ars_by_turn[1][self.game.turn_track])
             }
 
             print(f'T{self.game.turn_track} {ar_output}, {side}\'s turn.')

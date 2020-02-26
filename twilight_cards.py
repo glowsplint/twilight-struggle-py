@@ -16,14 +16,14 @@ class CardInfo:
     ALL = dict()
     index = dict()
 
-    def __init__(self, name='', type='', stage='', card_index=0,
+    def __init__(self, name='', card_type='', stage='', card_index=0,
                  optional_card=False, ops=0,
                  event_text='', scoring_region='', may_be_held=True,
                  owner='NEUTRAL', remove_if_used_as_event=False,
                  resolve_headline_first=False, can_headline=True,
                  **kwargs):
         self.name = name
-        self.type = type
+        self.card_type = card_type
         self.stage = stage
         self.card_index = card_index
         self.ops = ops
@@ -95,7 +95,7 @@ class Card():
 # --
 Asia_Scoring = {
     'name': 'Asia_Scoring',
-    'type': 'Scoring',
+    'card_type': 'Scoring',
     'stage': 'Early War',
     'card_index': 1,
     'scoring_region': 'Asia',
@@ -106,7 +106,7 @@ Asia_Scoring = {
 
 Europe_Scoring = {
     'name': 'Europe_Scoring',
-    'type': 'Scoring',
+    'card_type': 'Scoring',
     'stage': 'Early War',
     'card_index': 2,
     'scoring_region': 'Europe',
@@ -117,7 +117,7 @@ Europe_Scoring = {
 
 Middle_East_Scoring = {
     'name': 'Middle_East_Scoring',
-    'type': 'Scoring',
+    'card_type': 'Scoring',
     'stage': 'Early War',
     'card_index': 3,
     'scoring_region': 'Middle East',
@@ -128,7 +128,7 @@ Middle_East_Scoring = {
 
 Duck_and_Cover = {
     'name': 'Duck_and_Cover',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 4,
     'ops': 3,
@@ -138,7 +138,7 @@ Duck_and_Cover = {
 
 Five_Year_Plan = {
     'name': 'Five_Year_Plan',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 5,
     'ops': 3,
@@ -148,7 +148,7 @@ Five_Year_Plan = {
 
 The_China_Card = {
     'name': 'The_China_Card',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 6,
     'ops': 4,
@@ -159,7 +159,7 @@ The_China_Card = {
 
 Socialist_Governments = {
     'name': 'Socialist_Governments',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 7,
     'ops': 3,
@@ -169,7 +169,7 @@ Socialist_Governments = {
 
 Fidel = {
     'name': 'Fidel',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 8,
     'ops': 2,
@@ -181,7 +181,7 @@ Fidel = {
 
 Vietnam_Revolts = {
     'name': 'Vietnam_Revolts',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 9,
     'ops': 2,
@@ -193,7 +193,7 @@ Vietnam_Revolts = {
 
 Blockade = {
     'name': 'Blockade',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 10,
     'ops': 1,
@@ -205,7 +205,7 @@ Blockade = {
 
 Korean_War = {
     'name': 'Korean_War',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 11,
     'ops': 2,
@@ -217,7 +217,7 @@ Korean_War = {
 
 Romanian_Abdication = {
     'name': 'Romanian_Abdication',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 12,
     'ops': 1,
@@ -229,7 +229,7 @@ Romanian_Abdication = {
 
 Arab_Israeli_War = {
     'name': 'Arab_Israeli_War',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 13,
     'ops': 2,
@@ -240,7 +240,7 @@ Arab_Israeli_War = {
 
 COMECON = {
     'name': 'COMECON',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 14,
     'ops': 3,
@@ -252,7 +252,7 @@ COMECON = {
 
 Nasser = {
     'name': 'Nasser',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 15,
     'ops': 1,
@@ -264,7 +264,7 @@ Nasser = {
 
 Warsaw_Pact_Formed = {
     'name': 'Warsaw_Pact_Formed',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 16,
     'ops': 3,
@@ -276,7 +276,7 @@ Warsaw_Pact_Formed = {
 
 De_Gaulle_Leads_France = {
     'name': 'De_Gaulle_Leads_France',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 17,
     'ops': 3,
@@ -288,7 +288,7 @@ De_Gaulle_Leads_France = {
 
 Captured_Nazi_Scientist = {
     'name': 'Captured_Nazi_Scientist',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 18,
     'ops': 1,
@@ -300,7 +300,7 @@ Captured_Nazi_Scientist = {
 
 Truman_Doctrine = {
     'name': 'Truman_Doctrine',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 19,
     'ops': 1,
@@ -312,7 +312,7 @@ Truman_Doctrine = {
 
 Olympic_Games = {
     'name': 'Olympic_Games',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 20,
     'ops': 2,
@@ -323,7 +323,7 @@ Olympic_Games = {
 
 NATO = {
     'name': 'NATO',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 21,
     'ops': 4,
@@ -335,7 +335,7 @@ NATO = {
 
 Independent_Reds = {
     'name': 'Independent_Reds',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 22,
     'ops': 2,
@@ -347,7 +347,7 @@ Independent_Reds = {
 
 Marshall_Plan = {
     'name': 'Marshall_Plan',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 23,
     'ops': 4,
@@ -359,7 +359,7 @@ Marshall_Plan = {
 
 Indo_Pakistani_War = {
     'name': 'Indo_Pakistani_War',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 24,
     'ops': 2,
@@ -370,7 +370,7 @@ Indo_Pakistani_War = {
 
 Containment = {
     'name': 'Containment',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 25,
     'ops': 3,
@@ -382,7 +382,7 @@ Containment = {
 
 CIA_Created = {
     'name': 'CIA_Created',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 26,
     'ops': 1,
@@ -394,7 +394,7 @@ CIA_Created = {
 
 US_Japan_Mutual_Defense_Pact = {
     'name': 'US_Japan_Mutual_Defense_Pact',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 27,
     'ops': 4,
@@ -406,7 +406,7 @@ US_Japan_Mutual_Defense_Pact = {
 
 Suez_Crisis = {
     'name': 'Suez_Crisis',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 28,
     'ops': 3,
@@ -418,7 +418,7 @@ Suez_Crisis = {
 
 East_European_Unrest = {
     'name': 'East_European_Unrest',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 29,
     'ops': 3,
@@ -429,7 +429,7 @@ East_European_Unrest = {
 
 Decolonization = {
     'name': 'Decolonization',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 30,
     'ops': 2,
@@ -440,7 +440,7 @@ Decolonization = {
 
 Red_Scare_Purge = {
     'name': 'Red_Scare_Purge',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 31,
     'ops': 4,
@@ -451,7 +451,7 @@ Red_Scare_Purge = {
 
 UN_Intervention = {
     'name': 'UN_Intervention',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 32,
     'ops': 1,
@@ -463,7 +463,7 @@ UN_Intervention = {
 
 De_Stalinization = {
     'name': 'De_Stalinization',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 33,
     'ops': 3,
@@ -475,7 +475,7 @@ De_Stalinization = {
 
 Nuclear_Test_Ban = {
     'name': 'Nuclear_Test_Ban',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 34,
     'ops': 4,
@@ -486,7 +486,7 @@ Nuclear_Test_Ban = {
 
 Formosan_Resolution = {
     'name': 'Formosan_Resolution',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 35,
     'ops': 2,
@@ -498,7 +498,7 @@ Formosan_Resolution = {
 
 Defectors = {
     'name': 'Defectors',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 103,
     'ops': 2,
@@ -511,7 +511,7 @@ Defectors = {
 # -- OPTIONAL
 The_Cambridge_Five = {
     'name': 'The_Cambridge_Five',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 104,
     'optional_card': True,
@@ -524,7 +524,7 @@ The_Cambridge_Five = {
 # -- OPTIONAL
 Special_Relationship = {
     'name': 'Special_Relationship',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 105,
     'optional_card': True,
@@ -537,7 +537,7 @@ Special_Relationship = {
 # -- OPTIONAL
 NORAD = {
     'name': 'NORAD',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Early War',
     'card_index': 106,
     'optional_card': True,
@@ -556,7 +556,7 @@ NORAD = {
 
 Brush_War = {
     'name': 'Brush_War',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 36,
     'ops': 3,
@@ -567,7 +567,7 @@ Brush_War = {
 
 Central_America_Scoring = {
     'name': 'Central_America_Scoring',
-    'type': 'Scoring',
+    'card_type': 'Scoring',
     'stage': 'Mid War',
     'card_index': 37,
     'scoring_region': 'Central America',
@@ -578,7 +578,7 @@ Central_America_Scoring = {
 
 Southeast_Asia_Scoring = {
     'name': 'Southeast_Asia_Scoring',
-    'type': 'Scoring',
+    'card_type': 'Scoring',
     'stage': 'Mid War',
     'card_index': 38,
     'may_be_held': False,
@@ -590,7 +590,7 @@ Southeast_Asia_Scoring = {
 
 Arms_Race = {
     'name': 'Arms_Race',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 39,
     'ops': 3,
@@ -601,7 +601,7 @@ Arms_Race = {
 
 Cuban_Missile_Crisis = {
     'name': 'Cuban_Missile_Crisis',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 40,
     'ops': 3,
@@ -613,7 +613,7 @@ Cuban_Missile_Crisis = {
 
 Nuclear_Subs = {
     'name': 'Nuclear_Subs',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 41,
     'ops': 2,
@@ -625,7 +625,7 @@ Nuclear_Subs = {
 
 Quagmire = {
     'name': 'Quagmire',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 42,
     'ops': 3,
@@ -637,7 +637,7 @@ Quagmire = {
 
 Salt_Negotiations = {
     'name': 'Salt_Negotiations',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 43,
     'ops': 3,
@@ -649,7 +649,7 @@ Salt_Negotiations = {
 
 Bear_Trap = {
     'name': 'Bear_Trap',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 44,
     'ops': 3,
@@ -661,7 +661,7 @@ Bear_Trap = {
 
 Summit = {
     'name': 'Summit',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 45,
     'ops': 1,
@@ -672,7 +672,7 @@ Summit = {
 
 How_I_Learned_to_Stop_Worrying = {
     'name': 'How_I_Learned_to_Stop_Worrying',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 46,
     'ops': 2,
@@ -684,7 +684,7 @@ How_I_Learned_to_Stop_Worrying = {
 
 Junta = {
     'name': 'Junta',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 47,
     'ops': 2,
@@ -695,7 +695,7 @@ Junta = {
 
 Kitchen_Debates = {
     'name': 'Kitchen_Debates',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 48,
     'ops': 1,
@@ -707,7 +707,7 @@ Kitchen_Debates = {
 
 Missile_Envy = {
     'name': 'Missile_Envy',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 49,
     'ops': 2,
@@ -718,7 +718,7 @@ Missile_Envy = {
 
 We_Will_Bury_You = {
     'name': 'We_Will_Bury_You',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 50,
     'ops': 4,
@@ -730,7 +730,7 @@ We_Will_Bury_You = {
 
 Brezhnev_Doctrine = {
     'name': 'Brezhnev_Doctrine',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 51,
     'ops': 3,
@@ -742,7 +742,7 @@ Brezhnev_Doctrine = {
 
 Portuguese_Empire_Crumbles = {
     'name': 'Portuguese_Empire_Crumbles',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 52,
     'ops': 2,
@@ -754,7 +754,7 @@ Portuguese_Empire_Crumbles = {
 
 South_African_Unrest = {
     'name': 'South_African_Unrest',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 53,
     'ops': 2,
@@ -765,7 +765,7 @@ South_African_Unrest = {
 
 Allende = {
     'name': 'Allende',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 54,
     'ops': 1,
@@ -777,7 +777,7 @@ Allende = {
 
 Willy_Brandt = {
     'name': 'Willy_Brandt',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 55,
     'ops': 2,
@@ -789,7 +789,7 @@ Willy_Brandt = {
 
 Muslim_Revolution = {
     'name': 'Muslim_Revolution',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 56,
     'ops': 4,
@@ -800,7 +800,7 @@ Muslim_Revolution = {
 
 ABM_Treaty = {
     'name': 'ABM_Treaty',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 57,
     'ops': 4,
@@ -811,7 +811,7 @@ ABM_Treaty = {
 
 Cultural_Revolution = {
     'name': 'Cultural_Revolution',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 58,
     'ops': 3,
@@ -823,7 +823,7 @@ Cultural_Revolution = {
 
 Flower_Power = {
     'name': 'Flower_Power',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 59,
     'ops': 4,
@@ -835,7 +835,7 @@ Flower_Power = {
 
 U2_Incident = {
     'name': 'U2_Incident',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 60,
     'ops': 3,
@@ -847,7 +847,7 @@ U2_Incident = {
 
 OPEC = {
     'name': 'OPEC',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 61,
     'ops': 3,
@@ -858,7 +858,7 @@ OPEC = {
 
 Lone_Gunman = {
     'name': 'Lone_Gunman',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 62,
     'ops': 1,
@@ -870,7 +870,7 @@ Lone_Gunman = {
 
 Colonial_Rear_Guards = {
     'name': 'Colonial_Rear_Guards',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 63,
     'ops': 2,
@@ -881,7 +881,7 @@ Colonial_Rear_Guards = {
 
 Panama_Canal_Returned = {
     'name': 'Panama_Canal_Returned',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 64,
     'ops': 1,
@@ -893,7 +893,7 @@ Panama_Canal_Returned = {
 
 Camp_David_Accords = {
     'name': 'Camp_David_Accords',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 65,
     'ops': 2,
@@ -905,7 +905,7 @@ Camp_David_Accords = {
 
 Puppet_Governments = {
     'name': 'Puppet_Governments',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 66,
     'ops': 2,
@@ -917,7 +917,7 @@ Puppet_Governments = {
 
 Grain_Sales_to_Soviets = {
     'name': 'Grain_Sales_to_Soviets',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 67,
     'ops': 2,
@@ -928,7 +928,7 @@ Grain_Sales_to_Soviets = {
 
 John_Paul_II_Elected_Pope = {
     'name': 'John_Paul_II_Elected_Pope',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 68,
     'ops': 2,
@@ -940,7 +940,7 @@ John_Paul_II_Elected_Pope = {
 
 Latin_American_Death_Squads = {
     'name': 'Latin_American_Death_Squads',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 69,
     'ops': 2,
@@ -951,7 +951,7 @@ Latin_American_Death_Squads = {
 
 OAS_Founded = {
     'name': 'OAS_Founded',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 70,
     'ops': 1,
@@ -963,7 +963,7 @@ OAS_Founded = {
 
 Nixon_Plays_The_China_Card = {
     'name': 'Nixon_Plays_The_China_Card',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 71,
     'ops': 2,
@@ -975,7 +975,7 @@ Nixon_Plays_The_China_Card = {
 
 Sadat_Expels_Soviets = {
     'name': 'Sadat_Expels_Soviets',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 72,
     'ops': 1,
@@ -987,7 +987,7 @@ Sadat_Expels_Soviets = {
 
 Shuttle_Diplomacy = {
     'name': 'Shuttle_Diplomacy',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 73,
     'ops': 3,
@@ -998,7 +998,7 @@ Shuttle_Diplomacy = {
 
 The_Voice_Of_America = {
     'name': 'The_Voice_Of_America',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 74,
     'ops': 2,
@@ -1009,7 +1009,7 @@ The_Voice_Of_America = {
 
 Liberation_Theology = {
     'name': 'Liberation_Theology',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 75,
     'ops': 2,
@@ -1020,7 +1020,7 @@ Liberation_Theology = {
 
 Ussuri_River_Skirmish = {
     'name': 'Ussuri_River_Skirmish',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 76,
     'ops': 3,
@@ -1032,7 +1032,7 @@ Ussuri_River_Skirmish = {
 
 Ask_Not_What_Your_Country_Can_Do_For_You = {
     'name': 'Ask_Not_What_Your_Country_Can_Do_For_You',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 77,
     'ops': 3,
@@ -1044,7 +1044,7 @@ Ask_Not_What_Your_Country_Can_Do_For_You = {
 
 Alliance_for_Progress = {
     'name': 'Alliance_for_Progress',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 78,
     'ops': 3,
@@ -1056,7 +1056,7 @@ Alliance_for_Progress = {
 
 Africa_Scoring = {
     'name': 'Africa_Scoring',
-    'type': 'Scoring',
+    'card_type': 'Scoring',
     'stage': 'Mid War',
     'card_index': 79,
     'scoring_region': 'Africa',
@@ -1067,7 +1067,7 @@ Africa_Scoring = {
 
 One_Small_Step = {
     'name': 'One_Small_Step',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 80,
     'ops': 2,
@@ -1078,7 +1078,7 @@ One_Small_Step = {
 
 South_America_Scoring = {
     'name': 'South_America_Scoring',
-    'type': 'Scoring',
+    'card_type': 'Scoring',
     'stage': 'Mid War',
     'card_index': 81,
     'scoring_region': 'South America',
@@ -1090,7 +1090,7 @@ South_America_Scoring = {
 # -- OPTIONAL
 Che = {
     'name': 'Che',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 107,
     'optional_card': True,
@@ -1103,7 +1103,7 @@ Che = {
 # -- OPTIONAL
 Our_Man_In_Tehran = {
     'name': 'Our_Man_In_Tehran',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Mid War',
     'card_index': 108,
     'optional_card': True,
@@ -1121,7 +1121,7 @@ Our_Man_In_Tehran = {
 
 Iranian_Hostage_Crisis = {
     'name': 'Iranian_Hostage_Crisis',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Late War',
     'card_index': 82,
     'ops': 3,
@@ -1133,7 +1133,7 @@ Iranian_Hostage_Crisis = {
 
 The_Iron_Lady = {
     'name': 'The_Iron_Lady',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Late War',
     'card_index': 83,
     'ops': 3,
@@ -1145,7 +1145,7 @@ The_Iron_Lady = {
 
 Reagan_Bombs_Libya = {
     'name': 'Reagan_Bombs_Libya',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Late War',
     'card_index': 84,
     'ops': 2,
@@ -1157,7 +1157,7 @@ Reagan_Bombs_Libya = {
 
 Star_Wars = {
     'name': 'Star_Wars',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Late War',
     'card_index': 85,
     'ops': 2,
@@ -1169,7 +1169,7 @@ Star_Wars = {
 
 North_Sea_Oil = {
     'name': 'North_Sea_Oil',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Late War',
     'card_index': 86,
     'ops': 3,
@@ -1181,7 +1181,7 @@ North_Sea_Oil = {
 
 The_Reformer = {
     'name': 'The_Reformer',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Late War',
     'card_index': 87,
     'ops': 3,
@@ -1193,7 +1193,7 @@ The_Reformer = {
 
 Marine_Barracks_Bombing = {
     'name': 'Marine_Barracks_Bombing',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Late War',
     'card_index': 88,
     'ops': 2,
@@ -1205,7 +1205,7 @@ Marine_Barracks_Bombing = {
 
 Soviets_Shoot_Down_KAL_007 = {
     'name': 'Soviets_Shoot_Down_KAL_007',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Late War',
     'card_index': 89,
     'ops': 4,
@@ -1217,7 +1217,7 @@ Soviets_Shoot_Down_KAL_007 = {
 
 Glasnost = {
     'name': 'Glasnost',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Late War',
     'card_index': 90,
     'ops': 4,
@@ -1229,7 +1229,7 @@ Glasnost = {
 
 Ortega_Elected_in_Nicaragua = {
     'name': 'Ortega_Elected_in_Nicaragua',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Late War',
     'card_index': 91,
     'ops': 2,
@@ -1241,7 +1241,7 @@ Ortega_Elected_in_Nicaragua = {
 
 Terrorism = {
     'name': 'Terrorism',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Late War',
     'card_index': 92,
     'ops': 2,
@@ -1252,7 +1252,7 @@ Terrorism = {
 
 Iran_Contra_Scandal = {
     'name': 'Iran_Contra_Scandal',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Late War',
     'card_index': 93,
     'ops': 2,
@@ -1264,7 +1264,7 @@ Iran_Contra_Scandal = {
 
 Chernobyl = {
     'name': 'Chernobyl',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Late War',
     'card_index': 94,
     'ops': 3,
@@ -1276,7 +1276,7 @@ Chernobyl = {
 
 Latin_American_Debt_Crisis = {
     'name': 'Latin_American_Debt_Crisis',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Late War',
     'card_index': 95,
     'ops': 2,
@@ -1288,7 +1288,7 @@ Latin_American_Debt_Crisis = {
 
 Tear_Down_This_Wall = {
     'name': 'Tear_Down_This_Wall',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Late War',
     'card_index': 96,
     'ops': 3,
@@ -1300,7 +1300,7 @@ Tear_Down_This_Wall = {
 
 An_Evil_Empire = {
     'name': 'An_Evil_Empire',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Late War',
     'card_index': 97,
     'ops': 3,
@@ -1312,7 +1312,7 @@ An_Evil_Empire = {
 
 Aldrich_Ames_Remix = {
     'name': 'Aldrich_Ames_Remix',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Late War',
     'card_index': 98,
     'ops': 3,
@@ -1324,7 +1324,7 @@ Aldrich_Ames_Remix = {
 
 Pershing_II_Deployed = {
     'name': 'Pershing_II_Deployed',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Late War',
     'card_index': 99,
     'ops': 3,
@@ -1336,7 +1336,7 @@ Pershing_II_Deployed = {
 
 Wargames = {
     'name': 'Wargames',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Late War',
     'card_index': 100,
     'ops': 4,
@@ -1348,7 +1348,7 @@ Wargames = {
 
 Solidarity = {
     'name': 'Solidarity',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Late War',
     'card_index': 101,
     'ops': 2,
@@ -1360,7 +1360,7 @@ Solidarity = {
 
 Iran_Iraq_War = {
     'name': 'Iran_Iraq_War',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Late War',
     'card_index': 102,
     'ops': 2,
@@ -1373,7 +1373,7 @@ Iran_Iraq_War = {
 # -- OPTIONAL
 Yuri_and_Samantha = {
     'name': 'Yuri_and_Samantha',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Late War',
     'card_index': 109,
     'optional_card': True,
@@ -1387,7 +1387,7 @@ Yuri_and_Samantha = {
 # -- OPTIONAL
 AWACS_Sale_to_Saudis = {
     'name': 'AWACS_Sale_to_Saudis',
-    'type': 'Event',
+    'card_type': 'Event',
     'stage': 'Late War',
     'card_index': 110,
     'optional_card': True,
@@ -1400,7 +1400,7 @@ AWACS_Sale_to_Saudis = {
 
 Blank_1_Op_Card = {
     'name': 'Blank_1_Op_Card',
-    'type': 'Template',
+    'card_type': 'Template',
     'stage': 'Template',
     'card_index': 150,
     'optional_card': False,
@@ -1413,7 +1413,7 @@ Blank_1_Op_Card = {
 
 Blank_2_Op_Card = {
     'name': 'Blank_2_Op_Card',
-    'type': 'Template',
+    'card_type': 'Template',
     'stage': 'Template',
     'card_index': 151,
     'optional_card': False,
@@ -1426,7 +1426,7 @@ Blank_2_Op_Card = {
 
 Blank_3_Op_Card = {
     'name': 'Blank_3_Op_Card',
-    'type': 'Template',
+    'card_type': 'Template',
     'stage': 'Template',
     'card_index': 152,
     'optional_card': False,
@@ -1439,7 +1439,7 @@ Blank_3_Op_Card = {
 
 Blank_4_Op_Card = {
     'name': 'Blank_4_Op_Card',
-    'type': 'Template',
+    'card_type': 'Template',
     'stage': 'Template',
     'card_index': 153,
     'optional_card': False,
