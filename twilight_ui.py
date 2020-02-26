@@ -33,7 +33,8 @@ quit            Exit the game.
     ussr_prompt = '----- USSR Player: -----'
     us_prompt = '----- US Player: -----'
     rng_prompt = '----- RNG: -----'
-    left_margin = 25
+    left_margin_big = 25
+    left_margin_small = 15
 
     def __init__(self):
         self.game_lookahead = None
@@ -390,10 +391,10 @@ c dec           Returns the number of cards in the draw deck.
                 print(f'Displaying information on card {comd}:')
                 for k, v in items:
                     v = wrap(str(v), width=110)
-                    indent = '\n'+(UI.left_margin+1)*' '
+                    indent = '\n'+(UI.left_margin_big+1)*' '
                     v = indent.join(v)
                     if str(v):
-                        print(f'{k:>{UI.left_margin}} {v}')
+                        print(f'{k:>{UI.left_margin_big}} {v}')
 
             if comd.isdigit():
                 if int(comd) in CardInfo.index.keys():
@@ -414,6 +415,7 @@ c dec           Returns the number of cards in the draw deck.
 
     help_state = '''
 s <eu|as|me|af|na|sa>   Displays the scoring state and country data for the given region.
+s turn                  Displays information on the current turn and action round
 '''
 
     def parse_state(self, comd):
@@ -423,9 +425,27 @@ s <eu|as|me|af|na|sa>   Displays the scoring state and country data for the give
             return
 
         if comd == '':
+            # eventually needs to be ported to access PlayerView
             print('=== Game state ===')
-            print(f'VP status: {self.game.vp_track}')
-            print('Unimplemented')
+            ar_output = 'Headline phase' if self.game.ar_track == 0 else 'AR' + \
+                str(self.game.ar_track // 2)
+            side = Side.USSR.toStr() if self.game.ar_track % 2 == 1 else Side.US.toStr()
+
+            game_values = {
+                'VP': self.game.vp_track,
+                'DEFCON': self.game.defcon_track,
+                'Milops': self.game.milops_track,
+                'Space': self.game.space_track,
+                'Spaced turns': self.game.spaced_turns,
+                'Extra turns': self.game.extra_turn,
+                'US Basket': self.game.basket[Side.US],
+                'USSR Basket': self.game.basket[Side.USSR],
+            }
+
+            print(f'T{self.game.turn_track} {ar_output}, {side}\'s turn.')
+            for k, v in game_values.items():
+                print(f'{k:>{UI.left_margin_small}} {v}')
+
         elif comd == '?':
             print(UI.help_state)
         else:
@@ -434,7 +454,7 @@ s <eu|as|me|af|na|sa>   Displays the scoring state and country data for the give
             print(f'State of {region.name}:')
             for n in sorted(CountryInfo.REGION_ALL[region]):
                 print(self.game.map[n].get_state_str())
-            print('Score state currently unimplemented')
+            self.game.score(region, check_only=True)
 
     help_debug = '''
 dbg                                 Starts debugging mode.
