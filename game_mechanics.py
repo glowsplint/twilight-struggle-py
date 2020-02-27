@@ -724,7 +724,7 @@ class Game:
         card_name : str
             String representation of the card.
         '''
-        Card.ALL[card_name].use_event(self, side)
+        self.cards[card_name].use_event(self, side)
 
     '''
     Here we have different stages for card uses. These include the use of influence,
@@ -1265,16 +1265,17 @@ class Game:
     def end_of_turn(self):
 
         print('-------------------- End of turn --------------------')
-        # 2. Check for held scoring card (originally #2. but moved up to prevent held scoring cards)
+        # -2. Check for held scoring card (originally #2. but moved up to prevent held scoring cards)
 
         def check_for_scoring_cards(self):
             scoring_list = ['Asia_Scoring', 'Europe_Scoring', 'Middle_East_Scoring',
-                                            'Central_America_Scoring', 'Southeast_Asia_Scoring', 'Africa_Scoring', 'South_America_Scoring']
+                            'Central_America_Scoring', 'Southeast_Asia_Scoring',
+                            'Africa_Scoring', 'South_America_Scoring']
             scoring_cards = [self.cards[y] for y in scoring_list]
             if any(True for x in scoring_cards if x in self.hand[Side.US]):
                 self.terminate(Side.USSR)
             elif any(True for x in scoring_cards if x in self.hand[Side.USSR]):
-                self.terminate(Side.USSR)
+                self.terminate(Side.US)
 
         # -1. Check if any player may discard held cards, also resets space turns
         def space_discard(self):
@@ -1299,7 +1300,6 @@ class Game:
 
         # 1. Check milops
         def check_milops(self):
-
             milops_vp_change = [
                 min(milops - self.defcon_track, 0) for milops in self.milops_track
             ]
@@ -1329,7 +1329,7 @@ class Game:
                 self._Africa_Scoring()
             for s in [Side.USSR, Side.US]:
                 if 'The_China_Card' in self.hand[s]:
-                    self.change_vp(1*s.vp_mult)
+                    self.change_vp(s.vp_mult)
             print(f'Final scoring complete.')
             self.terminate()
 

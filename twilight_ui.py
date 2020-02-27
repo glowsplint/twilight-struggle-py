@@ -36,6 +36,7 @@ quit            Exit the game.
     rng_prompt = '----- RNG: -----'
     left_margin_big = 25
     left_margin_small = 15
+    event_text_width = 100
 
     def __init__(self):
         self.game_lookahead = None
@@ -384,22 +385,25 @@ c dec           Returns the number of cards in the draw deck.
             ambiguous = False
 
             def _print_card_info(comd, text: bool = True):
-                if not text:
-                    items = Card.INDEX[int(comd)].__dict__.items()
-                else:
-                    items = Card.ALL[matched].__dict__.items()
+                card = Card.INDEX[int(comd)] if not text else Card.ALL[matched]
+
+                keys = ['name', 'card_index', 'card_type', 'stage', 'optional', 'ops', 'owner',
+                        'can_headline', 'scoring_region', 'event_text', 'may_be_held', 'event_unique']
 
                 print(f'Displaying information on card {comd}:')
-                for k, v in items:
-                    v = wrap(str(v), width=110)
+                for key in keys:
+                    value = getattr(card, key)
+                    value = wrap(str(value), width=UI.event_text_width)
                     indent = '\n'+(UI.left_margin_big+1)*' '
-                    v = indent.join(v)
-                    if str(v):
-                        print(f'{k:>{UI.left_margin_big}} {v}')
+                    value = indent.join(value)
+                    if str(value):
+                        print(f'{key:>{UI.left_margin_big}} {value}')
 
             if comd.isdigit():
                 if int(comd) in Card.INDEX.keys():
                     _print_card_info(comd, text=False)
+                else:
+                    print(f'Card {comd} not found!')
             else:
                 for opt in Card.ALL.keys():
                     if opt.lower().startswith(comd):

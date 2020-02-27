@@ -2,7 +2,6 @@ import math
 
 from functools import partial
 from itertools import chain
-from abc import ABC, abstractmethod
 
 from twilight_input_output import Input
 from twilight_map import MapRegion, CountryInfo, Country
@@ -113,7 +112,6 @@ class Asia_Scoring(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.score(MapRegion.ASIA)
         if 'Shuttle_Diplomacy' in game_instance.limbo:
@@ -133,7 +131,6 @@ class Europe_Scoring(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.score(MapRegion.EUROPE)
 
@@ -149,7 +146,6 @@ class Middle_East_Scoring(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         game_instance.score(MapRegion.MIDDLE_EAST)
@@ -170,7 +166,6 @@ class Duck_and_Cover(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.change_defcon(-1)
         game_instance.change_vp(-(5 - game_instance.defcon_track))
@@ -187,7 +182,6 @@ class Five_Year_Plan(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def callback(self, game_instance, card_name: str):
         game_instance.input_state.reps -= 1
@@ -231,7 +225,6 @@ class The_China_Card(Card):
     def __init__(self):
         super().__init__()
 
-
     def can_event(self, game_instance, side):
         return False
 
@@ -247,7 +240,6 @@ class Socialist_Governments(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def can_event(self, game_instance, side):
         return False if 'The_Iron_Lady' in game_instance.basket[Side.US] else True
@@ -280,7 +272,6 @@ class Fidel(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         cuba = game_instance.map['Cuba']
         cuba.set_influence(max(3, cuba.influence[Side.USSR]), 0)
@@ -298,7 +289,6 @@ class Vietnam_Revolts(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         # TODO: Continuous effect
@@ -319,7 +309,6 @@ class Blockade(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         game_instance.input_state = Input(
@@ -347,7 +336,6 @@ class Korean_War(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.war('South_Korea', Side.USSR)
 
@@ -365,7 +353,6 @@ class Romanian_Abdication(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         romania = game_instance.map['Romania']
         romania.set_influence(max(3, romania.influence[Side.USSR]), 0)
@@ -382,7 +369,6 @@ class Arab_Israeli_War(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def can_event(self, game_instance, side):
         return False if 'Camp_David_Accords' in game_instance.basket[Side.US] else True
@@ -404,7 +390,6 @@ class COMECON(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         game_instance.input_state = Input(
@@ -433,7 +418,6 @@ class Nasser(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         egypt = game_instance.map['Egypt']
         egypt.change_influence(2, -math.ceil(egypt.influence[Side.US] / 2))
@@ -452,9 +436,7 @@ class Warsaw_Pact_Formed(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
-        # TODO: should aim to remove this as an option (_remove) if it's not available
         def remove():
             game_instance.input_state = Input(
                 Side.USSR, InputType.SELECT_COUNTRY,
@@ -486,14 +468,16 @@ class Warsaw_Pact_Formed(Card):
             'Add 5 USSR Influence to any countries in Eastern Europe': add
         }
 
-        game_instance.input_state = Input(
-            Side.USSR, InputType.SELECT_MULTIPLE,
-            partial(game_instance.select_multiple_callback,
-                    option_function_mapping),
-            option_function_mapping.keys(),
-            prompt='Warsaw Pact: Choose between two options.'
-        )
-
+        if len([n for n in CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE] if game_instance.map[n].has_us_influence]):
+            game_instance.input_state = Input(
+                Side.USSR, InputType.SELECT_MULTIPLE,
+                partial(game_instance.select_multiple_callback,
+                        option_function_mapping),
+                option_function_mapping.keys(),
+                prompt='Warsaw Pact: Choose between two options.'
+            )
+        else:
+            add()
 
 class De_Gaulle_Leads_France(Card):
     name = 'De_Gaulle_Leads_France'
@@ -507,7 +491,6 @@ class De_Gaulle_Leads_France(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         game_instance.map['France'].change_influence(1, -2)
@@ -527,7 +510,6 @@ class Captured_Nazi_Scientist(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.change_space(side, 1)
 
@@ -544,7 +526,6 @@ class Truman_Doctrine(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         game_instance.input_state = Input(
@@ -569,7 +550,6 @@ class Olympic_Games(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         def participate(side_opp):
@@ -622,7 +602,6 @@ class NATO(Card):
     def __init__(self):
         super().__init__()
 
-
     def can_event(self, game_instance, side):
         return True if 'Warsaw_Pact_Formed' in game_instance.basket[
             Side.US] or 'Marshall_Plan' in game_instance.basket[Side.US] else False
@@ -644,7 +623,6 @@ class Independent_Reds(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         ireds = ['Yugoslavia', 'Romania',
@@ -670,7 +648,6 @@ class Marshall_Plan(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         game_instance.basket[Side.US].append('Marshall_Plan')
@@ -699,7 +676,6 @@ class Indo_Pakistani_War(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.input_state = Input(
             side, InputType.SELECT_COUNTRY,
@@ -722,7 +698,6 @@ class Containment(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.basket[Side.US].append('Containment')
         game_instance.end_turn_stage_list.append(
@@ -741,7 +716,6 @@ class CIA_Created(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         # TODO: reveal hand
@@ -762,7 +736,6 @@ class US_Japan_Mutual_Defense_Pact(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         japan = game_instance.map['Japan']
         japan.set_influence(japan.influence[Side.USSR], max(
@@ -781,7 +754,6 @@ class Suez_Crisis(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         suez = ['France', 'UK', 'Israel']
@@ -809,7 +781,6 @@ class East_European_Unrest(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         dec = 2 if 8 <= game_instance.turn_track <= 10 else 1
@@ -839,7 +810,6 @@ class Decolonization(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.input_state = Input(
             Side.USSR, InputType.SELECT_COUNTRY,
@@ -866,7 +836,6 @@ class Red_Scare_Purge(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.basket[side].append('Red_Scare_Purge')
         game_instance.end_turn_stage_list.append(
@@ -885,7 +854,6 @@ class UN_Intervention(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def can_event(self, game_instance, side):
         return any((game_instance.cards[c].info.owner == side.opp for c in game_instance.hand[side]))
@@ -917,7 +885,6 @@ class De_Stalinization(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         def remove_callback(country_name):
@@ -968,7 +935,6 @@ class Nuclear_Test_Ban(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.change_vp(
             (game_instance.defcon_track - 2) * side.vp_mult)
@@ -988,7 +954,6 @@ class Formosan_Resolution(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.basket[Side.US].append('Formosan_Resolution')
 
@@ -1004,7 +969,6 @@ class Defectors(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def can_event(self, game_instance, side):
         return False
@@ -1033,7 +997,6 @@ class The_Cambridge_Five(Card):
     def __init__(self):
         super().__init__()
 
-
     def can_event(self, game_instance, side):
         return False if game_instance.turn_track >= 8 else True
 
@@ -1054,7 +1017,6 @@ class Special_Relationship(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def can_event(self, game_instance, side):
         return True if game_instance.map['UK'].control == Side.US else False
@@ -1092,7 +1054,6 @@ class NORAD(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.basket[Side.US].append('NORAD')
 
@@ -1114,7 +1075,6 @@ class Brush_War(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         game_instance.input_state = Input(
@@ -1140,7 +1100,6 @@ class Central_America_Scoring(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.score(MapRegion.CENTRAL_AMERICA)
 
@@ -1157,7 +1116,6 @@ class Southeast_Asia_Scoring(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         vps = [0, 0, 0]
@@ -1184,7 +1142,6 @@ class Arms_Race(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         if game_instance.milops_track[side] > game_instance.milops_track[side.opp]:
             if game_instance.milops_track >= game_instance.defcon_track:
@@ -1206,7 +1163,6 @@ class Cuban_Missile_Crisis(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.change_defcon(2 - game_instance.defcon_track)
         game_instance.basket[side].append('Cuban_Missile_Crisis')
@@ -1227,7 +1183,6 @@ class Nuclear_Subs(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.basket[Side.US].append('Nuclear_Subs')
         game_instance.end_turn_stage_list.append(
@@ -1246,7 +1201,6 @@ class Quagmire(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         # need to insert and replace the US Action round with the quagmire_discard stage
@@ -1267,7 +1221,6 @@ class Salt_Negotiations(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def callback(self, game_instance, side: Side, option_stop_early: str, card_name: str):
         game_instance.input_state.reps -= 1
@@ -1307,7 +1260,6 @@ class Bear_Trap(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.basket[Side.USSR].append('Bear_Trap')
 
@@ -1323,7 +1275,6 @@ class Summit(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def choices(self, game_instance, side: Side):
         game_instance.change_vp(2*side.vp_mult)
@@ -1396,7 +1347,6 @@ class How_I_Learned_to_Stop_Worrying(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         option_function_mapping = {
             f'DEFCON 1: Thermonuclear War. {side.opp} victory!': partial(game_instance.change_defcon, 1 - game_instance.defcon_track),
@@ -1428,7 +1378,6 @@ class Junta(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def stage_2(self, game_instance, side, ca_sa):
         def coup(game_instance, side, ca_sa):
@@ -1482,7 +1431,6 @@ class Kitchen_Debates(Card):
     def __init__(self):
         super().__init__()
 
-
     def can_event(self, game_instance, side):
         us_count = sum(1 for n in CountryInfo.ALL if game_instance.map[n].control ==
                        Side.US and game_instance.map[n].info.battleground)
@@ -1508,7 +1456,6 @@ class Missile_Envy(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         # if the other player is only holding scoring cards, this effect needs to be pushed
         pass
@@ -1527,7 +1474,6 @@ class We_Will_Bury_You(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.change_defcon(-1)
         game_instance.basket[Side.USSR].append('We_Will_Bury_You')
@@ -1545,7 +1491,6 @@ class Brezhnev_Doctrine(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         game_instance.basket[Side.USSR].append('Brezhnev_Doctrine')
@@ -1566,7 +1511,6 @@ class Portuguese_Empire_Crumbles(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.map.change_influence('Angola', Side.USSR, 2)
         game_instance.map.change_influence('SE_African_States', Side.USSR, 2)
@@ -1583,7 +1527,6 @@ class South_African_Unrest(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         def _sa():
@@ -1631,7 +1574,6 @@ class Allende(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.map['Chile'].change_influence(2, 0)
 
@@ -1648,7 +1590,6 @@ class Willy_Brandt(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def can_event(self, game_instance, side):
         return False if 'Tear_Down_This_Wall' in game_instance.basket[Side.US] else True
@@ -1671,7 +1612,6 @@ class Muslim_Revolution(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def can_event(self, game_instance, side):
         return False if 'AWACS_Sale_to_Saudis' in game_instance.basket[Side.US] else True
@@ -1704,7 +1644,6 @@ class ABM_Treaty(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.change_defcon(1)
         game_instance.select_action(side, f'Blank_4_Op_Card')
@@ -1722,7 +1661,6 @@ class Cultural_Revolution(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         if 'The_China_Card' in game_instance.hand[Side.US]:
@@ -1743,7 +1681,6 @@ class Flower_Power(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def can_event(self, game_instance, side):
         return False if 'An_Evil_Empire' in game_instance.basket[Side.US] else True
@@ -1766,7 +1703,6 @@ class U2_Incident(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.basket[Side.USSR].append('U2_Incident')
         game_instance.end_turn_stage_list.append(
@@ -1784,7 +1720,6 @@ class OPEC(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def can_event(self, game_instance, side):
         return False if 'North_Sea_Oil' in game_instance.basket[Side.US] or 'North_Sea_Oil' in game_instance.removed_pile else True
@@ -1811,7 +1746,6 @@ class Lone_Gunman(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.select_action(Side.USSR, f'Blank_1_Op_Card')
         pass
@@ -1828,7 +1762,6 @@ class Colonial_Rear_Guards(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         game_instance.input_state = Input(
@@ -1857,7 +1790,6 @@ class Panama_Canal_Returned(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         countries = ['Panama', 'Costa_Rica', 'Venezuela']
         for country in countries:
@@ -1876,7 +1808,6 @@ class Camp_David_Accords(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         game_instance.change_vp(-1)
@@ -1898,7 +1829,6 @@ class Puppet_Governments(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         game_instance.input_state = Input(
@@ -1927,8 +1857,8 @@ class Grain_Sales_to_Soviets(Card):
     def __init__(self):
         super().__init__()
 
-
     # GRAIN SALES + UN INT: make sure everything goes into the discard pile
+
     def callback(self, game_instance, card_name: str):
         print(f'{card_name} was selected by Grain Sales to Soviets.')
         # if received card is Side.USSR, then offer to use UN intervention if holding
@@ -1986,7 +1916,6 @@ class John_Paul_II_Elected_Pope(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.map['Poland'].change_influence(-2, 1)
         game_instance.basket[Side.US].append('John_Paul_II_Elected_Pope')
@@ -2003,7 +1932,6 @@ class Latin_American_Death_Squads(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         game_instance.basket[side].append('Latin_American_Death_Squads')
@@ -2023,7 +1951,6 @@ class OAS_Founded(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         game_instance.input_state = Input(
@@ -2051,7 +1978,6 @@ class Nixon_Plays_The_China_Card(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         if 'The_China_Card' in game_instance.hand[Side.USSR]:
             game_instance.move_china_card(Side.USSR)
@@ -2072,7 +1998,6 @@ class Sadat_Expels_Soviets(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.map.set_influence(
             'Egypt', Side.USSR, 0)  # using alternate syntax
@@ -2091,7 +2016,6 @@ class Shuttle_Diplomacy(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.basket[Side.US].append('Shuttle_Diplomacy')
 
@@ -2107,7 +2031,6 @@ class The_Voice_Of_America(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         game_instance.input_state = Input(
@@ -2136,7 +2059,6 @@ class Liberation_Theology(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.input_state = Input(
             Side.USSR, InputType.SELECT_COUNTRY,
@@ -2162,7 +2084,6 @@ class Ussuri_River_Skirmish(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         if 'The_China_Card' in game_instance.hand[Side.USSR]:
@@ -2192,7 +2113,6 @@ class Ask_Not_What_Your_Country_Can_Do_For_You(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def callback(self, game_instance, option_stop_early, card_name: str):
         game_instance.input_state.reps -= 1
@@ -2232,7 +2152,6 @@ class Alliance_for_Progress(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         ca = list(CountryInfo.REGION_ALL[MapRegion.CENTRAL_AMERICA])
         sa = list(CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA])
@@ -2254,7 +2173,6 @@ class Africa_Scoring(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.score(MapRegion.AFRICA)
 
@@ -2270,7 +2188,6 @@ class One_Small_Step(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def can_event(self, game_instance, side):
         return True if game_instance.space_track[side] < game_instance.space_track[side.opp] else False
@@ -2292,7 +2209,6 @@ class South_America_Scoring(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.score(MapRegion.SOUTH_AMERICA)
 
@@ -2309,7 +2225,6 @@ class Che(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         ca_sa_af = chain(CountryInfo.REGION_ALL[MapRegion.CENTRAL_AMERICA],
@@ -2333,7 +2248,6 @@ class Our_Man_In_Tehran(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def can_event(self, game_instance, side):
         return any(game_instance.map[n].control == Side.US for n in CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST])
@@ -2381,7 +2295,6 @@ class Iranian_Hostage_Crisis(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.map.set_influence('Iran', Side.US, 0)
         game_instance.map.change_influence('Iran', Side.USSR, 2)
@@ -2400,7 +2313,6 @@ class The_Iron_Lady(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         game_instance.map.change_influence('Argentina', Side.USSR, 1)
@@ -2422,7 +2334,6 @@ class Reagan_Bombs_Libya(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         swing = math.floor(game_instance.map['Libya'].influence[Side.USSR] / 2)
         game_instance.change_vp(-swing)
@@ -2440,7 +2351,6 @@ class Star_Wars(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def can_event(self, game_instance, side):
         return True if game_instance.space_track[Side.US] > game_instance.space_track[Side.USSR] else False
@@ -2473,7 +2383,6 @@ class North_Sea_Oil(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.basket[Side.US].append('North_Sea_Oil')
         game_instance.ars_by_turn[Side.US][game_instance.turn_track] = 8
@@ -2492,9 +2401,7 @@ class The_Reformer(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
-        # TODO: Glasnost no coup in Europe
         reps = 6 if game_instance.vp_track > 0 else 4
         game_instance.input_state = Input(
             Side.USSR, InputType.SELECT_COUNTRY,
@@ -2521,7 +2428,6 @@ class Marine_Barracks_Bombing(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         game_instance.map.set_influence('Lebanon', Side.US, 0)
@@ -2550,7 +2456,6 @@ class Soviets_Shoot_Down_KAL_007(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.change_defcon(-1)
         game_instance.change_vp(-2)
@@ -2571,7 +2476,6 @@ class Glasnost(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         game_instance.change_defcon(1)
@@ -2594,7 +2498,6 @@ class Ortega_Elected_in_Nicaragua(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.map.set_influence('Nicaragua', Side.US, 0)
         game_instance.card_operation_coup(side, 'Ortega_Elected_in_Nicaragua', restricted_list=[
@@ -2612,7 +2515,6 @@ class Terrorism(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def callback(self, game_instance, side, card_name: str):
         game_instance.input_state.reps -= 1
@@ -2650,7 +2552,6 @@ class Iran_Contra_Scandal(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.basket[Side.USSR].append('Iran_Contra_Scandal')
         game_instance.end_turn_stage_list.append(
@@ -2669,7 +2570,6 @@ class Chernobyl(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         def add_chernobyl(effect_name: str):
@@ -2707,7 +2607,6 @@ class Latin_American_Debt_Crisis(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         def double_inf_ussr_callback(country_name: str) -> bool:
@@ -2753,7 +2652,6 @@ class Tear_Down_This_Wall(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         if 'Willy_Brandt' in game_instance.basket[Side.USSR]:
             game_instance.basket[Side.USSR].remove('Willy_Brandt')
@@ -2795,7 +2693,6 @@ class An_Evil_Empire(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.change_vp(-1)
         if 'Flower_Power' in game_instance.basket[Side.USSR]:
@@ -2815,7 +2712,6 @@ class Aldrich_Ames_Remix(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         # TODO hand reveal for rest of turn
@@ -2840,7 +2736,6 @@ class Pershing_II_Deployed(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         game_instance.change_vp(1)
@@ -2870,7 +2765,6 @@ class Wargames(Card):
     def __init__(self):
         super().__init__()
 
-
     def can_event(self, game_instance, side):
         return True if game_instance.defcon_track == 2 else False
 
@@ -2893,7 +2787,6 @@ class Solidarity(Card):
     def __init__(self):
         super().__init__()
 
-
     def can_event(self, game_instance, side):
         return False if 'John_Paul_II_Elected_Pope' in game_instance.basket[Side.US] else True
 
@@ -2915,7 +2808,6 @@ class Iran_Iraq_War(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def use_event(self, game_instance, side: Side):
         game_instance.input_state = Input(
@@ -2940,7 +2832,6 @@ class Yuri_and_Samantha(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.basket[Side.USSR].append('Yuri_and_Samantha')
         game_instance.end_turn_stage_list.append(
@@ -2961,7 +2852,6 @@ class AWACS_Sale_to_Saudis(Card):
     def __init__(self):
         super().__init__()
 
-
     def use_event(self, game_instance, side: Side):
         game_instance.map.change_influence('Saudi_Arabia', Side.US, 2)
         game_instance.basket[Side.US].append('AWACS_Sale_to_Saudis')
@@ -2981,7 +2871,6 @@ class Blank_1_Op_Card(Card):
     def __init__(self):
         super().__init__()
 
-
     def can_event(self, game_instance, side):
         return False
 
@@ -2999,7 +2888,6 @@ class Blank_2_Op_Card(Card):
 
     def __init__(self):
         super().__init__()
-
 
     def can_event(self, game_instance, side):
         return False
@@ -3019,7 +2907,6 @@ class Blank_3_Op_Card(Card):
     def __init__(self):
         super().__init__()
 
-
     def can_event(self, game_instance, side):
         return False
 
@@ -3038,122 +2925,5 @@ class Blank_4_Op_Card(Card):
     def __init__(self):
         super().__init__()
 
-
     def can_event(self, game_instance, side):
         return False
-
-
-Asia_Scoring = Asia_Scoring()
-Europe_Scoring = Europe_Scoring()
-Middle_East_Scoring = Middle_East_Scoring()
-Duck_and_Cover = Duck_and_Cover()
-Five_Year_Plan = Five_Year_Plan()
-The_China_Card = The_China_Card()
-Socialist_Governments = Socialist_Governments()
-Fidel = Fidel()
-Vietnam_Revolts = Vietnam_Revolts()
-Blockade = Blockade()
-Korean_War = Korean_War()
-Romanian_Abdication = Romanian_Abdication()
-Arab_Israeli_War = Arab_Israeli_War()
-COMECON = COMECON()
-Nasser = Nasser()
-Warsaw_Pact_Formed = Warsaw_Pact_Formed()
-De_Gaulle_Leads_France = De_Gaulle_Leads_France()
-Captured_Nazi_Scientist = Captured_Nazi_Scientist()
-Truman_Doctrine = Truman_Doctrine()
-Olympic_Games = Olympic_Games()
-NATO = NATO()
-Independent_Reds = Independent_Reds()
-Marshall_Plan = Marshall_Plan()
-Indo_Pakistani_War = Indo_Pakistani_War()
-Containment = Containment()
-CIA_Created = CIA_Created()
-US_Japan_Mutual_Defense_Pact = US_Japan_Mutual_Defense_Pact()
-Suez_Crisis = Suez_Crisis()
-East_European_Unrest = East_European_Unrest()
-Decolonization = Decolonization()
-Red_Scare_Purge = Red_Scare_Purge()
-UN_Intervention = UN_Intervention()
-De_Stalinization = De_Stalinization()
-Nuclear_Test_Ban = Nuclear_Test_Ban()
-Formosan_Resolution = Formosan_Resolution()
-Defectors = Defectors()
-The_Cambridge_Five = The_Cambridge_Five()
-Special_Relationship = Special_Relationship()
-NORAD = NORAD()
-Brush_War = Brush_War()
-Central_America_Scoring = Central_America_Scoring()
-Southeast_Asia_Scoring = Southeast_Asia_Scoring()
-Arms_Race = Arms_Race()
-Cuban_Missile_Crisis = Cuban_Missile_Crisis()
-Nuclear_Subs = Nuclear_Subs()
-Quagmire = Quagmire()
-Salt_Negotiations = Salt_Negotiations()
-Bear_Trap = Bear_Trap()
-Summit = Summit()
-How_I_Learned_to_Stop_Worrying = How_I_Learned_to_Stop_Worrying()
-Junta = Junta()
-Kitchen_Debates = Kitchen_Debates()
-Missile_Envy = Missile_Envy()
-We_Will_Bury_You = We_Will_Bury_You()
-Brezhnev_Doctrine = Brezhnev_Doctrine()
-Portuguese_Empire_Crumbles = Portuguese_Empire_Crumbles()
-South_African_Unrest = South_African_Unrest()
-Allende = Allende()
-Willy_Brandt = Willy_Brandt()
-Muslim_Revolution = Muslim_Revolution()
-ABM_Treaty = ABM_Treaty()
-Cultural_Revolution = Cultural_Revolution()
-Flower_Power = Flower_Power()
-U2_Incident = U2_Incident()
-OPEC = OPEC()
-Lone_Gunman = Lone_Gunman()
-Colonial_Rear_Guards = Colonial_Rear_Guards()
-Panama_Canal_Returned = Panama_Canal_Returned()
-Camp_David_Accords = Camp_David_Accords()
-Puppet_Governments = Puppet_Governments()
-Grain_Sales_to_Soviets = Grain_Sales_to_Soviets()
-John_Paul_II_Elected_Pope = John_Paul_II_Elected_Pope()
-Latin_American_Death_Squads = Latin_American_Death_Squads()
-OAS_Founded = OAS_Founded()
-Nixon_Plays_The_China_Card = Nixon_Plays_The_China_Card()
-Sadat_Expels_Soviets = Sadat_Expels_Soviets()
-Shuttle_Diplomacy = Shuttle_Diplomacy()
-The_Voice_Of_America = The_Voice_Of_America()
-Liberation_Theology = Liberation_Theology()
-Ussuri_River_Skirmish = Ussuri_River_Skirmish()
-Ask_Not_What_Your_Country_Can_Do_For_You = Ask_Not_What_Your_Country_Can_Do_For_You()
-Alliance_for_Progress = Alliance_for_Progress()
-Africa_Scoring = Africa_Scoring()
-One_Small_Step = One_Small_Step()
-South_America_Scoring = South_America_Scoring()
-Che = Che()
-Our_Man_In_Tehran = Our_Man_In_Tehran()
-Iranian_Hostage_Crisis = Iranian_Hostage_Crisis()
-The_Iron_Lady = The_Iron_Lady()
-Reagan_Bombs_Libya = Reagan_Bombs_Libya()
-Star_Wars = Star_Wars()
-North_Sea_Oil = North_Sea_Oil()
-The_Reformer = The_Reformer()
-Marine_Barracks_Bombing = Marine_Barracks_Bombing()
-Soviets_Shoot_Down_KAL_007 = Soviets_Shoot_Down_KAL_007()
-Glasnost = Glasnost()
-Ortega_Elected_in_Nicaragua = Ortega_Elected_in_Nicaragua()
-Terrorism = Terrorism()
-Iran_Contra_Scandal = Iran_Contra_Scandal()
-Chernobyl = Chernobyl()
-Latin_American_Debt_Crisis = Latin_American_Debt_Crisis()
-Tear_Down_This_Wall = Tear_Down_This_Wall()
-An_Evil_Empire = An_Evil_Empire()
-Aldrich_Ames_Remix = Aldrich_Ames_Remix()
-Pershing_II_Deployed = Pershing_II_Deployed()
-Wargames = Wargames()
-Solidarity = Solidarity()
-Iran_Iraq_War = Iran_Iraq_War()
-Yuri_and_Samantha = Yuri_and_Samantha()
-AWACS_Sale_to_Saudis = AWACS_Sale_to_Saudis()
-Blank_1_Op_Card = Blank_1_Op_Card()
-Blank_2_Op_Card = Blank_2_Op_Card()
-Blank_3_Op_Card = Blank_3_Op_Card()
-Blank_4_Op_Card = Blank_4_Op_Card()

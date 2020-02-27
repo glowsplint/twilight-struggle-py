@@ -90,6 +90,11 @@ class GameMap:
             String representation of the country we are checking.
         side : Side
             Player side which we are checking. Can be Side.US or Side.USSR.
+
+        Accounts for:
+        - NATO
+        - US_Japan_Mutual_Defense_Pact
+        - The_Reformer
         '''
         country = self[name]
         if country.info.superpower:
@@ -107,6 +112,8 @@ class GameMap:
         elif 'NATO' in game_instance.basket[Side.US] and name in game_instance.calculate_nato_countries():
             return False
         elif 'US_Japan_Mutual_Defense_Pact' in game_instance.basket[Side.US] and name == 'Japan':
+            return False
+        elif 'The_Reformer' in game_instance.basket[Side.USSR] and name in d4:
             return False
         elif game_instance.defcon_track == 4 and name in d4:
             return False
@@ -131,6 +138,7 @@ class GameMap:
         - Cuban_Missile_Crisis
         - SALT Negotiations
         - Cuban Missile Crisis
+
 
         Parameters
         ----------
