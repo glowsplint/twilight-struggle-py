@@ -5,7 +5,7 @@ from itertools import chain
 from typing import Sequence, Iterable, Callable, Tuple
 from twilight_map import GameMap, CountryInfo, Country
 from twilight_enums import Side, MapRegion, InputType, CardAction
-from twilight_cards import GameCards, CardInfo, Card
+from twilight_cards import GameCards, Card
 
 
 class Game:
