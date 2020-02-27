@@ -385,11 +385,12 @@ class Game:
         else:
             self.stage_list.append(self.select_card)
 
-    def can_play_event(self, side: Side, card_name: str, resolve_check=False):
+    def can_play_event(self, side: Side, card_name: str):
         '''
-        Checks if all the prerequisites for the Event are fulfilled. Returns True
-        if all prerequisites are fulfilled and the Event if not prevented, and False
-        otherwise.
+        Checks if all the prerequisites for the Event are fulfilled.
+        True if:
+        1. All prerequisites are fulfilled (including event prevention), and
+        2. The card is owned by you
 
         Parameters
         ----------
@@ -397,67 +398,14 @@ class Game:
             Side of the phasing player.
         card_name : str
             String representation of the card.
-        resolve_check : bool, default=False
-            True only when used in can_resolve_event_first below. Ensures that
-            'Resolve Event first' does not appear as an option when the Event's
-            prerequisites are not fulfilled.
         '''
-        hand = self.hand[side]
-        if card_name in (f'Blank_{n}_Op_Card' for n in range(1, 5)):
-            return False
-        elif card_name == 'The_China_Card':
-            return False
-        elif card_name == 'UN_Intervention':
-            return any(
-                (self.cards[c].info.owner == side.opp for c in hand))
-        elif card_name == 'Defectors' and side == Side.US:
-            return False
-        elif card_name == 'Special_Relationship':
-            return True if self.map['UK'].control == Side.US else False
-        elif card_name == 'NATO' and side == Side.US:
-            return True if 'Warsaw_Pact_Formed' in self.basket[
-                Side.US] or 'Marshall_Plan' in self.basket[Side.US] else False
-        elif card_name == 'Kitchen_Debates' and side == Side.US:
-            us_count = sum(1 for n in CountryInfo.ALL if self.map[n].control ==
-                           Side.US and self.map[n].info.battleground)
-            ussr_count = sum(1 for n in CountryInfo.ALL if self.map[n].control ==
-                             Side.USSR and self.map[n].info.battleground)
-            return us_count > ussr_count
-        elif card_name == 'Arab_Israeli_War' and side == Side.USSR:
-            return False if 'Camp_David_Accords' in self.basket[Side.US] else True
-        elif card_name == 'The_Cambridge_Five' and side == Side.USSR:
-            return False if self.turn_track >= 8 else True
-        elif card_name == 'Our_Man_In_Tehran' and side == Side.US:
-            return any(self.map[n].control == Side.US for n in CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST])
-        elif card_name == 'Socialist_Governments' and side == Side.USSR:
-            return False if 'The_Iron_Lady' in self.basket[Side.US] else True
-        elif card_name == 'One_Small_Step':
-            return True if self.space_track[side] < self.space_track[side.opp] else False
-        elif card_name == 'Muslim_Revolution' and side == Side.USSR:
-            return False if 'AWACS_Sale_to_Saudis' in self.basket[Side.US] else True
-        elif card_name == 'Flower_Power' and side == Side.USSR:
-            return False if 'An_Evil_Empire' in self.basket[Side.US] else True
-        elif card_name == 'OPEC' and side == Side.USSR:
-            return False if 'North_Sea_Oil' in self.basket[Side.US] or 'North_Sea_Oil' in self.removed_pile else True
-        elif card_name == 'Willy_Brandt' and side == Side.USSR:
-            return False if 'Tear_Down_This_Wall' in self.basket[Side.US] else True
-        elif card_name == 'Solidarity' and side == Side.US:
-            return False if 'John_Paul_II_Elected_Pope' in self.basket[Side.US] else True
-        elif card_name == 'Star_Wars' and side == Side.US:
-            return True if self.space_track[Side.US] > self.space_track[Side.USSR] else False
-        elif card_name == 'Wargames':
-            return True if self.defcon_track == 2 else False
-        else:
-            if resolve_check:
-                return False if self.cards[card_name].info.owner == Side.NEUTRAL else True
-            else:
-                return True if self.cards[card_name].info.owner != side.opp else False
+        return self.cards[card_name].can_event(self, side) and side != self.cards[card_name].owner.opp
 
     def can_resolve_event_first(self, side: Side, card_name: str):
         '''
         Checks if the phasing player can resolve the card's Event first.
         True if:
-        1. Card is opponent-owned.
+        1. Card is opponent-owned, and
         2. All the prerequisites for the event are fulfilled.
 
         Parameters
@@ -467,7 +415,7 @@ class Game:
         card_name : str
             String representation of the card.
         '''
-        return False if self.cards[card_name].info.owner != side.opp else self.can_play_event(side, card_name, resolve_check=True)
+        return side == self.cards[card_name].owner.opp and self.cards[card_name].can_event(self, side.opp)
 
     def can_place_influence(self, side: Side, card_name: str):
         '''
@@ -2442,7 +2390,7 @@ class Game:
             self.input_state = Game.Input(
                 side, InputType.SELECT_CARD,
                 partial(self._Star_Wars_callback, side),
-                (n for n in self.discard_pile if self.cards[n].info.type != 'Scoring'),
+                (n for n in self.discard_pile if self.cards[n].info.card_type != 'Scoring'),
                 prompt=f'Pick a non-scoring card from the discard pile for Event use immediately.'
             )
 
