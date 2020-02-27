@@ -1,6 +1,7 @@
 from typing import Sequence, Iterable, Callable, Tuple
 from twilight_enums import Side, InputType
 
+
 class Input:
 
     def __init__(self, side: Side, state: InputType, callback: Callable[[str], bool],
@@ -110,6 +111,9 @@ class Input:
         complete.
         '''
         return not self.reps or len(self.selection) == len(self.discarded_options)
+
+    def change_max_per_option(self, n: int):
+        self.max_per_option += n
 
 
 class Output:

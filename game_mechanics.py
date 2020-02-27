@@ -713,8 +713,32 @@ class Game:
     operations points for coup or realignment, and also on the space race.
     '''
 
-    def ops_influence_callback(self, side: Side, name: str) -> bool:
+    def china_before(self, c: Country, card_name: str, reps: int = 0):
+        asia = list(CountryInfo.REGION_ALL[MapRegion.ASIA])
+        if card_name == 'The_China_Card':
+            if c.info.name in asia:
+                if self.cards['The_China_Card'].all_points_in_asia:
+                    if not self.cards['The_China_Card'].extra_point_given:
+                        if reps:
+                            reps += 1
+                        else:
+                            self.input_state.reps += 1
+                        self.input_state.change_max_per_option(1)
+                        self.cards['The_China_Card'].extra_point_given = True
+            else:
+                self.cards['The_China_Card'].all_points_in_asia = False
+                if self.cards['The_China_Card'].extra_point_given:
+                    if reps:
+                        reps -= 1
+                    else:
+                        self.input_state.reps -= 1
+                    self.input_state.change_max_per_option(-1)
+                    self.cards['The_China_Card'].extra_point_given = False
+        return reps
+
+    def ops_influence_callback(self, side: Side, card_name: str, name: str) -> bool:
         c = self.map[name]
+        self.china_before(c, card_name)
 
         # may no longer need this eventually if we ensure options are always correct
         if self.input_state.reps == 1 and c.control == side.opp:
@@ -732,6 +756,11 @@ class Game:
                 if self.map[n].control == side.opp:
                     self.input_state.remove_option(n)
 
+        if card_name == 'The_China_Card':
+            if self.input_state.reps == 1 and self.cards['The_China_Card'].all_points_in_asia:
+                for n in self.input_state.selection:
+                    if self.map[n].info.name not in list(CountryInfo.REGION_ALL[MapRegion.ASIA]):
+                        self.input_state.remove_option(n)
         return True
 
     def card_operation_influence(self, side: Side, card_name: str):
@@ -768,21 +797,28 @@ class Game:
         return True
 
     def realignment_callback(self, side: Side, name: str, card_name: str, reps: int = None) -> bool:
+        reps = self.china_before(self.map[name], card_name, reps)
         reps -= 1
         self.input_state.reps -= 1
 
         if reps:
-            self.stage_list.append(
-                partial(self.card_operation_realignment, side, card_name=card_name, reps=reps))
+            if card_name == 'The_China_Card' and reps == 1 and self.cards['The_China_Card'].all_points_in_asia:
+                self.stage_list.append(
+                    partial(self.card_operation_realignment, side, card_name=card_name, reps=reps,
+                            restricted_list=list(CountryInfo.REGION_ALL[MapRegion.ASIA])))
+            else:
+                self.stage_list.append(
+                    partial(self.card_operation_realignment, side, card_name=card_name, reps=reps))
 
         self.stage_list.append(partial(
             self.dice_stage,
             partial(self.realign_dice_callback, name, side),
-            two_dice=True
-        ))
+            two_dice=True))
+
         return True
 
-    def card_operation_realignment(self, side: Side, card_name: str, reps: int = None, restricted_list: Sequence[str] = None, free=False):
+    def card_operation_realignment(self, side: Side, card_name: str, reps: int = None,
+                                   restricted_list: Sequence[str] = None, free=False):
         '''
         Stage when a player is given the opportunity to use realignment. Provides a list
         of countries where realignment can take place and waits for player input.
