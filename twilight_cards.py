@@ -18,23 +18,24 @@ class GameCards:
         self.mid_war = []
         self.late_war = []
 
-        for card_class in Card.__subclasses__():
+        for card_name, CardClass in Card.ALL.items():
 
-            self.ALL[card_class.name] = card_class()
+            self.ALL[card_name] = CardClass()
 
-            if card_class.stage == 'Early War':
-                self.early_war.append(card_class.name)
-            if card_class.stage == 'Mid War':
-                self.mid_war.append(card_class.name)
-            if card_class.stage == 'Late War':
-                self.late_war.append(card_class.name)
+            if CardClass.stage == 'Early War':
+                self.early_war.append(card_name)
+            if CardClass.stage == 'Mid War':
+                self.mid_war.append(card_name)
+            if CardClass.stage == 'Late War':
+                self.late_war.append(card_name)
 
     def __getitem__(self, item):
-        return Card.ALL[item]
+        return self.ALL[item]
 
 
 class Card:
 
+    ALL = dict()
     INDEX = dict()
 
     name = ''
@@ -49,6 +50,11 @@ class Card:
     event_text = ''
     may_be_held = True
     event_unique = False
+
+    @classmethod
+    def __init_subclass__(cls, **kwargs):
+        Card.ALL[cls.name] = cls
+        Card.INDEX[cls.card_index] = cls
 
     def __init__(self):
         self.is_playable = True
