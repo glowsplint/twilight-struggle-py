@@ -311,7 +311,7 @@ class Game:
         ussr_hl = self.headline_bin[Side.USSR]
         us_hl = self.headline_bin[Side.US]
 
-        if us_hl == 'Defectors' or self.cards[us_hl].info.ops >= self.cards[ussr_hl].info.ops:
+        if us_hl == 'Defectors' or self.cards[us_hl].ops >= self.cards[ussr_hl].info.ops:
             # must append triggers in backwards order
             self.stage_list.append(partial(self.resolve_headline, Side.USSR))
             self.stage_list.append(partial(self.resolve_headline, Side.US))

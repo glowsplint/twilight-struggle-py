@@ -8,6 +8,7 @@ from textwrap import wrap
 from game_mechanics import Game
 from twilight_enums import Side, InputType, CardAction
 from twilight_map import MapRegion, CountryInfo
+from twilight_cards import Card
 
 
 class UI:
@@ -109,7 +110,7 @@ quit            Exit the game.
             self.options = {CardAction[opt].value: opt
                             for opt in self.input_state.available_options}
         elif self.game.input_state.state == InputType.SELECT_CARD:
-            self.options = {CardInfo.ALL[opt].card_index: opt
+            self.options = {Card.ALL[opt].card_index: opt
                             for opt in self.input_state.available_options}
         elif self.game.input_state.state == InputType.SELECT_COUNTRY:
             self.options = {CountryInfo.ALL[opt].country_index: opt
@@ -361,7 +362,7 @@ c dec           Returns the number of cards in the draw deck.
             print(
                 f'Listing {len(self.game.hand[self.input_state.side])} cards in hand.')
             for c in sorted(self.game.hand[self.input_state.side]):
-                print(f'{CardInfo.ALL[c].card_index:5} {c}')
+                print(f'{Card.ALL[c].card_index:5} {c}')
         elif comd == '?':
             print(UI.help_card)
         elif comd == 'opp':
@@ -383,9 +384,9 @@ c dec           Returns the number of cards in the draw deck.
 
             def _print_card_info(comd, text: bool = True):
                 if not text:
-                    items = CardInfo.index[int(comd)].__dict__.items()
+                    items = Card.INDEX[int(comd)].__dict__.items()
                 else:
-                    items = CardInfo.ALL[matched].__dict__.items()
+                    items = Card.ALL[matched].__dict__.items()
 
                 print(f'Displaying information on card {comd}:')
                 for k, v in items:
@@ -396,10 +397,10 @@ c dec           Returns the number of cards in the draw deck.
                         print(f'{k:>{UI.left_margin_big}} {v}')
 
             if comd.isdigit():
-                if int(comd) in CardInfo.index.keys():
+                if int(comd) in Card.INDEX.keys():
                     _print_card_info(comd, text=False)
             else:
-                for opt in CardInfo.ALL.keys():
+                for opt in Card.ALL.keys():
                     if opt.lower().startswith(comd):
                         if matched:
                             ambiguous = True
@@ -436,7 +437,6 @@ s turn                  Displays information on the current turn and action roun
                 'Milops': self.game.milops_track,
                 'Space': self.game.space_track,
                 'Spaced turns': self.game.spaced_turns,
-                'Extra turns': self.game.extra_turn,
                 'US Basket': self.game.basket[Side.US],
                 'USSR Basket': self.game.basket[Side.USSR],
                 'ARs this turn': (self.game.ars_by_turn[0][self.game.turn_track], self.game.ars_by_turn[1][self.game.turn_track])
@@ -497,7 +497,7 @@ dbg rollback                        Restores the state before debugging started.
         elif user_choice[0] == 'card':
             if len(user_choice) != 3:
                 print('Invalid command. Enter ? for help.')
-            elif user_choice[1] not in CardInfo.ALL:
+            elif user_choice[1] not in Card.ALL:
                 print('Invalid card name.')
             elif user_choice[2].lower() not in ['us', 'ussr']:
                 print('Invalid side.')
