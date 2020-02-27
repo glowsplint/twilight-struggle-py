@@ -2442,7 +2442,7 @@ class Game:
             self.input_state = Game.Input(
                 side, InputType.SELECT_CARD,
                 partial(self._Star_Wars_callback, side),
-                (n for n in self.discard_pile if self.cards[n].info.ops >= 1),
+                (n for n in self.discard_pile if self.cards[n].info.type != 'Scoring'),
                 prompt=f'Pick a non-scoring card from the discard pile for Event use immediately.'
             )
 
@@ -2609,7 +2609,14 @@ class Game:
         self.basket[Side.US].append('An_Evil_Empire')
 
     def _Aldrich_Ames_Remix(self, side):
-        pass
+        # TODO hand reveal for rest of turn
+        self.input_state = Game.Input(
+            Side.USSR, InputType.SELECT_CARD,
+            partial(self.may_discard_callback, Side.US),
+            (n for n in self.hand[Side.US]
+                if n != 'The_China_Card'),
+            prompt='Choose a card to discard from the US hand.'
+        )
 
     def _Pershing_II_Deployed(self, side):
         self.change_vp(1)
