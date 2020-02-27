@@ -224,9 +224,25 @@ class The_China_Card(Card):
 
     def __init__(self):
         super().__init__()
+        self.all_points_in_asia = True
+        self.extra_point_given = False
 
     def can_event(self, game_instance, side):
         return False
+
+    def move_china_card(self, game_instance, side: Side, made_playable=False):
+        '''
+        Moves and flips the China Card after it has been used.
+        Side refers to the player that uses the China card, or whoever the card should move from.
+        '''
+        receipient_hand = game_instance.hand[side.opp]
+        receipient_hand.append('The_China_Card')
+        self.is_playable = made_playable
+        self.reset()
+    
+    def reset(self):
+        self.all_points_in_asia = True
+        self.extra_point_given = False
 
 
 class Socialist_Governments(Card):
@@ -1665,7 +1681,8 @@ class Cultural_Revolution(Card):
 
     def use_event(self, game_instance, side: Side):
         if 'The_China_Card' in game_instance.hand[Side.US]:
-            game_instance.move_china_card(Side.US, made_playable=True)
+            game_instance.cards['The_China_Card'].move_china_card(
+                game_instance, Side.US, made_playable=True)
         elif 'The_China_Card' in game_instance.hand[Side.USSR]:
             game_instance.change_vp(1)
 
@@ -1981,7 +1998,8 @@ class Nixon_Plays_The_China_Card(Card):
 
     def use_event(self, game_instance, side: Side):
         if 'The_China_Card' in game_instance.hand[Side.USSR]:
-            game_instance.move_china_card(Side.USSR)
+            game_instance.cards['The_China_Card'].move_china_card(
+                game_instance, Side.USSR)
         elif 'The_China_Card' in game_instance.hand[Side.US]:
             game_instance.change_vp(-2)
 
@@ -2088,7 +2106,8 @@ class Ussuri_River_Skirmish(Card):
 
     def use_event(self, game_instance, side: Side):
         if 'The_China_Card' in game_instance.hand[Side.USSR]:
-            game_instance.move_china_card(Side.USSR, made_playable=True)
+            game_instance.cards['The_China_Card'].move_china_card(
+                game_instance, Side.USSR, made_playable=True)
         elif 'The_China_Card' in game_instance.hand[Side.US]:
             game_instance.input_state = Input(
                 Side.US, InputType.SELECT_COUNTRY,

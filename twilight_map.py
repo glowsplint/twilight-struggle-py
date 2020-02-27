@@ -101,10 +101,8 @@ class GameMap:
             return False
 
         d4 = list(CountryInfo.REGION_ALL[MapRegion.EUROPE])
-        d3 = list(CountryInfo.REGION_ALL[MapRegion.ASIA])
-        d3.extend(d4)
-        d2 = list(CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST])
-        d2.extend(d3)
+        d3 = d4 + list(CountryInfo.REGION_ALL[MapRegion.ASIA])
+        d2 = d3 + list(CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST])
 
         if free:
             return not (side == Side.US and country.influence[Side.USSR] == 0 or
@@ -222,10 +220,8 @@ class GameMap:
             return False
 
         d4 = list(CountryInfo.REGION_ALL[MapRegion.EUROPE])
-        d3 = list(CountryInfo.REGION_ALL[MapRegion.ASIA])
-        d3.extend(d4)
-        d2 = list(CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST])
-        d2.extend(d3)
+        d3 = d4 + list(CountryInfo.REGION_ALL[MapRegion.ASIA])
+        d2 = d3 + list(CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST])
 
         if free:
             return not (side == Side.US and country.influence[Side.USSR] == 0 or
