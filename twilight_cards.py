@@ -479,6 +479,7 @@ class Warsaw_Pact_Formed(Card):
         else:
             add()
 
+
 class De_Gaulle_Leads_France(Card):
     name = 'De_Gaulle_Leads_France'
     card_index = 17
