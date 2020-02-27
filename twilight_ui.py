@@ -9,6 +9,7 @@ from game_mechanics import Game
 from twilight_enums import Side, InputType, CardAction
 from twilight_map import MapRegion, CountryInfo
 from twilight_cards import Card
+from twilight_input_output import Input
 
 
 class UI:
@@ -52,7 +53,7 @@ quit            Exit the game.
         self.log_filepath = None
 
     @property
-    def input_state(self) -> Game.Input:
+    def input_state(self) -> Input:
         return self.game.input_state
 
     @property
