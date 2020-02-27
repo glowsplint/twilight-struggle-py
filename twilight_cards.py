@@ -51,7 +51,7 @@ class Card:
     event_unique = False
 
     @classmethod
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls):
         Card.ALL[cls.name] = cls
         Card.INDEX[cls.card_index] = cls
 
