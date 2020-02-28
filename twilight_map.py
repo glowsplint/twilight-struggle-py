@@ -90,16 +90,19 @@ class GameMap:
             String representation of the country we are checking.
         side : Side
             Player side which we are checking. Can be Side.US or Side.USSR.
+
+        Accounts for:
+        - NATO
+        - US_Japan_Mutual_Defense_Pact
+        - The_Reformer
         '''
         country = self[name]
         if country.info.superpower:
             return False
 
         d4 = list(CountryInfo.REGION_ALL[MapRegion.EUROPE])
-        d3 = list(CountryInfo.REGION_ALL[MapRegion.ASIA])
-        d3.extend(d4)
-        d2 = list(CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST])
-        d2.extend(d3)
+        d3 = d4 + list(CountryInfo.REGION_ALL[MapRegion.ASIA])
+        d2 = d3 + list(CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST])
 
         if free:
             return not (side == Side.US and country.influence[Side.USSR] == 0 or
@@ -107,6 +110,8 @@ class GameMap:
         elif 'NATO' in game_instance.basket[Side.US] and name in game_instance.calculate_nato_countries():
             return False
         elif 'US_Japan_Mutual_Defense_Pact' in game_instance.basket[Side.US] and name == 'Japan':
+            return False
+        elif 'The_Reformer' in game_instance.basket[Side.USSR] and name in d4:
             return False
         elif game_instance.defcon_track == 4 and name in d4:
             return False
@@ -131,6 +136,7 @@ class GameMap:
         - Cuban_Missile_Crisis
         - SALT Negotiations
         - Cuban Missile Crisis
+
 
         Parameters
         ----------
@@ -214,10 +220,8 @@ class GameMap:
             return False
 
         d4 = list(CountryInfo.REGION_ALL[MapRegion.EUROPE])
-        d3 = list(CountryInfo.REGION_ALL[MapRegion.ASIA])
-        d3.extend(d4)
-        d2 = list(CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST])
-        d2.extend(d3)
+        d3 = d4 + list(CountryInfo.REGION_ALL[MapRegion.ASIA])
+        d2 = d3 + list(CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST])
 
         if free:
             return not (side == Side.US and country.influence[Side.USSR] == 0 or
@@ -517,15 +521,16 @@ class Country:
             return f'{self.info.name} [Superpower]'
         else:
             ctrl = self.control
-            stab_str = f'{self.info.name}[{self.info.stability}]'
+            bg_str = '\033[105mBG\033[0m ' if self.info.battleground else ''
+            stab_str = f'{self.info.name} {self.info.stability}'
             if ctrl == Side.US:
-                name_str = f'\033[104m{stab_str:23}\033[0m'
+                name_str = f'{bg_str:3}\033[104m{stab_str:23}\033[0m'
                 ctrl_str = f'[{ctrl.name} control]'
             elif ctrl == Side.USSR:
-                name_str = f'\033[101m{stab_str:23}\033[0m'
+                name_str = f'{bg_str:3}\033[101m{stab_str:23}\033[0m'
                 ctrl_str = f'[{ctrl.name} control]'
             else:
-                name_str = f'{stab_str:23}'
+                name_str = f'{bg_str:3}{stab_str:23}'
                 ctrl_str = ''
 
             return f'{name_str}US {self.influence[Side.US]}:{self.influence[Side.USSR]} USSR {ctrl_str}'

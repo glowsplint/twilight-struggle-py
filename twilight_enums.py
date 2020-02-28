@@ -102,9 +102,10 @@ class InputType(enum.IntEnum):
 
 class CardAction(enum.IntEnum):
 
-    PLAY_EVENT = 0,
+    PLAY_EVENT = 0
     RESOLVE_EVENT_FIRST = 1
     INFLUENCE = 2
     REALIGNMENT = 3
     COUP = 4
     SPACE = 5
+    SKIP_OPTIONAL_AR = 6
