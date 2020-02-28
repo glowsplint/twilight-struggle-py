@@ -339,13 +339,16 @@ class Vietnam_Revolts(Card):
     owner = Side.USSR
     event_text = 'Add 2 USSR Influence in Vietnam. For the remainder of the turn, the Soviet player may add 1 Operations point to any card that uses all points in Southeast Asia.'
     event_unique = True
+    _region = list(CountryInfo.REGION_ALL[MapRegion.SOUTHEAST_ASIA])
 
     def __init__(self):
         super().__init__()
         self.all_points_in_region = True
         self.extra_point_given = False
+        self.extra_point_taken = False
 
     def use_event(self, game_instance, side: Side):
+        game_instance.map.change_influence('Vietnam', Side.USSR, 2)
         game_instance.basket[Side.USSR].append('Vietnam_Revolts')
         game_instance.end_turn_stage_list.append(
             partial(game_instance.basket[Side.USSR].remove, 'Vietnam_Revolts'))
@@ -353,6 +356,52 @@ class Vietnam_Revolts(Card):
     def reset(self):
         self.all_points_in_region = True
         self.extra_point_given = False
+
+    def give_rep(self, game_instance, name, repetitions):
+        '''
+        Awards additional rep if:
+        1. All points in region
+        2. Additional rep has not already been given.
+        '''
+        if name not in Vietnam_Revolts._region:
+            self.all_points_in_region = False
+        if self.all_points_in_region and not self.extra_point_given:
+            repetitions += 1
+            game_instance.input_state.change_max_per_option(1)
+            self.extra_point_given = True
+        return repetitions
+
+    def remove_rep(self, game_instance, name, repetitions):
+        '''
+        Removes additional rep if:
+        1. It was given
+        2. Name not in _region
+        3. Additional rep has not already been taken.
+        '''
+        if self.extra_point_given:
+            if name not in Vietnam_Revolts._region:
+                if not self.extra_point_taken:
+                    repetitions -= 1
+                    game_instance.input_state.change_max_per_option(-1)
+                    self.extra_point_taken = True
+        return repetitions
+
+    def modify_selection(self, game_instance, card_name, side):
+        '''
+        Modifies the available options.
+
+        Handles the special case where 4 points have been placed in SEA with the China Card. We want to remove
+        all options not in ASIA, and also remove the options outside SEA if opponent owned. 
+        '''
+        if card_name == 'The_China_Card' and game_instance.input_state.reps == 2 and self.all_points_in_region:
+            for n in game_instance.input_state.selection:
+                if game_instance.map[n].info.name not in The_China_Card._region or (game_instance.map[n].info.name not in Vietnam_Revolts._region and game_instance.map[n].control == side.opp):
+                    game_instance.input_state.remove_option(n)
+
+        elif game_instance.input_state.reps == 1 and self.all_points_in_region:
+            for n in game_instance.input_state.selection:
+                if game_instance.map[n].info.name not in Vietnam_Revolts._region:
+                    game_instance.input_state.remove_option(n)
 
 
 class Blockade(Card):

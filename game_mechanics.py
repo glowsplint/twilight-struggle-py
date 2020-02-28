@@ -729,11 +729,19 @@ class Game:
             self.input_state.reps -= 1
 
         if card_name == 'The_China_Card':
-            self.input_state.reps = self.cards[card_name].give_rep(
+            self.input_state.reps = self.cards['The_China_Card'].give_rep(
                 self, name, self.input_state.reps)
-            self.input_state.reps = self.cards[card_name].remove_rep(
+            self.input_state.reps = self.cards['The_China_Card'].remove_rep(
                 self, name, self.input_state.reps)
-            self.cards[card_name].modify_selection(self)
+            self.cards['The_China_Card'].modify_selection(self)
+
+        if 'Vietnam_Revolts' in self.basket[Side.USSR]:
+            self.input_state.reps = self.cards['Vietnam_Revolts'].give_rep(
+                self, name, self.input_state.reps)
+            self.input_state.reps = self.cards['Vietnam_Revolts'].remove_rep(
+                self, name, self.input_state.reps)
+            self.cards['Vietnam_Revolts'].modify_selection(
+                self, card_name, side)
 
         c.increment_influence(side)
 
@@ -781,14 +789,26 @@ class Game:
         self.input_state.reps -= 1
 
         if card_name == 'The_China_Card':
-            reps = self.cards[card_name].give_rep(self, name, reps)
-            reps = self.cards[card_name].remove_rep(self, name, reps)
+            reps = self.cards['The_China_Card'].give_rep(self, name, reps)
+            reps = self.cards['The_China_Card'].remove_rep(self, name, reps)
+
+        if 'Vietnam_Revolts' in self.basket[Side.USSR]:
+            reps = self.cards['Vietnam_Revolts'].give_rep(self, name, reps)
+            reps = self.cards['Vietnam_Revolts'].remove_rep(self, name, reps)
 
         if reps:
-            if card_name == 'The_China_Card' and reps == 1 and self.cards['The_China_Card'].all_points_in_asia:
+            if card_name == 'The_China_Card' and 'Vietnam_Revolts' in self.basket[Side.USSR] and reps == 2 and self.cards['The_China_Card'].all_points_in_region and self.cards['Vietnam_Revolts'].all_points_in_region:
                 self.stage_list.append(
                     partial(self.card_operation_realignment, side, card_name=card_name, reps=reps,
-                            restricted_list=list(CountryInfo.REGION_ALL[MapRegion.ASIA])))
+                            restricted_list=self.cards['The_China_Card']._region))
+            elif 'Vietnam_Revolts' in self.basket[Side.USSR] and reps == 1 and self.cards['Vietnam_Revolts'].all_points_in_region:
+                self.stage_list.append(
+                    partial(self.card_operation_realignment, side, card_name=card_name, reps=reps,
+                            restricted_list=self.cards['Vietnam_Revolts']._region))
+            elif card_name == 'The_China_Card' and reps == 1 and self.cards['The_China_Card'].all_points_in_region:
+                self.stage_list.append(
+                    partial(self.card_operation_realignment, side, card_name=card_name, reps=reps,
+                            restricted_list=self.cards['The_China_Card']._region))
             else:
                 self.stage_list.append(
                     partial(self.card_operation_realignment, side, card_name=card_name, reps=reps))
@@ -805,8 +825,6 @@ class Game:
         '''
         Stage when a player is given the opportunity to use realignment. Provides a list
         of countries where realignment can take place and waits for player input.
-
-        TODO: Does not currently check the player baskets for China Card and Vietnam effects.
 
         Parameters
         ----------
@@ -1389,7 +1407,7 @@ class Game:
             self.change_vp(swing)
         else:
             print(
-                f'USSR:US = {vps[Side.USSR]}:{vps[Side.US]}')
+                f'US:USSR = {vps[Side.US]}:{vps[Side.USSR]}')
 
         if self.map['Taiwan'].info.battleground:
             self.map['Taiwan'].info.battleground = False
