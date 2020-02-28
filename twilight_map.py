@@ -135,7 +135,6 @@ class GameMap:
         - Vietnam_Revolts
         - Cuban_Missile_Crisis
         - SALT Negotiations
-        - Cuban Missile Crisis
 
 
         Parameters

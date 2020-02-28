@@ -105,7 +105,7 @@ class Asia_Scoring(Card):
     card_index = 1
     card_type = 'Scoring'
     stage = 'Early War'
-    scoring_region = 'Asia'
+    scoring_region = MapRegion.ASIA
     event_text = 'Both sides score: Presence: 3, Domination: 7, Control: 9. +1 per controlled Battleground Country in Region, +1 per Country controlled that is adjacent to enemy superpower'
     may_be_held = False
 
@@ -124,7 +124,7 @@ class Europe_Scoring(Card):
     card_index = 2
     card_type = 'Scoring'
     stage = 'Early War'
-    scoring_region = 'Europe'
+    scoring_region = MapRegion.EUROPE
     event_text = 'Both sides score: Presence: 3, Domination: 7, Control: VICTORY. +1 per controlled Battleground Country in Region, +1 per Country controlled that is adjacent to enemy superpower'
     may_be_held = False
 
@@ -140,7 +140,7 @@ class Middle_East_Scoring(Card):
     card_index = 3
     card_type = 'Scoring'
     stage = 'Early War'
-    scoring_region = 'Middle East'
+    scoring_region = MapRegion.MIDDLE_EAST
     event_text = 'Both sides score: Presence: 3, Domination: 5, Control: 7. +1 per controlled Battleground Country in Region'
     may_be_held = False
 
@@ -826,9 +826,10 @@ class CIA_Created(Card):
         super().__init__()
 
     def use_event(self, game_instance, side: Side):
-        # TODO: reveal hand
+        print(f'USSR player reveals: {game_instance.hand[Side.USSR]}')
+        game_instance.players[Side.US].update_opp_hand(
+            game_instance.hand[Side.USSR])
         game_instance.select_action(Side.US, f'Blank_1_Op_Card')
-        pass
 
 
 class US_Japan_Mutual_Defense_Pact(Card):
@@ -1110,7 +1111,21 @@ class The_Cambridge_Five(Card):
 
     def use_event(self, game_instance, side: Side):
         if self.can_event(game_instance, Side.USSR):
-            pass
+            us_scoring_cards = [n for n in game_instance.hand[Side.US]
+                                if game_instance.cards[n].info.card_type == 'Scoring']
+            countries = [CountryInfo.REGION_ALL[k] for k in [
+                Card.ALL[n].scoring_region for n in us_scoring_cards]]
+
+            print(f'US player reveals: {us_scoring_cards}')
+            game_instance.players[Side.USSR].update_opp_hand(us_scoring_cards)
+
+            game_instance.input_state = Input(
+                Side.USSR, InputType.SELECT_COUNTRY,
+                partial(game_instance.event_influence_callback,
+                        Country.increment_influence, Side.US),
+                (item for sublist in countries for item in sublist),
+                prompt=f'Place 1 influence in a country named on the revealed scoring cards using The Cambridge Five.',
+            )
 
 
 class Special_Relationship(Card):
@@ -1162,6 +1177,16 @@ class NORAD(Card):
     def __init__(self):
         super().__init__()
 
+    def place_norad_influence(self, game_instance):
+        game_instance.input_state = Input(
+            Side.US, InputType.SELECT_COUNTRY,
+            partial(game_instance.event_influence_callback,
+                    Country.increment_influence, Side.US),
+            game_instance.map.has_us_influence,
+            prompt='Place NORAD influence.',
+            reps_unit='influence'
+        )
+
     def use_event(self, game_instance, side: Side):
         game_instance.basket[Side.US].append('NORAD')
 
@@ -1201,7 +1226,7 @@ class Central_America_Scoring(Card):
     card_index = 37
     card_type = 'Scoring'
     stage = 'Mid War'
-    scoring_region = 'Central America'
+    scoring_region = MapRegion.CENTRAL_AMERICA
     event_text = 'Both sides score: Presence: 1, Domination: 3, Control: 5. +1 per controlled Battleground Country in Region, +1 per Country controlled that is adjacent to enemy superpower'
     may_be_held = False
 
@@ -1217,7 +1242,7 @@ class Southeast_Asia_Scoring(Card):
     card_index = 38
     card_type = 'Scoring'
     stage = 'Mid War'
-    scoring_region = 'Southeast Asia'
+    scoring_region = MapRegion.SOUTHEAST_ASIA
     event_text = 'Both sides score: 1 VP each for Control of: Burma, Cambodia/Laos, Vietnam, Malaysia, Indonesia, the Phillipines, 2 VP for Control of Thailand'
     may_be_held = False
     event_unique = True
@@ -1270,6 +1295,46 @@ class Cuban_Missile_Crisis(Card):
 
     def __init__(self):
         super().__init__()
+
+    def cuban_missile_remove(self, game_instance, side: Side):
+        '''
+        Gives an opportunity to the couping player to remove 2 influence from
+        Cuba/(West Germany/Turkey) if USSR/US respectively. This stage triggers
+        only when a coup is initiated, rather than 'any time' as mentioned by the
+        card event text.
+
+        Parameters
+        ----------
+        side : Side
+            Side of couping player
+        '''
+        if side == Side.USSR:
+            countries = ['Cuba']
+        elif side == Side.US:
+            countries = ['West_Germany', 'Turkey']
+        options = [
+            n for n in countries if game_instance.map[n].influence[side] >= 2]
+
+        if len(options) == 0:
+            return False
+
+        def cuban_callback(self, opt: str):
+            if opt != game_instance.input_state.option_stop_early:
+                game_instance.event_influence_callback(
+                    partial(Country.decrement_influence, amt=2), side, opt)
+                game_instance.basket[side.opp].remove('Cuban_Missile_Crisis')
+            else:
+                game_instance.input_state.reps -= 1
+            return True
+
+        game_instance.input_state = Input(
+            Side.US, InputType.SELECT_COUNTRY,
+            partial(cuban_callback, game_instance),
+            options,
+            prompt='Cuban Missile Crisis: Remove 2 influence to de-escalate.',
+            reps_unit='influence',
+            option_stop_early='Do not remove influence.'
+        )
 
     def use_event(self, game_instance, side: Side):
         game_instance.change_defcon(2 - game_instance.defcon_track)
@@ -1856,8 +1921,10 @@ class Lone_Gunman(Card):
         super().__init__()
 
     def use_event(self, game_instance, side: Side):
+        print(f'US player reveals: {game_instance.hand[Side.US]}')
+        game_instance.players[Side.USSR].update_opp_hand(
+            game_instance.hand[Side.US])
         game_instance.select_action(Side.USSR, f'Blank_1_Op_Card')
-        pass
 
 
 class Colonial_Rear_Guards(Card):
@@ -2277,7 +2344,7 @@ class Africa_Scoring(Card):
     card_index = 79
     card_type = 'Scoring'
     stage = 'Mid War'
-    scoring_region = 'Africa'
+    scoring_region = MapRegion.AFRICA
     event_text = 'Both sides score: Presence: 1, Domination: 4, Control: 6. +1 per controlled Battleground Country in Region'
     may_be_held = False
 
@@ -2313,7 +2380,7 @@ class South_America_Scoring(Card):
     card_index = 81
     card_type = 'Scoring'
     stage = 'Mid War'
-    scoring_region = 'South America'
+    scoring_region = MapRegion.SOUTH_AMERICA
     event_text = 'Both sides score: Presence: 2, Domination: 5, Control: 6. +1 per controlled Battleground Country in Region'
     may_be_held = False
 
@@ -2365,6 +2432,8 @@ class Our_Man_In_Tehran(Card):
 
     def stage_2(self, game_instance):
         game_instance.draw_pile.extend(game_instance.hand[Side.NEUTRAL])
+        game_instance.players[Side.US].update_draw_pile(
+            game_instance.hand[Side.NEUTRAL])
         game_instance.hand[Side.NEUTRAL] = []
         return True
 
@@ -2373,7 +2442,6 @@ class Our_Man_In_Tehran(Card):
         game_instance.discard_pile.append(opt)
         game_instance.hand[Side.NEUTRAL].remove(opt)
         game_instance.stage_list.append(partial(self.stage_2, game_instance))
-        # post-choice card reveal to USSR not done
         return True
 
     def use_event(self, game_instance, side: Side):
@@ -2384,7 +2452,8 @@ class Our_Man_In_Tehran(Card):
                 Side.US, InputType.SELECT_CARD,
                 partial(self.callback, game_instance),
                 (n for n in game_instance.hand[Side.NEUTRAL]),
-                prompt=f'Our Man In Tehran: Discard any of these cards.'
+                prompt=f'Our Man In Tehran: Discard any of these cards.',
+                reps=5
             )
 
 
@@ -2825,7 +2894,8 @@ class Aldrich_Ames_Remix(Card):
         super().__init__()
 
     def use_event(self, game_instance, side: Side):
-        # TODO hand reveal for rest of turn
+        game_instance.players[Side.USSR].update_opp_hand(
+            game_instance.hand[Side.US])
         game_instance.input_state = Input(
             Side.USSR, InputType.SELECT_CARD,
             partial(game_instance.may_discard_callback, Side.US),

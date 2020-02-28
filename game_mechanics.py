@@ -3,10 +3,12 @@ import math
 from functools import partial
 from itertools import chain
 from typing import Sequence, Iterable, Callable, Tuple
+
 from twilight_map import GameMap, CountryInfo, Country
 from twilight_enums import Side, MapRegion, InputType, CardAction
 from twilight_cards import GameCards, Card
 from twilight_input_output import Input, Output
+from twilight_playerview import PlayerView
 
 
 class Game:
@@ -41,6 +43,7 @@ class Game:
 
         self.map = None
         self.cards = None
+        self.players = None
 
         self.input_state = None
         self.output_queue = [[], []]
@@ -74,6 +77,7 @@ class Game:
         self.spaced_turns = [0, 0]
         self.map = GameMap()
         self.cards = GameCards()
+        self.players = [PlayerView(Side.USSR), PlayerView(Side.US)]
         self.handicap = handicap  # positive in favour of ussr
 
         self.stage_list = [
@@ -167,7 +171,7 @@ class Game:
             print('Game ended by thermonuclear war')
             self.terminate()
         if previous_defcon > 2 and self.defcon_track == 2 and self.ar_track != 0 and 'NORAD' in self.basket[Side.US]:
-            self.norad_influence()
+            self.cards['NORAD'].place_norad_influence(self)
 
         verb = 'improved' if n > 0 else 'degraded'
         print(f'DEFCON level {verb} to {self.defcon_track}.')
@@ -735,7 +739,7 @@ class Game:
                 self, name, self.input_state.reps)
             self.cards['The_China_Card'].modify_selection(self)
 
-        if 'Vietnam_Revolts' in self.basket[Side.USSR]:
+        if 'Vietnam_Revolts' in self.basket[Side.USSR] and side == Side.USSR:
             self.input_state.reps = self.cards['Vietnam_Revolts'].give_rep(
                 self, name, self.input_state.reps)
             self.input_state.reps = self.cards['Vietnam_Revolts'].remove_rep(
@@ -792,12 +796,12 @@ class Game:
             reps = self.cards['The_China_Card'].give_rep(self, name, reps)
             reps = self.cards['The_China_Card'].remove_rep(self, name, reps)
 
-        if 'Vietnam_Revolts' in self.basket[Side.USSR]:
+        if 'Vietnam_Revolts' in self.basket[Side.USSR] and side == Side.USSR:
             reps = self.cards['Vietnam_Revolts'].give_rep(self, name, reps)
             reps = self.cards['Vietnam_Revolts'].remove_rep(self, name, reps)
 
         if reps:
-            if card_name == 'The_China_Card' and 'Vietnam_Revolts' in self.basket[Side.USSR] and reps == 2 and self.cards['The_China_Card'].all_points_in_region and self.cards['Vietnam_Revolts'].all_points_in_region:
+            if card_name == 'The_China_Card' and 'Vietnam_Revolts' in self.basket[Side.USSR] and side == Side.USSR and reps == 2 and self.cards['The_China_Card'].all_points_in_region and self.cards['Vietnam_Revolts'].all_points_in_region:
                 self.stage_list.append(
                     partial(self.card_operation_realignment, side, card_name=card_name, reps=reps,
                             restricted_list=self.cards['The_China_Card']._region))
@@ -890,18 +894,18 @@ class Game:
 
         return True
 
-    def coup_callback(self, side: Side, effective_ops: int, card_name: str, country_name: str, free=False, che=False) -> bool:
+    def coup_callback(self, side: Side, effective_ops: int, card_name: str, name: str, free=False, che=False) -> bool:
         self.input_state.reps -= 1
 
         local_ops_modifier = 0
-        if card_name == 'The_China_Card' and country_name in CountryInfo.REGION_ALL[MapRegion.ASIA]:
+        if card_name == 'The_China_Card' and name in self.cards['The_China_Card']._region:
             local_ops_modifier += 1
-        if 'Vietnam_Revolts' in self.basket[Side.USSR] and country_name in CountryInfo.REGION_ALL[MapRegion.SOUTHEAST_ASIA]:
+        if 'Vietnam_Revolts' in self.basket[Side.USSR] and side == Side.USSR and name in self.cards['Vietnam_Revolts']._region:
             local_ops_modifier += 1
 
         self.stage_list.append(partial(
             self.dice_stage,
-            partial(self.coup_dice_callback, country_name, side,
+            partial(self.coup_dice_callback, name, side,
                     effective_ops + local_ops_modifier, free, che=che)))
 
         return True
@@ -910,8 +914,6 @@ class Game:
         '''
         Stage when a player is given the opportunity to coup. Provides a list
         of countries which can be couped and waits for player input.
-
-        TODO: Does not currently check the player baskets for China Card and Vietnam effects.
 
         Parameters
         ----------
@@ -932,7 +934,7 @@ class Game:
 
         # Cuban Missile Crisis
         if 'Cuban_Missile_Crisis' in self.basket[side.opp]:
-            self.cuban_missile_remove(side)
+            self.cards['Cuban_Missile_Crisis'].cuban_missile_remove(side)
 
         def choose_coup_country():
             self.input_state = Input(
@@ -1077,16 +1079,6 @@ class Game:
                  lower=lower, win_vp=win_vp, win_milops=win_milops)
         return True
 
-    def norad_influence(self):
-        self.input_state = Input(
-            Side.US, InputType.SELECT_COUNTRY,
-            partial(self.event_influence_callback,
-                    Country.increment_influence, Side.US),
-            self.map.has_us_influence,
-            prompt='Place NORAD influence.',
-            reps_unit='influence'
-        )
-
     def forced_to_missile_envy(self):
         # check first if the player has as many scoring cards as turns
         # if True, then player is given choice as to which scoring card they
@@ -1145,45 +1137,6 @@ class Game:
         # If you don't have suitable discards, then you can't play anything.
         else:
             print('AR skipped due to lack of suitable cards.')
-
-    def cuban_missile_remove(self, side: Side):
-        '''
-        Gives an opportunity to the couping player to remove 2 influence from
-        Cuba/(West Germany/Turkey) if USSR/US respectively. This stage triggers
-        only when a coup is initiated, rather than 'any time' as mentioned by the
-        card event text.
-
-        Parameters
-        ----------
-        side : Side
-            Side of couping player
-        '''
-        if side == Side.USSR:
-            countries = ['Cuba']
-        elif side == Side.US:
-            countries = ['West_Germany', 'Turkey']
-        options = [n for n in countries if self.map[n].influence[side] >= 2]
-
-        if len(options) == 0:
-            return False
-
-        def cuban_callback(self, opt: str):
-            if opt != self.input_state.option_stop_early:
-                self.event_influence_callback(
-                    partial(Country.decrement_influence, amt=2), side, opt)
-                self.basket[side.opp].remove('Cuban_Missile_Crisis')
-            else:
-                self.input_state.reps -= 1
-            return True
-
-        self.input_state = Input(
-            Side.US, InputType.SELECT_COUNTRY,
-            partial(cuban_callback, self),
-            options,
-            prompt='Cuban Missile Crisis: Remove 2 influence to de-escalate.',
-            reps_unit='influence',
-            option_stop_early='Do not remove influence.'
-        )
 
     def shuffle_callback(self, card_name):
         self.input_state.reps -= 1
