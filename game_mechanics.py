@@ -776,9 +776,13 @@ class Game:
         return True
 
     def realignment_callback(self, side: Side, name: str, card_name: str, reps: int = None) -> bool:
-        reps = self.china_before(self.map[name], card_name, reps)
+
         reps -= 1
         self.input_state.reps -= 1
+
+        if card_name == 'The_China_Card':
+            reps = self.cards[card_name].give_rep(self, name, reps)
+            reps = self.cards[card_name].remove_rep(self, name, reps)
 
         if reps:
             if card_name == 'The_China_Card' and reps == 1 and self.cards['The_China_Card'].all_points_in_asia:
