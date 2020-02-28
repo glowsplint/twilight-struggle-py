@@ -374,6 +374,9 @@ class Game:
         else:
             self.stage_list.append(self.select_card)
 
+        if 'Vietnam_Revolts' in self.basket[Side.USSR]:
+            self.cards['Vietnam_Revolts'].reset()
+
     def can_play_event(self, side: Side, card_name: str):
         '''
         Checks if all the prerequisites for the Event are fulfilled.
@@ -713,32 +716,8 @@ class Game:
     operations points for coup or realignment, and also on the space race.
     '''
 
-    def china_before(self, c: Country, card_name: str, reps: int = 0):
-        asia = list(CountryInfo.REGION_ALL[MapRegion.ASIA])
-        if card_name == 'The_China_Card':
-            if c.info.name in asia:
-                if self.cards['The_China_Card'].all_points_in_asia:
-                    if not self.cards['The_China_Card'].extra_point_given:
-                        if reps:
-                            reps += 1
-                        else:
-                            self.input_state.reps += 1
-                        self.input_state.change_max_per_option(1)
-                        self.cards['The_China_Card'].extra_point_given = True
-            else:
-                self.cards['The_China_Card'].all_points_in_asia = False
-                if self.cards['The_China_Card'].extra_point_given:
-                    if reps:
-                        reps -= 1
-                    else:
-                        self.input_state.reps -= 1
-                    self.input_state.change_max_per_option(-1)
-                    self.cards['The_China_Card'].extra_point_given = False
-        return reps
-
     def ops_influence_callback(self, side: Side, card_name: str, name: str) -> bool:
         c = self.map[name]
-        self.china_before(c, card_name)
 
         # may no longer need this eventually if we ensure options are always correct
         if self.input_state.reps == 1 and c.control == side.opp:
@@ -749,6 +728,13 @@ class Game:
         else:
             self.input_state.reps -= 1
 
+        if card_name == 'The_China_Card':
+            self.input_state.reps = self.cards[card_name].give_rep(
+                self, name, self.input_state.reps)
+            self.input_state.reps = self.cards[card_name].remove_rep(
+                self, name, self.input_state.reps)
+            self.cards[card_name].modify_selection(self)
+
         c.increment_influence(side)
 
         if self.input_state.reps == 1:
@@ -756,19 +742,12 @@ class Game:
                 if self.map[n].control == side.opp:
                     self.input_state.remove_option(n)
 
-        if card_name == 'The_China_Card':
-            if self.input_state.reps == 1 and self.cards['The_China_Card'].all_points_in_asia:
-                for n in self.input_state.selection:
-                    if self.map[n].info.name not in list(CountryInfo.REGION_ALL[MapRegion.ASIA]):
-                        self.input_state.remove_option(n)
         return True
 
     def card_operation_influence(self, side: Side, card_name: str):
         '''
         Stage when a player is given the opportunity to place influence. Provides a list
         of countries where influence can be placed into and waits for player input.
-
-        TODO: Does not currently check the player baskets for China Card and Vietnam effects.
 
         Parameters
         ----------

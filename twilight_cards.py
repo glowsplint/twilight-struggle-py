@@ -221,11 +221,13 @@ class The_China_Card(Card):
     owner = Side.NEUTRAL
     can_headline = False
     event_text = 'Begins the game with the USSR player. +1 Operations value when all points are used in Asia. Pass to opponent after play. +1 VP for the player holding this card at the end of Turn 10. Cancels effect of \'Formosan Resolution\' if this card is played by the US player.'
+    _region = list(CountryInfo.REGION_ALL[MapRegion.ASIA])
 
     def __init__(self):
         super().__init__()
-        self.all_points_in_asia = True
+        self.all_points_in_region = True
         self.extra_point_given = False
+        self.extra_point_taken = False
 
     def can_event(self, game_instance, side):
         return False
@@ -239,10 +241,45 @@ class The_China_Card(Card):
         receipient_hand.append('The_China_Card')
         self.is_playable = made_playable
         self.reset()
-    
+
     def reset(self):
-        self.all_points_in_asia = True
+        self.all_points_in_region = True
         self.extra_point_given = False
+
+    def give_rep(self, game_instance, name, repetitions):
+        '''
+        Awards additional rep if:
+        1. All points in region
+        2. Additional rep has not already been given.
+        '''
+        if name not in The_China_Card._region:
+            self.all_points_in_region = False
+        if self.all_points_in_region and not self.extra_point_given:
+            repetitions += 1
+            game_instance.input_state.change_max_per_option(1)
+            self.extra_point_given = True
+        return repetitions
+
+    def remove_rep(self, game_instance, name, repetitions):
+        '''
+        Removes additional rep if:
+        1. It was given
+        2. Name not in _region
+        3. Additional rep has not already been taken.
+        '''
+        if self.extra_point_given:
+            if name not in The_China_Card._region:
+                if not self.extra_point_taken:
+                    repetitions -= 1
+                    game_instance.input_state.change_max_per_option(-1)
+                    self.extra_point_taken = True
+        return repetitions
+
+    def modify_selection(self, game_instance):
+        if game_instance.input_state.reps == 1 and self.all_points_in_region:
+            for n in game_instance.input_state.selection:
+                if game_instance.map[n].info.name not in The_China_Card._region:
+                    game_instance.input_state.remove_option(n)
 
 
 class Socialist_Governments(Card):
@@ -305,12 +342,17 @@ class Vietnam_Revolts(Card):
 
     def __init__(self):
         super().__init__()
+        self.all_points_in_region = True
+        self.extra_point_given = False
 
     def use_event(self, game_instance, side: Side):
-        # TODO: Continuous effect
         game_instance.basket[Side.USSR].append('Vietnam_Revolts')
         game_instance.end_turn_stage_list.append(
             partial(game_instance.basket[Side.USSR].remove, 'Vietnam_Revolts'))
+
+    def reset(self):
+        self.all_points_in_region = True
+        self.extra_point_given = False
 
 
 class Blockade(Card):
