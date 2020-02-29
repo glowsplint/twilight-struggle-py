@@ -785,6 +785,10 @@ class Game:
 
     def realignment_callback(self, side: Side, name: str, card_name: str, reps: int = None) -> bool:
 
+        if name == self.input_state.option_stop_early:
+            self.input_state.reps = 0
+            return True
+
         reps -= 1
         self.input_state.reps -= 1
 
