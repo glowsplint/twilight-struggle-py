@@ -150,17 +150,9 @@ class Game:
         n : int
             Number of VPs to change by.
         '''
-        def vp_win_check():
-            if self.vp_track >= 20 or self.vp_track <= -20:
-                self.terminate()
-
-        if 'We_Will_Bury_You' in self.basket[Side.USSR] and n < 0:
-            self.change_vp(3)
-            vp_win_check()
-            self.basket[Side.USSR].remove('We_Will_Bury_You')
-
         self.vp_track += n
-        vp_win_check()
+        if self.vp_track >= 20 or self.vp_track <= -20:
+            self.terminate()
         print(f'Current VP: {self.vp_track}')
 
     def change_defcon(self, n: int):

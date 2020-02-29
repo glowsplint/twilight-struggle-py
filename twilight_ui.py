@@ -363,7 +363,7 @@ c dec           Returns the number of cards in the draw deck.
         if comd == '':
             print(
                 f'Listing {len(self.game.hand[self.input_state.side])} cards in hand.')
-            for c in sorted(self.game.hand[self.input_state.side]):
+            for c in self.game.hand[self.input_state.side]:
                 print(f'{Card.ALL[c].card_index:5} {c}')
         elif comd == '?':
             print(UI.help_card)

@@ -1990,8 +1990,6 @@ class Grain_Sales_to_Soviets(Card):
     owner = Side.US
     event_text = 'Randomly choose one card from USSR hand. Play it or return it. If Soviet player has no cards, or returned, use this card to conduct Operations normally.'
 
-    # GRAIN SALES + UN INT: make sure everything goes into the discard pile
-
     def use_un_intervention(self, game_instance, card_name: str):
         # the only exception where UN intervention is used out of place without calling card_callback
         game_instance.stage_list.append(
@@ -2004,7 +2002,6 @@ class Grain_Sales_to_Soviets(Card):
 
     def action_stage(self, game_instance, card_name: str):
         # if received card is Side.USSR, then offer to use UN intervention if holding
-
         option_function_mapping = {
             'Use card normally':
                 partial(game_instance.select_action, Side.US, card_name),
@@ -2023,7 +2020,7 @@ class Grain_Sales_to_Soviets(Card):
             partial(game_instance.select_multiple_callback,
                     option_function_mapping),
             option_function_mapping.keys(),
-            prompt='You may use UN Intervention on the card selected by Grain Sales to Soviets.'
+            prompt='You may use the card selected by Grain Sales to Soviets.'
         )
 
     def random_card_callback(self, game_instance, card_name: str):
