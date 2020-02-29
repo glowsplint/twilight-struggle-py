@@ -281,6 +281,8 @@ class GameMap:
         print(
             f'USSR rolled: {ussr_roll}, US rolled: {us_roll}, ussr_advantage = {ussr_advantage}, Difference = {difference}')
 
+
+
     def can_place_influence(self, game_instance, name: str, side: Side, effective_ops: int) -> bool:
         '''
         Checks if influence can be placed in a country, according to:
@@ -598,6 +600,21 @@ class Country:
         self.influence[side] = self.influence[side.opp]
         return True
 
+    def coup_influence(self, side: Side, swing: int):
+        '''
+        Changes the influence by swing after side performs a coup.
+
+        side: Side
+            The side the coup is in favour of.
+        swing: int
+            The coup value.
+        '''
+        opp_inf = self.influence[side.opp] - swing
+        if opp_inf < 0:
+            self.influence[side.opp] = 0
+            self.influence[side] -= opp_inf
+        else:
+            self.influence[side.opp] = opp_inf
 
 USSR = {
     'name': 'USSR',

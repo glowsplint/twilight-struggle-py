@@ -336,16 +336,19 @@ class Game:
                 partial(self.dispose_headline, side))
             self.stage_list.append(
                 partial(self.trigger_event, side, card_name))
-            self.headline_bin[side] = ''
 
     def dispose_headline(self, side):
-        if self.headline_bin[side]:
+        # TODO use card.dispose
+        if self.headline_bin[side] == 'Missile_Envy':
+            self.hand[side.opp].append('Missile_Envy')
+            self.cards['Missile_Envy'].exchange = False
+        elif self.headline_bin[side]:
             c = self.headline_bin[side]
-            if self.cards[c].info.unique_event:
+            if self.cards[c].event_unique:
                 self.removed_pile.append(c)
             else:
                 self.discard_pile.append(c)
-            self.headline_bin[side] = ''
+        self.headline_bin[side] = ''
 
     def ars_remaining(self, side):
         '''
@@ -481,14 +484,19 @@ class Game:
         side : Side
             Side of the choosing player.
         '''
-
         if side == Side.NEUTRAL:
             side = self.ar_side
+
+        if 'Missile_Envy' in self.basket[side]:
+            playable_cards = ['Missile_Envy']
+        else:
+            playable_cards = (
+                c for c in self.hand[side] if self.cards[c].is_playable)
 
         self.input_state = Input(
             side, InputType.SELECT_CARD,
             partial(self.card_callback, side),
-            (c for c in self.hand[side] if self.cards[c].is_playable),
+            playable_cards,
             prompt='Select a card in hand to play.'
         )
 
@@ -509,17 +517,17 @@ class Game:
         return True
 
     def action_callback(self, side: Side, card_name: str, action_name: str,
-                        is_event_resolved: bool = False, un_intervention: bool = False, grain_sales: bool = False):
+                        no_event: bool = False, un_intervention: bool = False):
         self.input_state.reps -= 1
         self.stage_list.append(
             partial(self.resolve_card_action, side,
-                    card_name, action_name, is_event_resolved=is_event_resolved,
-                    un_intervention=un_intervention, grain_sales=grain_sales)
+                    card_name, action_name, no_event=no_event,
+                    un_intervention=un_intervention)
         )
         return True
 
     def select_action(self, side: Side, card_name: str, is_event_resolved: bool = False,
-                      un_intervention: bool = False, grain_sales: bool = False, can_coup=True, free_coup_realignment=False):
+                      un_intervention: bool = False, can_coup=True, free_coup_realignment=False):
         '''
         Stage where the player has already chosen a card and now chooses an action to do with the card.
         Checks are made to ensure that the actions made available to the player are feasible actions,
@@ -554,15 +562,14 @@ class Game:
         self.input_state = Input(
             side, InputType.SELECT_CARD_ACTION,
             partial(self.action_callback, side, card_name,
-                    is_event_resolved=is_event_resolved,
-                    un_intervention=un_intervention,
-                    grain_sales=grain_sales),
+                    no_event=is_event_resolved,
+                    un_intervention=un_intervention),
             (CardAction(i).name for i, b in enumerate(bool_arr) if b),
             prompt=f'Select an action for {card_name}.'
         )
 
     def resolve_card_action(self, side: Side, card_name: str, action_name: str,
-                            is_event_resolved: bool = False, un_intervention: bool = False, grain_sales: bool = False):
+                            no_event: bool = False, un_intervention: bool = False):
         '''
         This function should lead to card_operation_realignment, card_operation_coup,
         or card_operation_influence, or a space race function.
@@ -579,12 +586,8 @@ class Game:
 
         if action == CardAction.PLAY_EVENT:
 
-            if grain_sales:
-                self.stage_list.append(
-                    partial(self.dispose_card, Side.USSR, card_name, event=True))
-            else:
-                self.stage_list.append(
-                    partial(self.dispose_card, side, card_name, event=True))
+            self.stage_list.append(
+                partial(self.cards[card_name].dispose, self, side))
             self.stage_list.append(
                 partial(self.trigger_event, side, card_name))
 
@@ -597,23 +600,15 @@ class Game:
 
         elif action == CardAction.SPACE:
 
-            if grain_sales:
-                self.stage_list.append(
-                    partial(self.dispose_card, Side.USSR, card_name))
-            else:
-                self.stage_list.append(
-                    partial(self.dispose_card, side, card_name))
+            self.stage_list.append(
+                partial(self.cards[card_name].dispose, self, side))
             self.stage_list.append(partial(self.space, side, card_name))
 
         elif action == CardAction.INFLUENCE:
 
-            if grain_sales:
-                self.stage_list.append(
-                    partial(self.dispose_card, Side.USSR, card_name, event=opp_event))
-            else:
-                self.stage_list.append(
-                    partial(self.dispose_card, side, card_name, event=opp_event))
-            if opp_event and not is_event_resolved and not un_intervention:
+            self.stage_list.append(
+                partial(self.cards[card_name].dispose, self, side))
+            if opp_event and not no_event and not un_intervention:
                 self.stage_list.append(
                     partial(self.trigger_event, side, card_name))
             self.stage_list.append(
@@ -621,13 +616,9 @@ class Game:
 
         elif action == CardAction.REALIGNMENT:
 
-            if grain_sales:
-                self.stage_list.append(
-                    partial(self.dispose_card, Side.USSR, card_name, event=opp_event))
-            else:
-                self.stage_list.append(
-                    partial(self.dispose_card, side, card_name, event=opp_event))
-            if opp_event and not is_event_resolved and not un_intervention:
+            self.stage_list.append(
+                partial(self.cards[card_name].dispose, self, side))
+            if opp_event and not no_event and not un_intervention:
                 self.stage_list.append(
                     partial(self.trigger_event, side, card_name))
             self.stage_list.append(
@@ -635,10 +626,9 @@ class Game:
 
         elif action == CardAction.COUP:
 
-            side = Side.USSR if grain_sales else side
             self.stage_list.append(
-                partial(self.dispose_card, side, card_name, event=opp_event))
-            if opp_event and not is_event_resolved and not un_intervention:
+                partial(self.cards[card_name].dispose, self, side))
+            if opp_event and not no_event and not un_intervention:
                 self.stage_list.append(
                     partial(self.trigger_event, side, card_name))
             self.stage_list.append(
@@ -650,34 +640,6 @@ class Game:
                     self.change_vp(2)
 
     # Utility functions used in stages
-
-    def dispose_card(self, side, card_name: str, event=False):
-        '''
-        Stage that deals with the card after it has been used.
-        Calls to this function should come after the event / use of operations / space race.
-
-        Parameters
-        ----------
-        side : Side
-            Side of the player who plays the card.
-        card_name : str
-            String representation of the card.
-        event : bool, default=False
-            True if the event has been resolved.
-        '''
-        if card_name == 'The_China_Card':
-            self.cards['The_China_Card'].move_china_card(self, side)
-        elif card_name == 'Shuttle_Diplomacy':
-            self.limbo.append('Shuttle_Diplomacy')
-            self.hand[side].remove(card_name)
-        elif card_name in (f'Blank_{n}_Op_Card' for n in range(1, 5)):
-            pass
-        else:
-            if event and self.cards[card_name].info.event_unique:
-                self.removed_pile.append(card_name)
-            else:
-                self.discard_pile.append(card_name)
-            self.hand[side].remove(card_name)
 
     def get_global_effective_ops(self, side: Side, raw_ops: int):
         '''
@@ -797,6 +759,10 @@ class Game:
         return True
 
     def realignment_callback(self, side: Side, name: str, card_name: str, reps: int = None) -> bool:
+
+        if name == self.input_state.option_stop_early:
+            self.input_state.reps = 0
+            return True
 
         reps -= 1
         self.input_state.reps -= 1
@@ -1088,19 +1054,6 @@ class Game:
                  lower=lower, win_vp=win_vp, win_milops=win_milops)
         return True
 
-    def forced_to_missile_envy(self):
-        # check first if the player has as many scoring cards as turns
-        # if True, then player is given choice as to which scoring card they
-        # can play. this stage is then triggered again at a later stage.
-        '''
-        In this stage, the <side> that faces this stage will be forced to use the missile envy card.
-
-        Hard-coded interactions:
-        - With Quagmire and Red_Scare_Purge (to code within Quagmire)
-        - With scoring cards (to code here)
-        '''
-        pass
-
     def qbt_dice_callback(self, side: Side, trap_name: str, num: str):
         self.input_state.reps -= 1
         if int(num) <= 4:
@@ -1125,10 +1078,6 @@ class Game:
             Name of the basket effect. Can be either 'Quagmire' or 'Bear_Trap'.
         '''
 
-        suitable_cards = [n for n in self.hand[side]
-                          if n != 'The_China_Card'
-                          and self.get_global_effective_ops(side, self.cards[n].info.ops) >= 2]
-
         scoring_cards = [n for n in self.hand[side]
                          if self.cards[n].info.card_type == 'Scoring']
 
@@ -1141,18 +1090,32 @@ class Game:
                 scoring_cards,
                 prompt='You must play a scoring card.'
             )
+            return
 
         # Otherwise, if there are discardable cards, you have to discard from these.
-        elif suitable_cards:
-            self.input_state = Input(
-                side, InputType.SELECT_CARD,
-                partial(self.qbt_discard_callback, side, trap_name),
-                suitable_cards,
-                prompt='You must discard a card to be released.'
-            )
-        # If you don't have suitable discards, then you can't play anything.
         else:
-            print('AR skipped due to lack of suitable cards.')
+            suitable_cards = []
+            if 'Missile_Envy' in self.basket[side]:
+                me_ops = self.get_global_effective_ops(
+                    side, self.cards['Missile_Envy'].ops)
+                if me_ops >= 2:
+                    suitable_cards.append('Missile_Envy')
+            else:
+                suitable_cards.extend(
+                    n for n in self.hand[side]
+                    if n != 'The_China_Card'
+                    and self.get_global_effective_ops(side, self.cards[n].info.ops) >= 2
+                )
+            if suitable_cards:
+                self.input_state = Input(
+                    side, InputType.SELECT_CARD,
+                    partial(self.qbt_discard_callback, side, trap_name),
+                    suitable_cards,
+                    prompt='You must discard a card to be released.'
+                )
+            # If you don't have suitable discards, then you can't play anything.
+            else:
+                print('AR skipped due to lack of suitable cards.')
 
     def shuffle_callback(self, card_name):
         self.input_state.reps -= 1
