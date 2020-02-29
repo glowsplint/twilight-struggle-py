@@ -150,9 +150,17 @@ class Game:
         n : int
             Number of VPs to change by.
         '''
+        def vp_win_check():
+            if self.vp_track >= 20 or self.vp_track <= -20:
+                self.terminate()
+
+        if 'We_Will_Bury_You' in self.basket[Side.USSR] and n < 0:
+            self.change_vp(3)
+            vp_win_check()
+            self.basket[Side.USSR].remove('We_Will_Bury_You')
+
         self.vp_track += n
-        if self.vp_track >= 20 or self.vp_track <= -20:
-            self.terminate()
+        vp_win_check()
         print(f'Current VP: {self.vp_track}')
 
     def change_defcon(self, n: int):
@@ -737,9 +745,10 @@ class Game:
                 self, name, self.input_state.reps)
             self.input_state.reps = self.cards['The_China_Card'].remove_rep(
                 self, name, self.input_state.reps)
-            self.cards['The_China_Card'].modify_selection(self)
+            self.cards['The_China_Card'].modify_selection(self, side)
 
-        if 'Vietnam_Revolts' in self.basket[Side.USSR] and side == Side.USSR:
+        # and side == Side.USSR:
+        if 'Vietnam_Revolts' in self.basket[Side.USSR]:
             self.input_state.reps = self.cards['Vietnam_Revolts'].give_rep(
                 self, name, self.input_state.reps)
             self.input_state.reps = self.cards['Vietnam_Revolts'].remove_rep(
@@ -1083,6 +1092,13 @@ class Game:
         # check first if the player has as many scoring cards as turns
         # if True, then player is given choice as to which scoring card they
         # can play. this stage is then triggered again at a later stage.
+        '''
+        In this stage, the <side> that faces this stage will be forced to use the missile envy card.
+
+        Hard-coded interactions:
+        - With Quagmire and Red_Scare_Purge (to code within Quagmire)
+        - With scoring cards (to code here)
+        '''
         pass
 
     def qbt_dice_callback(self, side: Side, trap_name: str, num: str):

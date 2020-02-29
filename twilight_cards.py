@@ -275,7 +275,12 @@ class The_China_Card(Card):
                     self.extra_point_taken = True
         return repetitions
 
-    def modify_selection(self, game_instance):
+    def modify_selection(self, game_instance, side):
+        if game_instance.input_state.reps == 2 and self.all_points_in_region:
+            for n in game_instance.input_state.selection:
+                if game_instance.map[n].info.name not in The_China_Card._region and game_instance.map[n].control == side.opp:
+                    game_instance.input_state.remove_option(n)
+
         if game_instance.input_state.reps == 1 and self.all_points_in_region:
             for n in game_instance.input_state.selection:
                 if game_instance.map[n].info.name not in The_China_Card._region:
@@ -393,9 +398,19 @@ class Vietnam_Revolts(Card):
         Handles the special case where 4 points have been placed in SEA with the China Card. We want to remove
         all options not in ASIA, and also remove the options outside SEA if opponent owned. 
         '''
+        if card_name == 'The_China_Card' and game_instance.input_state.reps == 3 and self.all_points_in_region:
+            for n in game_instance.input_state.selection:
+                if game_instance.map[n].info.name not in The_China_Card._region and game_instance.map[n].control == side.opp:
+                    game_instance.input_state.remove_option(n)
+
         if card_name == 'The_China_Card' and game_instance.input_state.reps == 2 and self.all_points_in_region:
             for n in game_instance.input_state.selection:
                 if game_instance.map[n].info.name not in The_China_Card._region or (game_instance.map[n].info.name not in Vietnam_Revolts._region and game_instance.map[n].control == side.opp):
+                    game_instance.input_state.remove_option(n)
+
+        elif game_instance.input_state.reps == 2 and self.all_points_in_region:
+            for n in game_instance.input_state.selection:
+                if game_instance.map[n].info.name not in Vietnam_Revolts._region or game_instance.map[n].control == side.opp:
                     game_instance.input_state.remove_option(n)
 
         elif game_instance.input_state.reps == 1 and self.all_points_in_region:
@@ -681,7 +696,8 @@ class Olympic_Games(Card):
 
         def boycott(side):
             game_instance.change_defcon(-1)
-            game_instance.select_action(side, f'Blank_4_Op_Card')
+            game_instance.select_action(
+                side, f'Blank_4_Op_Card', is_event_resolved=True)
 
         option_function_mapping = {
             'Participate and sponsor has modified die roll (+2).': partial(participate, side),
@@ -829,7 +845,8 @@ class CIA_Created(Card):
         print(f'USSR player reveals: {game_instance.hand[Side.USSR]}')
         game_instance.players[Side.US].update_opp_hand(
             game_instance.hand[Side.USSR])
-        game_instance.select_action(Side.US, f'Blank_1_Op_Card')
+        game_instance.select_action(
+            Side.US, f'Blank_1_Op_Card', is_event_resolved=True)
 
 
 class US_Japan_Mutual_Defense_Pact(Card):
@@ -1819,7 +1836,8 @@ class ABM_Treaty(Card):
 
     def use_event(self, game_instance, side: Side):
         game_instance.change_defcon(1)
-        game_instance.select_action(side, f'Blank_4_Op_Card')
+        game_instance.select_action(
+            side, f'Blank_4_Op_Card', is_event_resolved=True)
 
 
 class Cultural_Revolution(Card):
@@ -1924,7 +1942,8 @@ class Lone_Gunman(Card):
         print(f'US player reveals: {game_instance.hand[Side.US]}')
         game_instance.players[Side.USSR].update_opp_hand(
             game_instance.hand[Side.US])
-        game_instance.select_action(Side.USSR, f'Blank_1_Op_Card')
+        game_instance.select_action(
+            Side.USSR, f'Blank_1_Op_Card', is_event_resolved=True)
 
 
 class Colonial_Rear_Guards(Card):
@@ -2641,7 +2660,7 @@ class Soviets_Shoot_Down_KAL_007(Card):
         game_instance.change_vp(-2)
         if game_instance.map['South_Korea'].control == Side.US:
             game_instance.select_action(
-                Side.US, f'Blank_4_Op_Card', can_coup=False)
+                Side.US, f'Blank_4_Op_Card', can_coup=False, is_event_resolved=True)
 
 
 class Glasnost(Card):
@@ -2662,7 +2681,7 @@ class Glasnost(Card):
         game_instance.change_vp(2)
         if 'The_Reformer' in game_instance.basket[Side.USSR]:
             game_instance.select_action(
-                Side.USSR, f'Blank_4_Op_Card', can_coup=False)
+                Side.USSR, f'Blank_4_Op_Card', can_coup=False, is_event_resolved=True)
 
 
 class Ortega_Elected_in_Nicaragua(Card):
@@ -2836,7 +2855,7 @@ class Tear_Down_This_Wall(Card):
         if 'Willy_Brandt' in game_instance.basket[Side.USSR]:
             game_instance.basket[Side.USSR].remove('Willy_Brandt')
         game_instance.change_vp(1)
-        game_instance.map['West_Germany'].change_influence(0, 3)
+        game_instance.map['East_Germany'].change_influence(0, 3)
 
         def coup(game_instance, side):
             game_instance.card_operation_coup(side, 'Tear_Down_This_Wall', restricted_list=list(
@@ -2847,8 +2866,8 @@ class Tear_Down_This_Wall(Card):
                 CountryInfo.REGION_ALL[MapRegion.EUROPE]), free=True)
 
         option_function_mapping = {
-            'Free coup attempt': partial(coup, side),
-            'Free realignment rolls': partial(realignment, side)
+            'Free coup attempt': partial(coup, game_instance, side),
+            'Free realignment rolls': partial(realignment, game_instance, side)
         }
 
         game_instance.input_state = Input(
