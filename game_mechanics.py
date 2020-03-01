@@ -108,7 +108,7 @@ class Game:
         '''
         self.stage_list.clear()
         if side != Side.NEUTRAL:
-            winner = side.toStr()
+            winner = side.toStr
         else:
             winner = 'USSR' if self.vp_track > 0 else 'US'
         print(f'{winner} victory!')
@@ -294,7 +294,7 @@ class Game:
             Side's headline is displayed
         '''
         print(
-            f'{side.toStr()} selected {self.headline_bin[side]} for headline.')
+            f'{side.toStr} selected {self.headline_bin[side]} for headline.')
 
     def resolve_headline_order(self):
         '''
@@ -701,8 +701,7 @@ class Game:
                 self, name, self.input_state.reps)
             self.cards['The_China_Card'].modify_selection(self, side)
 
-        # and side == Side.USSR:
-        if 'Vietnam_Revolts' in self.basket[Side.USSR]:
+        if 'Vietnam_Revolts' in self.basket[Side.USSR] and side == Side.USSR:
             self.input_state.reps = self.cards['Vietnam_Revolts'].give_rep(
                 self, name, self.input_state.reps)
             self.input_state.reps = self.cards['Vietnam_Revolts'].remove_rep(
@@ -969,7 +968,7 @@ class Game:
                 self.input_state.remove_option(name)
             return True
 
-    def select_multiple_callback(self, option_function_mapping: dict, selected_option: list):
+    def select_multiple_callback(self, option_function_mapping: dict, selected_option: str):
         '''
         Stage where a player is given the opportunity to select from multiple choices.
 
@@ -1003,7 +1002,7 @@ class Game:
         self.input_state.reps -= 1
         return True
 
-    def war_dice_callback(self, name, side, modifier, min_roll, win_vp, win_milops, num: str):
+    def war_dice_callback(self, name: str, side: Side, modifier: int, min_roll: int, win_vp: int, win_milops: int, num: str):
 
         self.input_state.reps -= 1
         outcome = 'Success' if int(num) - modifier >= min_roll else 'Failure'
@@ -1048,8 +1047,10 @@ class Game:
 
     def qbt_dice_callback(self, side: Side, trap_name: str, num: str):
         self.input_state.reps -= 1
-        if int(num) <= 4:
+        outcome = 'Success' if int(num) <= 4 else 'Failure'
+        if outcome == 'Success':
             self.basket[side].remove(trap_name)
+        print(f'{outcome} with roll of {num}')
         return True
 
     def qbt_discard_callback(self, side: Side, trap_name: str, card_name: str):
@@ -1167,7 +1168,7 @@ class Game:
     def deal(self, first_side=Side.USSR):
 
         if first_side == Side.NEUTRAL:
-            handsize_target = [3, 2]
+            handsize_target = [3, 2] # hardcoded for Ask Not..
         if 1 <= self.turn_track <= 3:
             handsize_target = [8, 8]
         else:

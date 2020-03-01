@@ -78,13 +78,13 @@ class GameMap:
         '''Returns list of names that have USSR influence, less superpowers..'''
         return [country.info.name for country in self.ALL.values() if country.influence[Side.USSR] > 0 and country.info.superpower == False]
 
-    def can_coup(self, game_instance, name: str, side: Side, free=False) -> bool:
+    def can_coup(self, game, name: str, side: Side, free=False) -> bool:
         '''
         Checks if the country can be couped by a given side.
 
         Parameters
         ----------
-        game_instance : Game object
+        game : Game object
             The game object the country resides within.
         name : str
             String representation of the country we are checking.
@@ -107,23 +107,23 @@ class GameMap:
         if free:
             return not (side == Side.US and country.influence[Side.USSR] == 0 or
                         side == Side.USSR and country.influence[Side.US] == 0)
-        elif 'NATO' in game_instance.basket[Side.US] and name in game_instance.calculate_nato_countries():
+        elif 'NATO' in game.basket[Side.US] and name in game.calculate_nato_countries():
             return False
-        elif 'US_Japan_Mutual_Defense_Pact' in game_instance.basket[Side.US] and name == 'Japan':
+        elif 'US_Japan_Mutual_Defense_Pact' in game.basket[Side.US] and name == 'Japan':
             return False
-        elif 'The_Reformer' in game_instance.basket[Side.USSR] and name in d4:
+        elif 'The_Reformer' in game.basket[Side.USSR] and name in d4:
             return False
-        elif game_instance.defcon_track == 4 and name in d4:
+        elif game.defcon_track == 4 and name in d4:
             return False
-        elif game_instance.defcon_track == 3 and name in d3:
+        elif game.defcon_track == 3 and name in d3:
             return False
-        elif game_instance.defcon_track == 2 and name in d2:
+        elif game.defcon_track == 2 and name in d2:
             return False
 
         return not (side == Side.US and country.influence[Side.USSR] == 0 or
                     side == Side.USSR and country.influence[Side.US] == 0)
 
-    def coup(self, game_instance, name: str, side: Side, effective_ops: int, die_roll: int, free=False):
+    def coup(self, game, name: str, side: Side, effective_ops: int, die_roll: int, free=False):
         '''
         The result of a given side couping in a country, with a die_roll provided.
         Accounts for:
@@ -139,7 +139,7 @@ class GameMap:
 
         Parameters
         ----------
-        game_instance : Game object
+        game : Game object
             The game object the country resides within.
         name : str
             String representation of the country we are checking.
@@ -150,7 +150,7 @@ class GameMap:
         die_roll: int
             The die roll of the coup. Should be bounded within range(1,7).
         '''
-        assert(self.can_coup(game_instance, name, side))
+        assert(self.can_coup(game, name, side))
         country = self[name]
 
         ussr_advantage = 0
@@ -159,13 +159,13 @@ class GameMap:
         ca = list(CountryInfo.REGION_ALL[MapRegion.CENTRAL_AMERICA])
         sa = list(CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA])
         if name in ca or name in sa:
-            if 'Latin_American_Death_Squads' in game_instance.basket[side]:
+            if 'Latin_American_Death_Squads' in game.basket[side]:
                 ussr_advantage += 1
-            elif 'Latin_American_Death_Squads' in game_instance.basket[side.opp]:
+            elif 'Latin_American_Death_Squads' in game.basket[side.opp]:
                 ussr_advantage -= 1
 
         # SALT Negotiations
-        if 'SALT_Negotiations' in game_instance.basket[side] or 'SALT_Negotiations' in game_instance.basket[side]:
+        if 'SALT_Negotiations' in game.basket[side] or 'SALT_Negotiations' in game.basket[side]:
             ussr_advantage -= 1
 
         difference = die_roll + effective_ops + \
@@ -184,30 +184,30 @@ class GameMap:
             f'Coup {outcome} with roll of {die_roll}. Difference: {difference}')
 
         # Cuban Missile Crisis overrides Nuclear Subs
-        if 'Cuban_Missile_Crisis' in game_instance.basket[side.opp]:
-            game_instance.change_defcon(1-game_instance.defcon_track)
+        if 'Cuban_Missile_Crisis' in game.basket[side.opp]:
+            game.change_defcon(1-game.defcon_track)
         elif country.info.battleground:
             if side == Side.US:
-                if 'Nuclear_Subs' not in game_instance.basket[Side.US]:
-                    game_instance.change_defcon(-1)
+                if 'Nuclear_Subs' not in game.basket[Side.US]:
+                    game.change_defcon(-1)
             else:
-                game_instance.change_defcon(-1)
+                game.change_defcon(-1)
 
         # Yuri and Samantha
-        if side == Side.US and 'Yuri_and_Samantha' in game_instance.basket[Side.USSR]:
-            game_instance.change_vp(1)
+        if side == Side.US and 'Yuri_and_Samantha' in game.basket[Side.USSR]:
+            game.change_vp(1)
 
         # Free coups
         if not free:
-            game_instance.change_milops(side, effective_ops)
+            game.change_milops(side, effective_ops)
 
-    def can_realignment(self, game_instance, name: str, side: Side, free=False) -> bool:
+    def can_realignment(self, game, name: str, side: Side, free=False) -> bool:
         '''
         Checks if the country can be realigned by a given side.
 
         Parameters
         ----------
-        game_instance : Game object
+        game : Game object
             The game object the country resides within.
         name : str
             String representation of the country we are checking.
@@ -225,15 +225,15 @@ class GameMap:
         if free:
             return not (side == Side.US and country.influence[Side.USSR] == 0 or
                         side == Side.USSR and country.influence[Side.US] == 0)
-        elif 'NATO' in game_instance.basket[Side.US] and name in game_instance.calculate_nato_countries():
+        elif 'NATO' in game.basket[Side.US] and name in game.calculate_nato_countries():
             return False
-        elif 'US_Japan_Mutual_Defense_Pact' in game_instance.basket[Side.US] and name == 'Japan':
+        elif 'US_Japan_Mutual_Defense_Pact' in game.basket[Side.US] and name == 'Japan':
             return False
-        elif game_instance.defcon_track == 4 and name in d4:
+        elif game.defcon_track == 4 and name in d4:
             return False
-        elif game_instance.defcon_track == 3 and name in d3:
+        elif game.defcon_track == 3 and name in d3:
             return False
-        elif game_instance.defcon_track == 2 and name in d2:
+        elif game.defcon_track == 2 and name in d2:
             return False
 
         if side == Side.USSR and country.ussr_influence_only:
@@ -243,13 +243,13 @@ class GameMap:
         else:
             return not (country.influence[Side.USSR] == 0 and country.influence[Side.US] == 0)
 
-    def realignment(self, game_instance, name: str, side: Side, ussr_roll: int, us_roll: int):
+    def realignment(self, game, name: str, side: Side, ussr_roll: int, us_roll: int):
         '''
         The result of a given side using realignment in a country, with both dice rolls provided.
 
         Parameters
         ----------
-        game_instance : Game object
+        game : Game object
             The game object the country resides within.
         name : str
             String representation of the country we are checking.
@@ -258,11 +258,11 @@ class GameMap:
         us_roll, us_roll: ints
             The respective dice rolls of the realignment. Should be bounded within range(1,7).
         '''
-        assert(self.can_realignment(game_instance, name, side))
+        assert(self.can_realignment(game, name, side))
         country = self[name]
 
         ussr_advantage = 0  # net positive is in favour of USSR
-        if 'Iran_Contra_Scandal' in game_instance.basket[Side.USSR]:
+        if 'Iran_Contra_Scandal' in game.basket[Side.USSR]:
             ussr_advantage += 1
 
         for adjacent_name in country.info.adjacent_countries:
@@ -283,7 +283,7 @@ class GameMap:
 
 
 
-    def can_place_influence(self, game_instance, name: str, side: Side, effective_ops: int) -> bool:
+    def can_place_influence(self, game, name: str, side: Side, effective_ops: int) -> bool:
         '''
         Checks if influence can be placed in a country, according to:
         1. Is there influence in the country itself, or any of its adjacent countries?
@@ -292,7 +292,7 @@ class GameMap:
 
         Parameters
         ----------
-        game_instance : Game object
+        game : Game object
             The game object the country resides within.
         name : str
             String representation of the country we are checking.
@@ -322,17 +322,17 @@ class GameMap:
                 return True
 
         def is_chernobyl():
-            if 'Chernobyl_Europe' in game_instance.basket[Side.US]:
+            if 'Chernobyl_Europe' in game.basket[Side.US]:
                 return False if name in list(CountryInfo.REGION_ALL[MapRegion.EUROPE]) else True
-            elif 'Chernobyl_Middle_East' in game_instance.basket[Side.US]:
+            elif 'Chernobyl_Middle_East' in game.basket[Side.US]:
                 return False if name in list(CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST]) else True
-            elif 'Chernobyl_Asia' in game_instance.basket[Side.US]:
+            elif 'Chernobyl_Asia' in game.basket[Side.US]:
                 return False if name in list(CountryInfo.REGION_ALL[MapRegion.ASIA]) else True
-            elif 'Chernobyl_Africa' in game_instance.basket[Side.US]:
+            elif 'Chernobyl_Africa' in game.basket[Side.US]:
                 return False if name in list(CountryInfo.REGION_ALL[MapRegion.AFRICA]) else True
-            elif 'Chernobyl_Central_America' in game_instance.basket[Side.US]:
+            elif 'Chernobyl_Central_America' in game.basket[Side.US]:
                 return False if name in list(CountryInfo.REGION_ALL[MapRegion.CENTRAL_AMERICA]) else True
-            elif 'Chernobyl_South_America' in game_instance.basket[Side.US]:
+            elif 'Chernobyl_South_America' in game.basket[Side.US]:
                 return False if name in list(CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA]) else True
             return True
 

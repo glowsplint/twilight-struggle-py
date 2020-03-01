@@ -1,3 +1,4 @@
+from typing import Sequence, Iterable
 from twilight_enums import Side, InputType, CardAction
 from twilight_map import MapRegion, CountryInfo
 
@@ -36,12 +37,12 @@ class PlayerView:
         However, we may also want for a player to maintain probabilistic distributions over
         what the draw pile contains, based on what cards have been played.
         '''
-        self.draw_pile = []
-        self.hand = []
-        self.opp_hand = []
+        self.draw_pile = set()
+        self.hand = set()
+        self.opp_hand = set()
         self.opp_headline = None  # contains only opposite headline
 
-    def update(self, game, side):
+    def update(self, game):
 
         self.vp_track = game.vp_track
         self.turn_track = game.turn_track
@@ -62,17 +63,26 @@ class PlayerView:
 
         self.hand = game.hand[self.side]
 
-    def update_opp_hand(self, opp_hand: list):
-        '''Opponent's hand consists of a list of card strings for known cards.'''
-        self.opp_hand = opp_hand
+    def update_opp_hand(self, new_known_cards: Iterable[str]):
+        '''Adds <opp_hand> to a set of already known information about the other player's cards.'''
+        print(f'{self.side.opp.toStr} player reveals: {new_known_cards}')
+        self.opp_hand.update(new_known_cards)
+
+    def remove_opp_hand(self, removed_cards: Iterable[str]):
+        '''Removes <removed_cards> from known information about the other player's cards.'''
+        self.opp_hand.difference_update(removed_cards)
 
     def update_headline(self, opp_headline):
         self.opp_headline = opp_headline
 
-    def update_draw_pile(self, known_cards: list):
-        '''Contains additional information about the draw pile from events.'''
-        self.draw_pile += known_cards
+    def update_draw_pile(self, known_cards: Iterable[str]):
+        '''Contains additional information about the draw pile.'''
+        self.draw_pile.update(known_cards)
+
+    def remove_draw_pile(self, removed_cards: Iterable[str]):
+        '''Removes <removed_cards> from known information about the draw pile.'''
+        self.draw_pile.difference_update(removed_cards)
 
     def reset_draw_pile(self):
         '''Reverting to no additional information about the contents of the draw pile.'''
-        self.draw_pile = []
+        self.draw_pile = set()
