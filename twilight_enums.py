@@ -1,12 +1,68 @@
 import enum
 from typing import Iterable, Callable
 
+class TrackEffects():
+
+    def __init__(self, defcon: int=0, vp: int=0, milops: int=0):
+        self.defcon = defcon
+        self.vp = vp
+        self.milops = milops
+
+    def __iadd__(self, other):
+        self.defcon += other.defcon
+        self.vp += other.vp
+        self.milops += other.milops
+        return self
+
+    def __repr__(self):
+        items = []
+        if self.defcon:
+            items.append(f'DEFCON {self.defcon:+}')
+
+        if self.vp:
+            items.append(f'VP {self.vp:+}')
+
+        if self.milops:
+            items.append(f'Mil. Ops. {self.milops:+}')
+
+        return '; '.join(items)
+
+class CoupEffects(TrackEffects):
+
+    def __init__(self, no_milops: bool=False, no_defcon_bg: bool=False, **kwargs):
+        super().__init__(**kwargs)
+        self.no_milops = no_milops
+        self.no_defcon_bg = no_defcon_bg
+
+    def __iadd__(self, other):
+        super().__iadd__(other)
+        self.no_milops = self.no_milops or other.no_milops
+        self.no_defcon_bg = self.no_defcon_bg or other.no_defcon_bg
+        return self
+
+    def __repr__(self):
+        items = []
+        prefix = super().__repr__()
+
+        if prefix: items.append(prefix)
+        if self.no_milops:
+            items.append('No mil. ops. gained')
+
+        if self.no_defcon_bg:
+            items.append('No DEFCON reduction for battlegrounds')
+
+        return '; '.join(items)
+
 
 class Side(enum.IntEnum):
 
     USSR = 0
     US = 1
     NEUTRAL = 2
+
+    @classmethod
+    def PLAYERS(cls):
+        return (cls.USSR, cls.US)
 
     @staticmethod
     def fromStr(s):

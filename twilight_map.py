@@ -21,29 +21,29 @@ class CountryInfo:
 
         CountryInfo.ALL[name] = self
         if region == 'Europe':
-            self.regions = [MapRegion.EUROPE,
-                            MapRegion.EASTERN_EUROPE, MapRegion.WESTERN_EUROPE]
+            self.regions = {MapRegion.EUROPE,
+                            MapRegion.EASTERN_EUROPE, MapRegion.WESTERN_EUROPE}
         elif region == 'Western Europe':
-            self.regions = [MapRegion.EUROPE, MapRegion.WESTERN_EUROPE]
+            self.regions = {MapRegion.EUROPE, MapRegion.WESTERN_EUROPE}
         elif region == 'Eastern Europe':
-            self.regions = [MapRegion.EUROPE, MapRegion.EASTERN_EUROPE]
+            self.regions = {MapRegion.EUROPE, MapRegion.EASTERN_EUROPE}
         elif region == 'Asia':
-            self.regions = [MapRegion.ASIA]
+            self.regions = {MapRegion.ASIA}
         elif region == 'Southeast Asia':
-            self.regions = [MapRegion.ASIA, MapRegion.SOUTHEAST_ASIA]
+            self.regions = {MapRegion.ASIA, MapRegion.SOUTHEAST_ASIA}
         elif region == 'Middle East':
-            self.regions = [MapRegion.MIDDLE_EAST]
+            self.regions = {MapRegion.MIDDLE_EAST}
         elif region == 'Africa':
-            self.regions = [MapRegion.AFRICA]
+            self.regions = {MapRegion.AFRICA}
         elif region == 'Central America':
-            self.regions = [MapRegion.CENTRAL_AMERICA]
+            self.regions = {MapRegion.CENTRAL_AMERICA}
         elif region == 'South America':
-            self.regions = [MapRegion.SOUTH_AMERICA]
+            self.regions = {MapRegion.SOUTH_AMERICA}
         elif region == '':
-            self.regions = []
+            self.regions = set()
         else:
             print(f'Unrecognized region string: {region}')
-            self.regions = []
+            self.regions = set()
 
         for r in self.regions:
             CountryInfo.REGION_ALL[r].add(name)
@@ -77,6 +77,22 @@ class GameMap:
     def has_ussr_influence(self):
         '''Returns list of names that have USSR influence, less superpowers..'''
         return [country.info.name for country in self.ALL.values() if country.influence[Side.USSR] > 0 and country.info.superpower == False]
+
+    def can_coup_all(self, side, defcon=5):
+
+        restricted_regions = set()
+
+        if defcon < 5:
+            restricted_regions.add(MapRegion.EUROPE)
+        if defcon < 4:
+            restricted_regions.add(MapRegion.ASIA)
+        if defcon < 3:
+            restricted_regions.add(MapRegion.MIDDLE_EAST)
+
+        return (country.info.name for country in self.ALL.values()
+                if country.has_influence(side.opp)
+                and not country.info.superpower
+                and not restricted_regions.intersection(country.info.regions))
 
     def can_coup(self, game_instance, name: str, side: Side, free=False) -> bool:
         '''

@@ -5,7 +5,7 @@ from itertools import chain
 from typing import Sequence, Iterable, Callable, Tuple
 
 from twilight_map import GameMap, CountryInfo, Country
-from twilight_enums import Side, MapRegion, InputType, CardAction
+from twilight_enums import Side, MapRegion, InputType, CardAction, CoupEffects
 from twilight_cards import GameCards, Card
 from twilight_input_output import Input, Output
 from twilight_playerview import PlayerView
@@ -154,6 +154,9 @@ class Game:
         if self.vp_track >= 20 or self.vp_track <= -20:
             self.terminate()
         print(f'Current VP: {self.vp_track}')
+
+    def set_defcon(self, n: int):
+        self.change_defcon(n - self.defcon_track)
 
     def change_defcon(self, n: int):
         '''
@@ -359,10 +362,10 @@ class Game:
             if not self.ar_track or self.ar_side == len(Game.Default.AR_ORDER):
                 # check if just ended headline or
                 # if AR should be incremented
-                self.ar_track += 1
                 self.ar_side_done = [not self.ars_remaining(
                     s) for s in Game.Default.AR_ORDER]
                 self.ar_side = Game.Default.AR_ORDER[0]
+                self.ar_track += 1
                 if all(self.ar_side_done):
                     # End the turn since all players have no more ARs
                     self.stage_list.append(self.end_of_turn)
@@ -624,7 +627,7 @@ class Game:
                 self.stage_list.append(
                     partial(self.trigger_event, side, card_name))
             self.stage_list.append(
-                partial(self.card_operation_coup, side, card_name))
+                partial(self.cards[card_name].use_ops_coup, self, side))
 
         if 'Flower_Power' in self.basket[Side.USSR]:
             if action in [CardAction.PLAY_EVENT, CardAction.INFLUENCE, CardAction.REALIGNMENT, CardAction.COUP]:
@@ -877,7 +880,7 @@ class Game:
 
         return True
 
-    def card_operation_coup(self, side: Side, card_name: str, restricted_list: Sequence[str] = None, free=False, che=False):
+    def card_operation_coup_old(self, side: Side, card_name: str, restricted_list: Sequence[str] = None, free=False, che=False):
         '''
         Stage when a player is given the opportunity to coup. Provides a list
         of countries which can be couped and waits for player input.
@@ -903,16 +906,208 @@ class Game:
         if 'Cuban_Missile_Crisis' in self.basket[side.opp]:
             self.cards['Cuban_Missile_Crisis'].cuban_missile_remove(side)
 
-        def choose_coup_country():
-            self.input_state = Input(
-                side, InputType.SELECT_COUNTRY,
-                partial(self.coup_callback, side,
-                        effective_ops, card_name, che=che),
-                (n for n in CountryInfo.ALL
-                    if self.map.can_coup(self, n, side) and n in restricted_list),
-                prompt=f'Select a country to coup using operations from {card_name}.')
+        self.input_state = Input(
+            side, InputType.SELECT_COUNTRY,
+            partial(self.coup_callback, side,
+                    effective_ops, card_name, che=che),
+            (n for n in CountryInfo.ALL
+                if self.map.can_coup(self, n, side) and n in restricted_list),
+            prompt=f'Select a country to coup using operations from {card_name}.'
+        )
 
-        self.stage_list.append(choose_coup_country)
+    def coup(self, name: str, side: Side, effective_ops: int, die_roll: int, free=False):
+        '''
+        The result of a given side couping in a country, with a die_roll provided.
+        Accounts for:
+        - Global operations modifiers
+        - Latin_American_Death_Squads,
+        - Nuclear_Subs
+        - Yuri_And_Samantha
+        - The_China_Card
+        - Vietnam_Revolts
+        - Cuban_Missile_Crisis
+        - SALT Negotiations
+
+
+        Parameters
+        ----------
+        name : str
+            String representation of the country we are checking.
+        side : Side
+            Player side which we are checking. Can be Side.US or Side.USSR.
+        effective_ops : int
+            The number of effective operations used in the coup.
+        die_roll: int
+            The die roll of the coup. Should be bounded within range(1,7).
+        '''
+        country = self.map[name]
+
+        ussr_advantage = 0
+
+        # Latin American Death Squads
+        ca = list(CountryInfo.REGION_ALL[MapRegion.CENTRAL_AMERICA])
+        sa = list(CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA])
+        if name in ca or name in sa:
+            if 'Latin_American_Death_Squads' in self.basket[side]:
+                ussr_advantage += 1
+            elif 'Latin_American_Death_Squads' in self.basket[side.opp]:
+                ussr_advantage -= 1
+
+        # SALT Negotiations
+        if 'SALT_Negotiations' in self.basket[side] or 'SALT_Negotiations' in self.basket[side]:
+            ussr_advantage -= 1
+
+        difference = die_roll + effective_ops + \
+            ussr_advantage - country.info.stability * 2
+        outcome = 'success' if difference > 0 else 'failure'
+
+        if outcome == 'success':
+            if side == Side.USSR:
+                country.change_influence(max(
+                    0, difference - country.influence[Side.US]), -min(difference, country.influence[Side.US]))
+
+            if side == Side.US:
+                country.change_influence(-min(difference, country.influence[Side.USSR]), max(
+                    0, difference - country.influence[Side.USSR]))
+        print(
+            f'Coup {outcome} with roll of {die_roll}. Difference: {difference}')
+
+        # Cuban Missile Crisis overrides Nuclear Subs
+        if 'Cuban_Missile_Crisis' in self.basket[side.opp]:
+            self.change_defcon(1-self.defcon_track)
+        elif country.info.battleground:
+            if side == Side.US:
+                if 'Nuclear_Subs' not in self.basket[Side.US]:
+                    self.change_defcon(-1)
+            else:
+                self.change_defcon(-1)
+
+        # Yuri and Samantha
+        if side == Side.US and 'Yuri_and_Samantha' in self.basket[Side.USSR]:
+            self.change_vp(1)
+
+        # Free coups
+        if not free:
+            self.change_milops(side, effective_ops)
+
+    def coup_new(self, side, ops, country_name, roll_str: str):
+        '''
+        The result of a given side couping in a country, with a die_roll provided.
+        Accounts for:
+        - Global operations modifiers
+        - Latin_American_Death_Squads,
+        - Nuclear_Subs
+        - Yuri_And_Samantha
+        - The_China_Card
+        - Vietnam_Revolts
+        - Cuban_Missile_Crisis
+        - SALT Negotiations
+
+        Parameters
+        ----------
+        name : str
+            String representation of the country we are checking.
+        side : Side
+            Player side which we are checking. Can be Side.US or Side.USSR.
+        ops : int
+            The number of effective operations used in the coup.
+        die_roll: int
+            The die roll of the coup. Should be bounded within range(1,7).
+        '''
+        roll = int(roll_str)
+        print(f'Rolled {roll}.')
+        roll_mod = 0
+        for effect_side in Side.PLAYERS():
+            for effect_name in self.basket[effect_side]:
+                mod = self.cards[effect_name].effect_coup_roll(self, effect_side, side, country_name)
+                if mod is not None:
+                    roll_mod += mod
+                    print(f'{effect_name}: {mod:+} to roll')
+
+        country = self.map[country_name]
+        difference = roll + roll_mod + ops - self.map[country_name].info.stability * 2
+
+        if difference > 0:
+            print(f'Coup succeeded. Influence change: {difference}.')
+            country.coup_influence(side, difference)
+        else:
+            print(f'Coup failed.')
+
+
+        # Cuban Missile Crisis overrides Nuclear Subs
+        # The Cuban Missile Crisis sets DEFCON in its method, instead of returning the changes,
+        # so it's guaranteed to happen first.
+
+        result = CoupEffects()
+        for effect_side in Side.PLAYERS():
+            for effect_name in self.basket[effect_side]:
+                effect = self.cards[effect_name].effect_coup_after(self, effect_side, side, country_name, difference)
+                if effect is not None:
+                    result += effect
+                    print(f'{effect_name}: {effect}')
+
+        if not result.no_defcon_bg and country.info.battleground:
+            print('Battleground coup: DEFCON -1')
+            result += CoupEffects(defcon=-1)
+
+        if not result.no_milops:
+            print(f'Coup: Milops {ops:+}')
+            result += CoupEffects(milops=ops)
+
+        if result.defcon: self.change_defcon(result.defcon)
+        if result.vp: self.change_vp(result.vp)
+        if result.milops: self.change_milops(side, result.milops)
+
+    def coup_dice_callback_new(self, side, ops, country_name, roll):
+        self.input_state.reps -= 1
+        self.coup_new(side, ops, country_name, roll)
+        return True
+
+    def coup_country_callback_new(self, side, ops, country_name):
+        self.input_state.reps -= 1
+        for effect_side in Side.PLAYERS():
+            for effect_name in self.basket[effect_side]:
+                ops_mod = self.cards[effect_name].effect_coup_ops(self, effect_side, side, country_name)
+                if ops_mod is not None:
+                    ops += ops_mod
+                    print(f'{effect_name}: {ops_mod:+} to ops')
+
+        self.stage_list.append(partial(
+            self.dice_stage,
+            partial(self.coup_dice_callback_new, side, ops, country_name)
+        ))
+
+        return True
+
+    def can_coup_all(self, side, defcon):
+
+        options = set(self.map.can_coup_all(side, defcon=defcon))
+        for effect_side in Side.PLAYERS():
+            for effect_name in self.basket[effect_side]:
+                effect_country_list = self.cards[effect_name].effect_restrict_coup(self, side)
+                if effect_country_list is not None:
+                    options.difference_update(effect_country_list)
+
+        return options
+
+    def coup_country_stage(self, side, ops):
+
+        # TODO Cuban Missile Crisis
+
+        self.input_state = Input(
+            side, InputType.SELECT_COUNTRY,
+            partial(self.coup_country_callback_new, side, ops),
+            self.can_coup_all(side, self.defcon_track),
+            prompt=f'Select a country to coup using {ops} operations points.'
+        )
+
+    def card_operation_coup(self, side: Side, ops: int):
+        # Cuban Missile Crisis
+        if 'Cuban_Missile_Crisis' in self.basket[side.opp]:
+            self.cards['Cuban_Missile_Crisis'].cmc_remove_stage(self, side)
+            self.stage_list.append(partial(self.coup_country_stage, side, ops))
+        else:
+            self.coup_country_stage(side, ops)
 
     def space_dice_callback(self, side, num: str):
         self.input_state.reps -= 1
@@ -966,7 +1161,7 @@ class Game:
             return False
         else:
             if not self.map[name].influence[side]:
-                self.input_state.remove_option(name)
+                self.input_state.discard(name)
             return True
 
     def select_multiple_callback(self, option_function_mapping: dict, selected_option: list):
