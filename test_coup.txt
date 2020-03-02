@@ -42,16 +42,14 @@ m 30 #T1AR4 USA: Decol
 m 4
 m 80 #Chile
 m 39 43 55 57
-
 m 109 #T1AR5 USSR: Yuri and Samantha
 m 0
-
 m 107 #T1AR5 USA: Che
 m 4
 m 55 #Nigeria VP+1 USSR, DEFCON no change, SALT-1
+
 m 56 #Cameroon
 m 61 #Zimbabwe
-
 m 47 #T1AR6 USSR: Junta
 m 0
 m 85 #Brazil
@@ -63,22 +61,79 @@ m 0
 m 0
 m 16 #East Germany
 
+===
+
+new
+m 17 17 17 17 7 14
+m 15 10 10 9 14 7 12
+m 12 10
+m 9 #Vietnam
+m 16 #Warsaw Pact
+m 1
+m 7 17 17 19 20
+m 33 #T1AR1 USSR: Destal into CA/SA
+m 0
+m 17 17 17 17
+m 67 75 77 79 
+m 54 #T1AR1 USA: Allende
+m 2
+m 74 # move into cuba
+m 21 #T1AR2 USSR: NATO
+m 1
+m 4  #Coup, check Italy/UK/France not available
+
+m 44 #Philippines, check VR+1
+
+m 30 #T1AR2 USA: Decol
+m 2
+m 71 73 # move into Costa Rica
+m 37 38 39 41
+m 69 #T1AR3 USSR: LADS
+m 0
+m 52 #T1AR3 USA: Portugese Empire
+m 4
+m 77 # Columbia, check LADS -1 roll
+
+m 91 #T1AR4 USSR: Ortega
+m 0
+m 71 #Costa Rica, check LADS +1 roll
+
+m 18 #T1AR4 USA: Captured Nazi Scientist
+m 4
+m 38 #Laos/C
+m 17 #T1A5 USSR: De Gaulle
+m 0
+m 20 #T1A5 USA: Olympic
+m 4
+m 40
+m 31 #T1A6 USSR: RSP
+m 4 #Check that France is available
+m 10
+
+m 74 #T1A6 USA: VOA
+m 4
+m 39
+
+===
+Coup Related Effects/Card Events Tested (# is done)
+
 #China Card 6
 
-Vietnam Revolts 9
+#Vietnam Revolts 9
 Cuban Missile Crisis 40
 
-NATO 21 (Warsaw 16)
+#NATO 21 (needs Warsaw 16)
+#De Gaulle 17 (affects NATO)
 #US Japan 27
 #Reformer 87
 
 #SALT 43
-LADS 69
+#LADS 69
 
 #Nuclear Subs 41
 #Yuri and Samantha 109
 
 #Junta 47
 #Che 107
-Ortega 91
+#Ortega 91
 #Tear Down 96
