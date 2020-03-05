@@ -54,6 +54,33 @@ class CoupEffects(TrackEffects):
         return '; '.join(items)
 
 
+class RealignState():
+
+    def __init__(self, side=None, reps=0, countries=None, defcon=None):
+        '''
+
+        :param side: The side choosing the countries to realign.
+        :param reps: Number of realignments
+        :param countries: Countries attempted
+        :param defcon: Simulated DEFCON status. None for actual DEFCON.
+        '''
+        self.side = side
+        self.reps = reps
+        self.countries = [] if countries is None else countries
+        self.defcon = defcon
+
+    def __iadd__(self, other):
+        self.reps += other.reps
+        self.countries += other.countries
+        return self
+
+    def __repr__(self):
+        items = []
+        if self.reps:
+            items.append(f'Remaining realignments {self.reps:+}')
+
+        return '; '.join(items)
+
 class Side(enum.IntEnum):
 
     USSR = 0
@@ -137,7 +164,7 @@ class MapRegion(enum.IntEnum):
         elif s == 'southeast asia' or s == 'se':
             return MapRegion.SOUTHEAST_ASIA
         else:
-            raise NameError('Invalid string for MapRegion.fromStr')
+            return None
 
     @classmethod
     def main_regions(self):

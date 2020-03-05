@@ -5,7 +5,7 @@ from itertools import chain
 from typing import Sequence, Iterable, Callable, Tuple
 
 from twilight_map import GameMap, CountryInfo, Country
-from twilight_enums import Side, MapRegion, InputType, CardAction, CoupEffects
+from twilight_enums import Side, MapRegion, InputType, CardAction, CoupEffects, RealignState
 from twilight_cards import GameCards, Card
 from twilight_input_output import Input, Output
 from twilight_playerview import PlayerView
@@ -53,9 +53,11 @@ class Game:
         self.discard_pile = []
         self.draw_pile = []
         self.limbo = []  # strictly for shuttle_diplomacy
-        self.basket = [[], []]
+        self.basket = [[], [], []]
         self.headline_bin = ['', '']
         self.end_turn_stage_list = []
+
+        self.realign_state = None
 
     '''
     Starts a new game.
@@ -194,6 +196,9 @@ class Game:
 
     def reset_milops(self):
         self.milops_track = [0, 0]
+
+    def iterate_effects(self) -> Iterable[Tuple[Side, str]]:
+        return ((s, eff) for s in Side for eff in self.basket[s])
 
     # Here, we have the game initialisation stages.
     def put_start_USSR(self):
@@ -431,14 +436,10 @@ class Game:
         Checks if the player of <side> can use realignment on any country.
         True if there is at least 1 country suitable for realignment.
         '''
-        return any(self.map.can_realignment(self, n, side) for n in CountryInfo.ALL)
+        return len(self.can_realign_all(side, self.defcon_track)) > 0
 
     def can_coup_at_all(self, side: Side):
-        '''
-        Checks if the player of <side> can coup in any country.
-        True if there is at least 1 country suitable for coup.
-        '''
-        return any(self.map.can_coup(self, n, side) for n in CountryInfo.ALL)
+        return len(self.can_coup_all(side, self.defcon_track)) > 0
 
     def can_space(self, side: Side, card_name: str):
         '''
@@ -617,7 +618,7 @@ class Game:
                 self.stage_list.append(
                     partial(self.trigger_event, side, card_name))
             self.stage_list.append(
-                partial(self.card_operation_realignment, side, card_name))
+                partial(self.cards[card_name].use_ops_realignment, self, side))
 
         elif action == CardAction.COUP:
 
@@ -748,85 +749,6 @@ class Game:
             reps_unit='operations'
         )
 
-    def realign_dice_callback(self, name, side, num: tuple):
-        self.input_state.reps -= 1
-        self.map.realignment(self, name, side, *num)
-        return True
-
-    def realignment_callback(self, side: Side, name: str, card_name: str, reps: int = None) -> bool:
-
-        if name == self.input_state.option_stop_early:
-            self.input_state.reps = 0
-            return True
-
-        reps -= 1
-        self.input_state.reps -= 1
-
-        if card_name == 'The_China_Card':
-            reps = self.cards['The_China_Card'].give_rep(self, name, reps)
-            reps = self.cards['The_China_Card'].remove_rep(self, name, reps)
-
-        if 'Vietnam_Revolts' in self.basket[Side.USSR] and side == Side.USSR:
-            reps = self.cards['Vietnam_Revolts'].give_rep(self, name, reps)
-            reps = self.cards['Vietnam_Revolts'].remove_rep(self, name, reps)
-
-        if reps:
-            if card_name == 'The_China_Card' and 'Vietnam_Revolts' in self.basket[Side.USSR] and side == Side.USSR and reps == 2 and self.cards['The_China_Card'].all_points_in_region and self.cards['Vietnam_Revolts'].all_points_in_region:
-                self.stage_list.append(
-                    partial(self.card_operation_realignment, side, card_name=card_name, reps=reps,
-                            restricted_list=self.cards['The_China_Card']._region))
-            elif 'Vietnam_Revolts' in self.basket[Side.USSR] and reps == 1 and self.cards['Vietnam_Revolts'].all_points_in_region:
-                self.stage_list.append(
-                    partial(self.card_operation_realignment, side, card_name=card_name, reps=reps,
-                            restricted_list=self.cards['Vietnam_Revolts']._region))
-            elif card_name == 'The_China_Card' and reps == 1 and self.cards['The_China_Card'].all_points_in_region:
-                self.stage_list.append(
-                    partial(self.card_operation_realignment, side, card_name=card_name, reps=reps,
-                            restricted_list=self.cards['The_China_Card']._region))
-            else:
-                self.stage_list.append(
-                    partial(self.card_operation_realignment, side, card_name=card_name, reps=reps))
-
-        self.stage_list.append(partial(
-            self.dice_stage,
-            partial(self.realign_dice_callback, name, side),
-            two_dice=True))
-
-        return True
-
-    def card_operation_realignment(self, side: Side, card_name: str, reps: int = None,
-                                   restricted_list: Sequence[str] = None, free=False):
-        '''
-        Stage when a player is given the opportunity to use realignment. Provides a list
-        of countries where realignment can take place and waits for player input.
-
-        Parameters
-        ----------
-        side : Side
-            Side of the player who is placing influence.
-        card_name : str
-            String representation of the card used for the realignment operations.
-        '''
-        card = self.cards[card_name]
-        if not reps:
-            reps = self.get_global_effective_ops(side, card.info.ops)
-            can_stop_now = ''
-        else:
-            can_stop_now = 'Stop realignments.'
-
-        if restricted_list is None:
-            restricted_list = CountryInfo.ALL
-
-        self.input_state = Input(
-            side, InputType.SELECT_COUNTRY,
-            partial(self.realignment_callback, side,
-                    card_name=card_name, reps=reps),
-            (n for n in CountryInfo.ALL if self.map.can_realignment(
-                self, n, side) and n in restricted_list),
-            prompt=f'Select a country for realignment using operations from {card_name}. {reps} realignments remaining.',
-            option_stop_early=can_stop_now
-        )
-
     def dice_stage(self, fn: Callable[[str], bool] = None, two_dice=False, reroll_ties=False):
         if not two_dice:
             options = (str(i) for i in range(1, 7))
@@ -846,151 +768,111 @@ class Game:
             prompt=prompt,
         )
 
-    def coup_dice_callback(self, name, side, ops, free, num: str, che=False):
-        self.input_state.reps -= 1
-
-        if che:
-            before_us_inf = self.map[name].influence[Side.US]
-            ca_sa_af = chain(CountryInfo.REGION_ALL[MapRegion.CENTRAL_AMERICA],
-                             CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA],
-                             CountryInfo.REGION_ALL[MapRegion.AFRICA])
-
-        self.map.coup(self, name, side, ops, int(num), free=free)
-
-        if che and self.map[name].influence[Side.US] < before_us_inf:
-            print('You are allowed a second coup from Che.')
-            self.card_operation_coup(Side.USSR, 'Che', restricted_list=[
-                n for n in ca_sa_af if not self.map[n].info.battleground], che=False)
-
-        return True
-
-    def coup_callback(self, side: Side, effective_ops: int, card_name: str, name: str, free=False, che=False) -> bool:
-        self.input_state.reps -= 1
-
-        local_ops_modifier = 0
-        if card_name == 'The_China_Card' and name in self.cards['The_China_Card']._region:
-            local_ops_modifier += 1
-        if 'Vietnam_Revolts' in self.basket[Side.USSR] and side == Side.USSR and name in self.cards['Vietnam_Revolts']._region:
-            local_ops_modifier += 1
-
-        self.stage_list.append(partial(
-            self.dice_stage,
-            partial(self.coup_dice_callback, name, side,
-                    effective_ops + local_ops_modifier, free, che=che)))
-
-        return True
-
-    def card_operation_coup_old(self, side: Side, card_name: str, restricted_list: Sequence[str] = None, free=False, che=False):
+    def realignment(self, country_name, ussr_roll: int, us_roll: int):
         '''
-        Stage when a player is given the opportunity to coup. Provides a list
-        of countries which can be couped and waits for player input.
+        The result of a given side using realignment in a country, with both dice rolls provided.
 
         Parameters
         ----------
-        side : Side
-            Side of the player who is couping.
-        card_name : str
-            String representation of the card used for the coup.
-        restricted_list : Sequence[str], default=None
-            Further restricts the available_list via intersection of two sets.
-            It should be a list of country_names. Use of restricted_list is intended
-            for cards like Junta, Che, Ortega where there are further restrictions.
-        '''
-        card = self.cards[card_name]
-        effective_ops = self.get_global_effective_ops(
-            side, card.info.ops)
-        if restricted_list is None:
-            restricted_list = CountryInfo.ALL
-
-        # Cuban Missile Crisis
-        if 'Cuban_Missile_Crisis' in self.basket[side.opp]:
-            self.cards['Cuban_Missile_Crisis'].cuban_missile_remove(side)
-
-        self.input_state = Input(
-            side, InputType.SELECT_COUNTRY,
-            partial(self.coup_callback, side,
-                    effective_ops, card_name, che=che),
-            (n for n in CountryInfo.ALL
-                if self.map.can_coup(self, n, side) and n in restricted_list),
-            prompt=f'Select a country to coup using operations from {card_name}.'
-        )
-
-    def coup(self, name: str, side: Side, effective_ops: int, die_roll: int, free=False):
-        '''
-        The result of a given side couping in a country, with a die_roll provided.
-        Accounts for:
-        - Global operations modifiers
-        - Latin_American_Death_Squads,
-        - Nuclear_Subs
-        - Yuri_And_Samantha
-        - The_China_Card
-        - Vietnam_Revolts
-        - Cuban_Missile_Crisis
-        - SALT Negotiations
-
-
-        Parameters
-        ----------
+        game_instance : Game object
+            The game object the country resides within.
         name : str
             String representation of the country we are checking.
         side : Side
             Player side which we are checking. Can be Side.US or Side.USSR.
-        effective_ops : int
-            The number of effective operations used in the coup.
-        die_roll: int
-            The die roll of the coup. Should be bounded within range(1,7).
+        us_roll, us_roll: ints
+            The respective dice rolls of the realignment. Should be bounded within range(1,7).
         '''
-        country = self.map[name]
+        country = self.map[country_name]
+        rolls = [0, 0]
+        rolls[Side.USSR] = ussr_roll
+        rolls[Side.US] = us_roll
 
-        ussr_advantage = 0
+        print(f'USSR rolled {ussr_roll}, US rolled {us_roll}.')
+        for effect_side, effect_name in self.iterate_effects():
+            for roll_side in Side.PLAYERS():
+                mod = self.cards[effect_name].effect_realign_roll(self, effect_side, roll_side, country_name)
+                if mod is not None:
+                    print(f'{effect_name}: {mod:+} to {roll_side} roll.')
+                    rolls[roll_side] += mod
 
-        # Latin American Death Squads
-        ca = list(CountryInfo.REGION_ALL[MapRegion.CENTRAL_AMERICA])
-        sa = list(CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA])
-        if name in ca or name in sa:
-            if 'Latin_American_Death_Squads' in self.basket[side]:
-                ussr_advantage += 1
-            elif 'Latin_American_Death_Squads' in self.basket[side.opp]:
-                ussr_advantage -= 1
+        for roll_side in Side.PLAYERS():
+            for adj_name in country.info.adjacent_countries:
+                if self.map[adj_name].control == roll_side:
+                    print(f'{adj_name} control: +1 to {roll_side.name} roll.')
+                    rolls[roll_side] += 1
+            if country.influence[roll_side] > country.influence[roll_side.opp]:
+                print(f'More influence in {country_name} : +1 to {roll_side.name} roll.')
+                rolls[roll_side] += 1
 
-        # SALT Negotiations
-        if 'SALT_Negotiations' in self.basket[side] or 'SALT_Negotiations' in self.basket[side]:
-            ussr_advantage -= 1
+        for roll_side in Side.PLAYERS():
+            diff = rolls[roll_side] - rolls[roll_side.opp]
+            if diff > 0:
+                country.decrement_influence(roll_side.opp, amt=diff)
+                # print(f'{roll_side.opp.name} loses influence.')
 
-        difference = die_roll + effective_ops + \
-            ussr_advantage - country.info.stability * 2
-        outcome = 'success' if difference > 0 else 'failure'
+        self.realign_state += RealignState(reps=-1, countries=[country_name])
 
-        if outcome == 'success':
-            if side == Side.USSR:
-                country.change_influence(max(
-                    0, difference - country.influence[Side.US]), -min(difference, country.influence[Side.US]))
+        for effect_side, effect_name in self.iterate_effects():
+            effect = self.cards[effect_name].effect_realign_ops(self, effect_side, country_name)
+            if effect is not None:
+                self.realign_state += effect
+                print(f'{effect_name}: {effect}.')
 
-            if side == Side.US:
-                country.change_influence(-min(difference, country.influence[Side.USSR]), max(
-                    0, difference - country.influence[Side.USSR]))
-        print(
-            f'Coup {outcome} with roll of {die_roll}. Difference: {difference}')
+        if self.realign_state.reps:
+            self.stage_list.append(self.realign_country_stage)
+        else:
+            for effect_side, effect_name in self.iterate_effects():
+                self.cards[effect_name].effect_realign_after(self, effect_side)
 
-        # Cuban Missile Crisis overrides Nuclear Subs
-        if 'Cuban_Missile_Crisis' in self.basket[side.opp]:
-            self.change_defcon(1-self.defcon_track)
-        elif country.info.battleground:
-            if side == Side.US:
-                if 'Nuclear_Subs' not in self.basket[Side.US]:
-                    self.change_defcon(-1)
-            else:
-                self.change_defcon(-1)
+    def realign_dice_callback(self, country_name, rolls):
+        self.input_state.reps -= 1
+        ussr_roll, us_roll = rolls
+        self.realignment(country_name, ussr_roll, us_roll)
+        return True
 
-        # Yuri and Samantha
-        if side == Side.US and 'Yuri_and_Samantha' in self.basket[Side.USSR]:
-            self.change_vp(1)
+    def realign_country_callback(self, country_name):
 
-        # Free coups
-        if not free:
-            self.change_milops(side, effective_ops)
+        self.input_state.reps -= 1
 
-    def coup_new(self, side, ops, country_name, roll_str: str):
+        if country_name == self.input_state.option_stop_early:
+            return True
+
+        self.stage_list.append(partial(
+            self.dice_stage,
+            partial(self.realign_dice_callback, country_name),
+            two_dice=True
+        ))
+
+        return True
+
+    def can_realign_all(self, side, defcon):
+
+        options = set(self.map.can_realign_all(side, defcon=defcon))
+        for effect_side, effect_name in self.iterate_effects():
+            effect_country_list = self.cards[effect_name].effect_realign_country_restrict(self, side)
+            if effect_country_list is not None:
+                options.difference_update(effect_country_list)
+
+        return options
+
+    def realign_country_stage(self):
+
+        defcon = self.defcon_track if self.realign_state.defcon is None else self.realign_state.defcon
+
+        self.input_state = Input(
+            self.realign_state.side, InputType.SELECT_COUNTRY,
+            partial(self.realign_country_callback),
+            self.can_realign_all(self.realign_state.side, defcon),
+            prompt=f'Select a country to realign.',
+            option_stop_early='Conclude realignments early.'
+        )
+
+    def operations_realign(self, side, ops):
+        self.realign_state = RealignState(side, reps=ops)
+        self.stage_list.append(self.realign_country_stage)
+
+    def coup(self, side, ops, country_name, roll):
         '''
         The result of a given side couping in a country, with a die_roll provided.
         Accounts for:
@@ -1014,18 +896,15 @@ class Game:
         die_roll: int
             The die roll of the coup. Should be bounded within range(1,7).
         '''
-        roll = int(roll_str)
         print(f'Rolled {roll}.')
-        roll_mod = 0
-        for effect_side in Side.PLAYERS():
-            for effect_name in self.basket[effect_side]:
-                mod = self.cards[effect_name].effect_coup_roll(self, effect_side, side, country_name)
-                if mod is not None:
-                    roll_mod += mod
-                    print(f'{effect_name}: {mod:+} to roll')
+        for effect_side, effect_name in self.iterate_effects():
+            mod = self.cards[effect_name].effect_coup_roll(self, effect_side, side, country_name)
+            if mod is not None:
+                roll += mod
+                print(f'{effect_name}: {mod:+} to roll.')
 
         country = self.map[country_name]
-        difference = roll + roll_mod + ops - self.map[country_name].info.stability * 2
+        difference = roll + ops - self.map[country_name].info.stability * 2
 
         if difference > 0:
             print(f'Coup succeeded. Influence change: {difference}.')
@@ -1039,42 +918,40 @@ class Game:
         # so it's guaranteed to happen first.
 
         result = CoupEffects()
-        for effect_side in Side.PLAYERS():
-            for effect_name in self.basket[effect_side]:
-                effect = self.cards[effect_name].effect_coup_after(self, effect_side, side, country_name, difference)
-                if effect is not None:
-                    result += effect
-                    print(f'{effect_name}: {effect}')
+        for effect_side, effect_name in self.iterate_effects():
+            effect = self.cards[effect_name].effect_coup_after(self, effect_side, side, country_name, difference)
+            if effect is not None:
+                result += effect
+                print(f'{effect_name}: {effect}.')
 
         if not result.no_defcon_bg and country.info.battleground:
-            print('Battleground coup: DEFCON -1')
+            print('Battleground coup: DEFCON -1.')
             result += CoupEffects(defcon=-1)
 
         if not result.no_milops:
-            print(f'Coup: Milops {ops:+}')
+            print(f'Coup: Milops {ops:+}.')
             result += CoupEffects(milops=ops)
 
         if result.defcon: self.change_defcon(result.defcon)
         if result.vp: self.change_vp(result.vp)
         if result.milops: self.change_milops(side, result.milops)
 
-    def coup_dice_callback_new(self, side, ops, country_name, roll):
+    def coup_dice_callback(self, side, ops, country_name, roll_str):
         self.input_state.reps -= 1
-        self.coup_new(side, ops, country_name, roll)
+        self.coup(side, ops, country_name, int(roll_str))
         return True
 
-    def coup_country_callback_new(self, side, ops, country_name):
+    def coup_country_callback(self, side, ops, country_name):
         self.input_state.reps -= 1
-        for effect_side in Side.PLAYERS():
-            for effect_name in self.basket[effect_side]:
-                ops_mod = self.cards[effect_name].effect_coup_ops(self, effect_side, side, country_name)
-                if ops_mod is not None:
-                    ops += ops_mod
-                    print(f'{effect_name}: {ops_mod:+} to ops')
+        for effect_side, effect_name in self.iterate_effects():
+            ops_mod = self.cards[effect_name].effect_coup_ops(self, effect_side, side, country_name)
+            if ops_mod is not None:
+                ops += ops_mod
+                print(f'{effect_name}: {ops_mod:+} to ops.')
 
         self.stage_list.append(partial(
             self.dice_stage,
-            partial(self.coup_dice_callback_new, side, ops, country_name)
+            partial(self.coup_dice_callback, side, ops, country_name)
         ))
 
         return True
@@ -1082,26 +959,23 @@ class Game:
     def can_coup_all(self, side, defcon):
 
         options = set(self.map.can_coup_all(side, defcon=defcon))
-        for effect_side in Side.PLAYERS():
-            for effect_name in self.basket[effect_side]:
-                effect_country_list = self.cards[effect_name].effect_restrict_coup(self, side)
-                if effect_country_list is not None:
-                    options.difference_update(effect_country_list)
+        for effect_side, effect_name in self.iterate_effects():
+            effect_country_list = self.cards[effect_name].effect_coup_country_restrict(self, side)
+            if effect_country_list is not None:
+                options.difference_update(effect_country_list)
 
         return options
 
     def coup_country_stage(self, side, ops):
 
-        # TODO Cuban Missile Crisis
-
         self.input_state = Input(
             side, InputType.SELECT_COUNTRY,
-            partial(self.coup_country_callback_new, side, ops),
+            partial(self.coup_country_callback, side, ops),
             self.can_coup_all(side, self.defcon_track),
             prompt=f'Select a country to coup using {ops} operations points.'
         )
 
-    def card_operation_coup(self, side: Side, ops: int):
+    def operations_coup(self, side: Side, ops: int):
         # Cuban Missile Crisis
         if 'Cuban_Missile_Crisis' in self.basket[side.opp]:
             self.cards['Cuban_Missile_Crisis'].cmc_remove_stage(self, side)
