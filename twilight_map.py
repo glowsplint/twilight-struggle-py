@@ -110,47 +110,15 @@ class GameMap:
                 and not country.info.superpower
                 and not restricted_regions.intersection(country.info.regions))
 
-    def can_realignment(self, game_instance, name: str, side: Side, free=False) -> bool:
-        '''
-        Checks if the country can be realigned by a given side.
+    def has_influence_around(self, side, country_name):
+        c = self[country_name]
+        return not c.info.superpower and (
+            c.has_influence(side)
+            or any(self[adj].has_influence(side) for adj in c.info.adjacent_countries)
+        )
 
-        Parameters
-        ----------
-        game_instance : Game object
-            The game object the country resides within.
-        name : str
-            String representation of the country we are checking.
-        side : Side
-            Player side which we are checking. Can be Side.US or Side.USSR.
-        '''
-        country = self[name]
-        if country.info.superpower:
-            return False
-
-        d4 = list(CountryInfo.REGION_ALL[MapRegion.EUROPE])
-        d3 = d4 + list(CountryInfo.REGION_ALL[MapRegion.ASIA])
-        d2 = d3 + list(CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST])
-
-        if free:
-            return not (side == Side.US and country.influence[Side.USSR] == 0 or
-                        side == Side.USSR and country.influence[Side.US] == 0)
-        elif 'NATO' in game_instance.basket[Side.US] and name in game_instance.calculate_nato_countries():
-            return False
-        elif 'US_Japan_Mutual_Defense_Pact' in game_instance.basket[Side.US] and name == 'Japan':
-            return False
-        elif game_instance.defcon_track == 4 and name in d4:
-            return False
-        elif game_instance.defcon_track == 3 and name in d3:
-            return False
-        elif game_instance.defcon_track == 2 and name in d2:
-            return False
-
-        if side == Side.USSR and country.ussr_influence_only:
-            return False
-        elif side == Side.US and country.us_influence_only:
-            return False
-        else:
-            return not (country.influence[Side.USSR] == 0 and country.influence[Side.US] == 0)
+    def has_influence_around_all(self, side):
+        return (self.has_influence_around(side, n) for n in CountryInfo.ALL)
 
     def can_place_influence(self, game_instance, name: str, side: Side, effective_ops: int) -> bool:
         '''

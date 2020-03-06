@@ -523,7 +523,7 @@ class Game:
         return True
 
     def select_action(self, side: Side, card_name: str, is_event_resolved: bool = False,
-                      un_intervention: bool = False, can_coup=True, free_coup_realignment=False):
+                      un_intervention: bool = False, can_coup=True):
         '''
         Stage where the player has already chosen a card and now chooses an action to do with the card.
         Checks are made to ensure that the actions made available to the player are feasible actions,
@@ -648,32 +648,18 @@ class Game:
         Parameters
         ----------
         side : Side
-            Side of the player who plays the China Card.
+            Side of the player
         raw_ops : int
             Unmodified operations value of the card.
         '''
-        modifier = 0
-        if side == Side.USSR and 'Brezhnev_Doctrine' in self.basket[side]:
-            modifier += 1
-        if side == Side.US and 'Containment' in self.basket[side]:
-            modifier += 1
-        if 'Red_Scare_Purge' in self.basket[side.opp]:
-            modifier -= 1
-        return min(max([raw_ops + modifier, 1]), 4)
+        raw_ops = 0
+        for effect_side, effect_name in self.iterate_effects():
+            mod = self.cards[effect_name].effect_global_ops(self, effect_side, side)
+            if mod is not None:
+                raw_ops += mod
+                print(f'{effect_name}: {mod:+} ops.')
 
-    def calculate_nato_countries(self):
-        '''
-        Calculates which countries are affected by NATO. Accounts for cancellations
-        like De_Gaulle_Leads_France and Willy_Brandt. Returns a list of country name
-        strings with NATO effect protection.
-        '''
-        europe = list(CountryInfo.REGION_ALL[MapRegion.EUROPE])
-        if 'NATO' in self.basket[Side.US]:
-            if 'De_Gaulle_Leads_France' in self.basket[Side.USSR]:
-                europe.remove('France')
-            if 'Willy_Brandt' in self.basket[Side.USSR]:
-                europe.remove('West_Germany')
-        return europe
+        return min(max(raw_ops, 1), 4)
 
     def trigger_event(self, side: Side, card_name: str):
         '''
@@ -723,7 +709,17 @@ class Game:
 
         return True
 
-    def card_operation_influence(self, side: Side, card_name: str):
+    def get_influence_operations_cost(self, side, ops):
+
+        #TODO make it the beginning of AR map
+        self.map.ALL
+
+        for effect_side, effect_name in self.iterate_effects():
+
+
+
+
+    def operations_influence(self, side: Side, ops: int):
         '''
         Stage when a player is given the opportunity to place influence. Provides a list
         of countries where influence can be placed into and waits for player input.
@@ -732,19 +728,16 @@ class Game:
         ----------
         side : Side
             Side of the player who is placing influence.
-        card_name : str
-            String representation of the card used for influence operations.
+        ops : int
+            Number of operations.
         '''
-
-        card = self.cards[card_name]
-        reps = self.get_global_effective_ops(side, card.info.ops)
 
         self.input_state = Input(
             side, InputType.SELECT_COUNTRY,
-            partial(self.ops_influence_callback, side, card_name),
+            partial(self.ops_influence_callback, side),
             (n for n in CountryInfo.ALL
                 if self.map.can_place_influence(self, n, side, reps)),
-            prompt=f'Place operations from {card_name} as influence.',
+            prompt=f'Use operations to place influence.',
             reps=reps,
             reps_unit='operations'
         )
@@ -947,7 +940,7 @@ class Game:
             ops_mod = self.cards[effect_name].effect_coup_ops(self, effect_side, side, country_name)
             if ops_mod is not None:
                 ops += ops_mod
-                print(f'{effect_name}: {ops_mod:+} to ops.')
+                print(f'{effect_name}: {ops_mod:+} ops.')
 
         self.stage_list.append(partial(
             self.dice_stage,
@@ -1299,9 +1292,8 @@ class Game:
 
         # 0. Clear all events that only last until the end of turn.
         def clear_baskets(self):
-            for function in self.end_turn_stage_list:
-                function()
-            self.end_turn_stage_list = []
+            for effect_side, effect_name in self.iterate_effects():
+                self.cards[effect_name].effect_end_turn()
 
         # 1. Check milops
         def check_milops(self):

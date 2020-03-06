@@ -81,6 +81,24 @@ class RealignState():
 
         return '; '.join(items)
 
+class InfOpsState():
+
+    def __init__(self, ops, countries=None):
+        self.ops = ops
+        self.countries = [] if countries is None else countries
+
+    def __iadd__(self, other):
+        self.ops += other.ops
+        self.countries += other.countries
+        return self
+
+    def __repr__(self):
+        items = []
+        if self.ops:
+            items.append(f'Remaining realignments {self.ops:+}')
+
+        return '; '.join(items)
+
 class Side(enum.IntEnum):
 
     USSR = 0
