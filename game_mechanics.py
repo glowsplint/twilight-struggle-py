@@ -458,7 +458,7 @@ class Game:
                 return False
             if self.space_track[side] == 7 and self.get_global_effective_ops(side, card_name.info.ops) == 4:
                 return True
-            elif self.space_track[side] >= 5 and self.get_global_effective_ops(side, card_name.info.ops) >= 3:
+            elif self.space_track[side] >= 4 and self.get_global_effective_ops(side, card_name.info.ops) >= 3:
                 return True
             elif self.get_global_effective_ops(side, self.cards[card_name].info.ops) >= 2:
                 return True
@@ -1168,7 +1168,7 @@ class Game:
     def deal(self, first_side=Side.USSR):
 
         if first_side == Side.NEUTRAL:
-            handsize_target = [3, 2] # hardcoded for Ask Not..
+            handsize_target = [3, 2]  # hardcoded for Ask Not..
         if 1 <= self.turn_track <= 3:
             handsize_target = [8, 8]
         else:
