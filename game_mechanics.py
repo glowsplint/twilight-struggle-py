@@ -58,6 +58,7 @@ class Game:
         self.end_turn_stage_list = []
 
         self.realign_state = None
+        self.opsinf_state = None
 
     '''
     Starts a new game.
@@ -389,9 +390,6 @@ class Game:
         else:
             self.stage_list.append(self.select_card)
 
-        if 'Vietnam_Revolts' in self.basket[Side.USSR]:
-            self.cards['Vietnam_Revolts'].reset()
-
     def can_play_event(self, side: Side, card_name: str):
         '''
         Checks if all the prerequisites for the Event are fulfilled.
@@ -608,7 +606,7 @@ class Game:
                 self.stage_list.append(
                     partial(self.trigger_event, side, card_name))
             self.stage_list.append(
-                partial(self.card_operation_influence, side, card_name))
+                partial(self.cards[card_name].use_ops_influence, self, side))
 
         elif action == CardAction.REALIGNMENT:
 
@@ -652,7 +650,6 @@ class Game:
         raw_ops : int
             Unmodified operations value of the card.
         '''
-        raw_ops = 0
         for effect_side, effect_name in self.iterate_effects():
             mod = self.cards[effect_name].effect_global_ops(self, effect_side, side)
             if mod is not None:
@@ -671,53 +668,60 @@ class Game:
     Here we have different stages for card uses. These include the use of influence,
     operations points for coup or realignment, and also on the space race.
     '''
-
-    def ops_influence_callback(self, side: Side, card_name: str, name: str) -> bool:
-        c = self.map[name]
-
-        # may no longer need this eventually if we ensure options are always correct
-        if self.input_state.reps == 1 and c.control == side.opp:
-            return False
+    
+    def ops_inf_after(self, side):
+        for effect_side, effect_name in self.iterate_effects():
+            self.cards[effect_name].effect_opsinf_after(self, effect_side, side)
+        
+    def ops_inf_callback(self, side: Side, country_name: str) -> bool:
+        c = self.map[country_name]
 
         if c.control == side.opp:
             self.input_state.reps -= 2
+            for n in self.opsinf_state:
+                self.opsinf_state[n] -= 2
         else:
             self.input_state.reps -= 1
-
-        if card_name == 'The_China_Card':
-            self.input_state.reps = self.cards['The_China_Card'].give_rep(
-                self, name, self.input_state.reps)
-            self.input_state.reps = self.cards['The_China_Card'].remove_rep(
-                self, name, self.input_state.reps)
-            self.cards['The_China_Card'].modify_selection(self, side)
-
-        # and side == Side.USSR:
-        if 'Vietnam_Revolts' in self.basket[Side.USSR]:
-            self.input_state.reps = self.cards['Vietnam_Revolts'].give_rep(
-                self, name, self.input_state.reps)
-            self.input_state.reps = self.cards['Vietnam_Revolts'].remove_rep(
-                self, name, self.input_state.reps)
-            self.cards['Vietnam_Revolts'].modify_selection(
-                self, card_name, side)
+            for n in self.opsinf_state:
+                self.opsinf_state[n] -= 1
 
         c.increment_influence(side)
-
-        if self.input_state.reps == 1:
-            for n in self.input_state.selection:
-                if self.map[n].control == side.opp:
-                    self.input_state.remove_option(n)
-
+        
+        for effect_side, effect_name in self.iterate_effects():
+            reg_mod = self.cards[effect_name].effect_opsinf_country_select(self, effect_side, side, country_name)
+            if reg_mod is not None:
+                region, mod = reg_mod
+                for n in CountryInfo.REGION_ALL[region]:
+                    if n in self.opsinf_state:
+                        self.opsinf_state[n] += mod
+                print(f'{effect_name}: {mod:+} ops in {region.name}.')        
+        
+        self.ops_inf_remove_insufficient_ops(side)
+        self.input_state.reps = max(self.opsinf_state.values())
         return True
 
-    def get_influence_operations_cost(self, side, ops):
+    def ops_inf_remove_insufficient_ops(self, side):
+    
+        for n in self.opsinf_state:
+            req_ops = 2 if self.map[n].control == side.opp else 1
+            if req_ops > self.opsinf_state[n]:
+                self.input_state.remove_option(n)
+
+    def ops_inf_get_available_ops(self, side, ops):
 
         #TODO make it the beginning of AR map
-        self.map.ALL
+        result = {n: ops for n in self.map.has_influence_around_all(side)}
 
         for effect_side, effect_name in self.iterate_effects():
+            reg_mod = self.cards[effect_name].effect_opsinf_region_ops(self, effect_side, side)
+            if reg_mod is not None:
+                region, mod = reg_mod
+                for n in CountryInfo.REGION_ALL[region]:
+                    if n in result:
+                        result[n] += mod
+                print(f'{effect_name}: {mod:+} ops in {region.name}.')
 
-
-
+        return result
 
     def operations_influence(self, side: Side, ops: int):
         '''
@@ -731,16 +735,18 @@ class Game:
         ops : int
             Number of operations.
         '''
-
+        
+        self.stage_list.append(partial(self.ops_inf_after, side))
+        self.opsinf_state = self.ops_inf_get_available_ops(side, ops)
         self.input_state = Input(
             side, InputType.SELECT_COUNTRY,
-            partial(self.ops_influence_callback, side),
-            (n for n in CountryInfo.ALL
-                if self.map.can_place_influence(self, n, side, reps)),
+            partial(self.ops_inf_callback, side),
+            self.opsinf_state,
             prompt=f'Use operations to place influence.',
-            reps=reps,
-            reps_unit='operations'
+            reps=max(self.opsinf_state.values()),
+            reps_unit='operations (including region bonuses)'
         )
+        self.ops_inf_remove_insufficient_ops(side)
 
     def dice_stage(self, fn: Callable[[str], bool] = None, two_dice=False, reroll_ties=False):
         if not two_dice:
@@ -760,6 +766,10 @@ class Game:
             options,
             prompt=prompt,
         )
+        
+    def realign_after_stage(self):
+        for effect_side, effect_name in self.iterate_effects():
+            self.cards[effect_name].effect_realign_after(self, effect_side)
 
     def realignment(self, country_name, ussr_roll: int, us_roll: int):
         '''
@@ -814,9 +824,6 @@ class Game:
 
         if self.realign_state.reps:
             self.stage_list.append(self.realign_country_stage)
-        else:
-            for effect_side, effect_name in self.iterate_effects():
-                self.cards[effect_name].effect_realign_after(self, effect_side)
 
     def realign_dice_callback(self, country_name, rolls):
         self.input_state.reps -= 1
@@ -863,7 +870,9 @@ class Game:
 
     def operations_realign(self, side, ops):
         self.realign_state = RealignState(side, reps=ops)
+        self.stage_list.append(self.realign_after_stage)
         self.stage_list.append(self.realign_country_stage)
+        #self.cards[card_name].use_ops_realign(self, side)
 
     def coup(self, side, ops, country_name, roll):
         '''
@@ -968,13 +977,8 @@ class Game:
             prompt=f'Select a country to coup using {ops} operations points.'
         )
 
-    def operations_coup(self, side: Side, ops: int):
-        # Cuban Missile Crisis
-        if 'Cuban_Missile_Crisis' in self.basket[side.opp]:
-            self.cards['Cuban_Missile_Crisis'].cmc_remove_stage(self, side)
-            self.stage_list.append(partial(self.coup_country_stage, side, ops))
-        else:
-            self.coup_country_stage(side, ops)
+    def operations_coup(self, side: Side, card_name: int):
+        pass
 
     def space_dice_callback(self, side, num: str):
         self.input_state.reps -= 1
@@ -1023,13 +1027,9 @@ class Game:
         '''
         self.input_state.reps -= 1
         status = country_function(self.map[name], side)
-        # TODO: this might not be general enough. If bugs happen check here
-        if not status:
-            return False
-        else:
-            if not self.map[name].influence[side]:
-                self.input_state.discard(name)
-            return True
+        if not self.map[name].influence[side]:
+            self.input_state.remove_option(name)
+        return True
 
     def select_multiple_callback(self, option_function_mapping: dict, selected_option: list):
         '''

@@ -81,7 +81,7 @@ class RealignState():
 
         return '; '.join(items)
 
-class InfOpsState():
+class OpsInfState():
 
     def __init__(self, ops, countries=None):
         self.ops = ops
