@@ -110,7 +110,7 @@ class Input:
         Returns True if no more input is required, False if input is not
         complete.
         '''
-        return not self.reps or len(self.selection) == len(self.discarded_options)
+        return not self.reps or len(self.selection) == len(self.discarded_options) or not len(list(self.available_options))
 
     def change_max_per_option(self, n: int):
         self.max_per_option += n

@@ -9,30 +9,6 @@ from twilight_map import MapRegion, CountryInfo, Country
 from twilight_enums import Side, MapRegion, InputType, CardAction
 
 
-class GameCards:
-
-    def __init__(self):
-
-        self.ALL = dict()
-        self.early_war = []
-        self.mid_war = []
-        self.late_war = []
-
-        for card_name, CardClass in Card.ALL.items():
-
-            self.ALL[card_name] = CardClass()
-
-            if CardClass.stage == 'Early War':
-                self.early_war.append(card_name)
-            if CardClass.stage == 'Mid War':
-                self.mid_war.append(card_name)
-            if CardClass.stage == 'Late War':
-                self.late_war.append(card_name)
-
-    def __getitem__(self, item):
-        return self.ALL[item]
-
-
 class Card:
 
     ALL = dict()
@@ -86,8 +62,8 @@ class Card:
         else:
             game.discard_pile.append(self.name)
             self.event_occurred = False
-        if self.info.name in game.players[side.opp].opp_hand:
-            game.players[side.opp].remove_opp_hand([self])
+        if self.info.name in game.players[side.opp].opp_hand.info.values():
+            game.players[side.opp].opp_hand.remove([self.name])
 
     def available_actions(self, game, side):
         pass
@@ -106,6 +82,44 @@ class Card:
 
     def effect_ar_function(self, game) -> Optional[Callable[[], None]]:
         return None
+
+
+class GameCards:
+
+    # used for global tracking (cf. playerview)
+    early_war = []
+    mid_war = []
+    late_war = []
+
+    for card_name, CardClass in Card.ALL.items():
+        if CardClass.stage == 'Early War':
+            early_war.append(card_name)
+        if CardClass.stage == 'Mid War':
+            mid_war.append(card_name)
+        if CardClass.stage == 'Late War':
+            late_war.append(card_name)
+
+    def __init__(self):
+
+        self.ALL = dict()
+        self.early_war = []
+        self.mid_war = []
+        self.late_war = []
+        self.in_play = []
+
+        for card_name, CardClass in Card.ALL.items():
+            self.ALL[card_name] = CardClass()
+
+            if CardClass.stage == 'Early War':
+                self.early_war.append(card_name)
+            if CardClass.stage == 'Mid War':
+                self.mid_war.append(card_name)
+            if CardClass.stage == 'Late War':
+                self.late_war.append(card_name)
+
+    def __getitem__(self, item):
+        return self.ALL[item]
+
 
 # --
 # -- EARLY WAR
@@ -234,18 +248,20 @@ class The_China_Card(Card):
     def can_event(self, game, side):
         return False
 
-    def move_china_card(self, game, side: Side, made_playable=False):
+    def move(self, game, side: Side, made_playable=False):
         '''
         Moves and flips the China Card after it has been used.
         Side refers to the player that uses the China card, or whoever the card should move from.
         '''
-        receipient_hand = game.hand[side.opp]
-        receipient_hand.append('The_China_Card')
+        game.hand[side.opp].append('The_China_Card')
+        game.hand[side].remove('The_China_Card')
+        game.players[side].opp_hand.update(['The_China_Card'])
+        game.players[side.opp].opp_hand.remove(['The_China_Card'])
         self.is_playable = made_playable
         self.reset()
 
     def dispose(self, game, side):
-        self.move_china_card(game, side)
+        self.move(game, side)
 
     def reset(self):
         self.all_points_in_region = True
@@ -666,7 +682,7 @@ class Olympic_Games(Card):
                 else:
                     game.change_vp(2 * side_opp.opp.vp_mult)
                 print(
-                    f'{outcome} with (Sponsor, Participant) rolls of ({num[0]}, {num[1]}).')
+                    f'{outcome} with (Sponsor, Participant) modified rolls of ({num[0]}, {num[1]}).')
 
                 return True
 
@@ -712,7 +728,7 @@ class NATO(Card):
     def use_event(self, game, side: Side):
         if self.can_event(game, Side.US):
             self.event_occurred = True
-            game.basket[Side.USSR].append('NATO')
+            game.basket[Side.US].append('NATO')
 
 
 class Independent_Reds(Card):
@@ -811,7 +827,7 @@ class CIA_Created(Card):
     event_unique = True
 
     def use_event(self, game, side: Side):
-        game.players[Side.US].update_opp_hand(
+        game.players[Side.US].opp_hand.update(
             game.hand[Side.USSR])
         self.event_occurred = True
         game.select_action(
@@ -1079,7 +1095,11 @@ class The_Cambridge_Five(Card):
             countries = [CountryInfo.REGION_ALL[k] for k in [
                 Card.ALL[n].scoring_region for n in us_scoring_cards]]
 
-            game.players[Side.USSR].update_opp_hand(us_scoring_cards)
+            if len(us_scoring_cards):
+                game.players[Side.USSR].opp_hand.update(us_scoring_cards)
+            else:
+                print('US player has no scoring cards.')
+                game.players[Side.USSR].opp_hand.no_scoring_cards = True
 
             self.event_occurred = True
             game.input_state = Input(
@@ -1341,7 +1361,7 @@ class Salt_Negotiations(Card):
         if card_name != option_stop_early:
             game.discard_pile.remove(card_name)
             game.hand[side].append(card_name)
-            game.players[side.opp].update_opp_hand([card_name])
+            game.players[side.opp].opp_hand.update([card_name])
         return True
 
     def use_event(self, game, side: Side):
@@ -1405,15 +1425,19 @@ class Summit(Card):
 
     def dice_callback(self, game, ussr_advantage: int, num: tuple):
         game.input_state.reps -= 1
-        outcome = 'USSR success' if num[Side.USSR] + \
-            ussr_advantage > num[Side.US] else 'US success'
-
-        if outcome == 'USSR Success':
-            self.choices(game, Side.USSR)
+        if num[Side.USSR] + ussr_advantage > num[Side.US]:
+            outcome = 'USSR success'
+        elif num[Side.USSR] + ussr_advantage < num[Side.US]:
+            outcome = 'US success'
         else:
+            outcome = 'Tie'
+
+        if outcome == 'USSR success':
+            self.choices(game, Side.USSR)
+        elif outcome == 'US success':
             self.choices(game, Side.US)
         print(
-            f'{outcome} with (USSR, US) rolls of ({num[Side.USSR]}, {num[Side.US]}). ussr_advantage is {ussr_advantage}.')
+            f'{outcome} with (USSR, US) modified rolls of ({num[Side.USSR]}, {num[Side.US]}). ussr_advantage is {ussr_advantage}.')
         return True
 
     def use_event(self, game, side: Side):
@@ -1566,7 +1590,7 @@ class Missile_Envy(Card):
         if self.exchange:
             game.hand[side].remove(self.name)
             game.hand[side.opp].append(self.name)
-            game.players[side].update_opp_hand([self])
+            game.players[side].opp_hand.update([self])
             self.exchange = False
         else:
             game.basket[side].remove(self.name)
@@ -1814,7 +1838,7 @@ class Cultural_Revolution(Card):
     def use_event(self, game, side: Side):
         self.event_occurred = True
         if 'The_China_Card' in game.hand[Side.US]:
-            game.cards['The_China_Card'].move_china_card(
+            game.cards['The_China_Card'].move(
                 game, Side.US, made_playable=True)
         elif 'The_China_Card' in game.hand[Side.USSR]:
             game.change_vp(1)
@@ -1889,7 +1913,7 @@ class Lone_Gunman(Card):
     event_unique = True
 
     def use_event(self, game, side: Side):
-        game.players[Side.USSR].update_opp_hand(game.hand[Side.US])
+        game.players[Side.USSR].opp_hand.update(game.hand[Side.US])
         self.event_occurred = True
         game.select_action(
             Side.USSR, f'Blank_1_Op_Card', is_event_resolved=True)
@@ -2112,7 +2136,7 @@ class Nixon_Plays_The_China_Card(Card):
     def use_event(self, game, side: Side):
         self.event_occurred = True
         if 'The_China_Card' in game.hand[Side.USSR]:
-            game.cards['The_China_Card'].move_china_card(
+            game.cards['The_China_Card'].move(
                 game, Side.USSR)
         elif 'The_China_Card' in game.hand[Side.US]:
             game.change_vp(-2)
@@ -2214,7 +2238,7 @@ class Ussuri_River_Skirmish(Card):
     def use_event(self, game, side: Side):
         self.event_occurred = True
         if 'The_China_Card' in game.hand[Side.USSR]:
-            game.cards['The_China_Card'].move_china_card(
+            game.cards['The_China_Card'].move(
                 game, Side.USSR, made_playable=True)
         elif 'The_China_Card' in game.hand[Side.US]:
             game.input_state = Input(
@@ -2367,7 +2391,7 @@ class Our_Man_In_Tehran(Card):
 
     def stage_2(self, game):
         game.draw_pile.extend(game.hand[Side.NEUTRAL])
-        game.players[Side.US].update_draw_pile(
+        game.players[Side.US].draw_pile.update(
             game.hand[Side.NEUTRAL])
         game.hand[Side.NEUTRAL] = []
         return True
@@ -2792,7 +2816,7 @@ class Aldrich_Ames_Remix(Card):
     event_unique = True
 
     def use_event(self, game, side: Side):
-        game.players[Side.USSR].update_opp_hand(
+        game.players[Side.USSR].opp_hand.update(
             game.hand[Side.US])
         game.input_state = Input(
             Side.USSR, InputType.SELECT_CARD,

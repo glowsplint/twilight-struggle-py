@@ -181,7 +181,7 @@ class GameMap:
                 country.change_influence(-min(difference, country.influence[Side.USSR]), max(
                     0, difference - country.influence[Side.USSR]))
         print(
-            f'Coup {outcome} with roll of {die_roll}. Difference: {difference}')
+            f'Coup {outcome} with roll of {die_roll}. Difference: {die_roll}+{effective_ops}+({ussr_advantage})-{country.info.stability * 2}={difference}')
 
         # Cuban Missile Crisis overrides Nuclear Subs
         if 'Cuban_Missile_Crisis' in game.basket[side.opp]:
@@ -280,8 +280,6 @@ class GameMap:
             country.change_influence(difference, 0)
         print(
             f'USSR rolled: {ussr_roll}, US rolled: {us_roll}, ussr_advantage = {ussr_advantage}, Difference = {difference}')
-
-
 
     def can_place_influence(self, game, name: str, side: Side, effective_ops: int) -> bool:
         '''
@@ -615,6 +613,7 @@ class Country:
             self.influence[side] -= opp_inf
         else:
             self.influence[side.opp] = opp_inf
+
 
 USSR = {
     'name': 'USSR',
