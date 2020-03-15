@@ -135,7 +135,6 @@ class GameMap:
         - Vietnam_Revolts
         - Cuban_Missile_Crisis
         - SALT Negotiations
-        - Cuban Missile Crisis
 
 
         Parameters
@@ -263,7 +262,7 @@ class GameMap:
         country = self[name]
 
         ussr_advantage = 0  # net positive is in favour of USSR
-        if 'Iran_Contra_Scandal' in game_instance.basket[Side.USSR] and side == Side.US:
+        if 'Iran_Contra_Scandal' in game_instance.basket[Side.USSR]:
             ussr_advantage += 1
 
         for adjacent_name in country.info.adjacent_countries:
