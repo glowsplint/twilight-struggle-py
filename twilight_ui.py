@@ -464,6 +464,9 @@ s turn                  Displays information on the current turn and action roun
         else:
             # remember to check if comd is a valid ID
             region = MapRegion.fromStr(comd)
+            if region is None:
+                print('Invalid region name.')
+                return
             print(f'State of {region.name}:')
             for n in sorted(CountryInfo.REGION_ALL[region]):
                 print(self.game.map[n].get_state_str())

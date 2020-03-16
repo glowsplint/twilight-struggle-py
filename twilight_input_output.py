@@ -90,8 +90,6 @@ class Input:
         option : str
             The option to remove.
         '''
-        if option not in self.selection:
-            raise KeyError('Option was never present!')
         self.discarded_options.add(option)
 
     @property

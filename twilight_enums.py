@@ -1,12 +1,113 @@
 import enum
 from typing import Iterable, Callable
 
+class TrackEffects():
+
+    def __init__(self, defcon: int=0, vp: int=0, milops: int=0):
+        self.defcon = defcon
+        self.vp = vp
+        self.milops = milops
+
+    def __iadd__(self, other):
+        self.defcon += other.defcon
+        self.vp += other.vp
+        self.milops += other.milops
+        return self
+
+    def __repr__(self):
+        items = []
+        if self.defcon:
+            items.append(f'DEFCON {self.defcon:+}')
+
+        if self.vp:
+            items.append(f'VP {self.vp:+}')
+
+        if self.milops:
+            items.append(f'Mil. Ops. {self.milops:+}')
+
+        return '; '.join(items)
+
+class CoupEffects(TrackEffects):
+
+    def __init__(self, no_milops: bool=False, no_defcon_bg: bool=False, **kwargs):
+        super().__init__(**kwargs)
+        self.no_milops = no_milops
+        self.no_defcon_bg = no_defcon_bg
+
+    def __iadd__(self, other):
+        super().__iadd__(other)
+        self.no_milops = self.no_milops or other.no_milops
+        self.no_defcon_bg = self.no_defcon_bg or other.no_defcon_bg
+        return self
+
+    def __repr__(self):
+        items = []
+        prefix = super().__repr__()
+
+        if prefix: items.append(prefix)
+        if self.no_milops:
+            items.append('No mil. ops. gained')
+
+        if self.no_defcon_bg:
+            items.append('No DEFCON reduction for battlegrounds')
+
+        return '; '.join(items)
+
+
+class RealignState():
+
+    def __init__(self, side=None, reps=0, countries=None, defcon=None):
+        '''
+
+        :param side: The side choosing the countries to realign.
+        :param reps: Number of realignments
+        :param countries: Countries attempted
+        :param defcon: Simulated DEFCON status. None for actual DEFCON.
+        '''
+        self.side = side
+        self.reps = reps
+        self.countries = [] if countries is None else countries
+        self.defcon = defcon
+
+    def __iadd__(self, other):
+        self.reps += other.reps
+        self.countries += other.countries
+        return self
+
+    def __repr__(self):
+        items = []
+        if self.reps:
+            items.append(f'Remaining realignments {self.reps:+}')
+
+        return '; '.join(items)
+
+class OpsInfState():
+
+    def __init__(self, ops, countries=None):
+        self.ops = ops
+        self.countries = [] if countries is None else countries
+
+    def __iadd__(self, other):
+        self.ops += other.ops
+        self.countries += other.countries
+        return self
+
+    def __repr__(self):
+        items = []
+        if self.ops:
+            items.append(f'Remaining realignments {self.ops:+}')
+
+        return '; '.join(items)
 
 class Side(enum.IntEnum):
 
     USSR = 0
     US = 1
     NEUTRAL = 2
+
+    @classmethod
+    def PLAYERS(cls):
+        return (cls.USSR, cls.US)
 
     @staticmethod
     def fromStr(s):
@@ -82,7 +183,7 @@ class MapRegion(enum.IntEnum):
         elif s == 'southeast asia' or s == 'se':
             return MapRegion.SOUTHEAST_ASIA
         else:
-            raise NameError('Invalid string for MapRegion.fromStr')
+            return None
 
     @classmethod
     def main_regions(self):
