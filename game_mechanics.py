@@ -14,8 +14,9 @@ from twilight_playerview import PlayerView
 class Game:
 
     class Default:
+        '''A bunch of default values for the game.'''
         ARS_BY_TURN = (None, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7)
-        AR_ORDER = [Side.USSR, Side.US]
+        AR_ORDER = (Side.USSR, Side.US)
         SPACE_ROLL_MAX = (3, 4, 3, 4, 3, 4, 3, 2)
         SPACE_VPS = ((2, 1), (0, 0), (2, 0), (0, 0),
                      (3, 1), (0, 0), (4, 2), (2, 0))
@@ -114,10 +115,15 @@ class Game:
         '''
         self.stage_list.clear()
         if side != Side.NEUTRAL:
-            winner = side.toStr
+            winner = side
         else:
-            winner = 'USSR' if self.vp_track > 0 else 'US'
-        print(f'{winner} victory!')
+            if self.vp_track > 0:
+                winner = Side.USSR
+            elif self.vp_track < 0:
+                winner = Side.US
+            else:
+                winner = Side.NEUTRAL
+        print(f'{winner.toStr} victory!')
 
     '''Here are functions used to manipulate the various tracks.'''
 
@@ -649,7 +655,8 @@ class Game:
             Unmodified operations value of the card.
         '''
         for effect_side, effect_name in self.iterate_effects():
-            mod = self.cards[effect_name].effect_global_ops(self, effect_side, side)
+            mod = self.cards[effect_name].effect_global_ops(
+                self, effect_side, side)
             if mod is not None:
                 raw_ops += mod
                 print(f'{effect_name}: {mod:+} ops.')
@@ -666,11 +673,12 @@ class Game:
     Here we have different stages for card uses. These include the use of influence,
     operations points for coup or realignment, and also on the space race.
     '''
-    
+
     def ops_inf_after(self, side):
         for effect_side, effect_name in self.iterate_effects():
-            self.cards[effect_name].effect_opsinf_after(self, effect_side, side)
-        
+            self.cards[effect_name].effect_opsinf_after(
+                self, effect_side, side)
+
     def ops_inf_callback(self, side: Side, country_name: str) -> bool:
         c = self.map[country_name]
 
@@ -684,22 +692,23 @@ class Game:
                 self.opsinf_state[n] -= 1
 
         c.increment_influence(side)
-        
+
         for effect_side, effect_name in self.iterate_effects():
-            reg_mod = self.cards[effect_name].effect_opsinf_country_select(self, effect_side, side, country_name)
+            reg_mod = self.cards[effect_name].effect_opsinf_country_select(
+                self, effect_side, side, country_name)
             if reg_mod is not None:
                 region, mod = reg_mod
                 for n in CountryInfo.REGION_ALL[region]:
                     if n in self.opsinf_state:
                         self.opsinf_state[n] += mod
-                print(f'{effect_name}: {mod:+} ops in {region.name}.')        
-        
+                print(f'{effect_name}: {mod:+} ops in {region.name}.')
+
         self.ops_inf_remove_insufficient_ops(side)
         self.input_state.reps = max(self.opsinf_state.values())
         return True
 
     def ops_inf_remove_insufficient_ops(self, side):
-    
+
         for n in self.opsinf_state:
             req_ops = 2 if self.map[n].control == side.opp else 1
             if req_ops > self.opsinf_state[n]:
@@ -707,11 +716,12 @@ class Game:
 
     def ops_inf_get_available_ops(self, side, ops):
 
-        #TODO make it the beginning of AR map
+        # TODO make it the beginning of AR map
         result = {n: ops for n in self.map.has_influence_around_all(side)}
 
         for effect_side, effect_name in self.iterate_effects():
-            reg_mod = self.cards[effect_name].effect_opsinf_region_ops(self, effect_side, side)
+            reg_mod = self.cards[effect_name].effect_opsinf_region_ops(
+                self, effect_side, side)
             if reg_mod is not None:
                 region, mod = reg_mod
                 for n in CountryInfo.REGION_ALL[region]:
@@ -733,7 +743,7 @@ class Game:
         ops : int
             Number of operations.
         '''
-        
+
         self.stage_list.append(partial(self.ops_inf_after, side))
         self.opsinf_state = self.ops_inf_get_available_ops(side, ops)
         self.input_state = Input(
@@ -764,7 +774,7 @@ class Game:
             options,
             prompt=prompt,
         )
-        
+
     def realign_after_stage(self):
         for effect_side, effect_name in self.iterate_effects():
             self.cards[effect_name].effect_realign_after(self, effect_side)
@@ -792,7 +802,8 @@ class Game:
         print(f'USSR rolled {ussr_roll}, US rolled {us_roll}.')
         for effect_side, effect_name in self.iterate_effects():
             for roll_side in Side.PLAYERS():
-                mod = self.cards[effect_name].effect_realign_roll(self, effect_side, roll_side, country_name)
+                mod = self.cards[effect_name].effect_realign_roll(
+                    self, effect_side, roll_side, country_name)
                 if mod is not None:
                     print(f'{effect_name}: {mod:+} to {roll_side} roll.')
                     rolls[roll_side] += mod
@@ -803,7 +814,8 @@ class Game:
                     print(f'{adj_name} control: +1 to {roll_side.name} roll.')
                     rolls[roll_side] += 1
             if country.influence[roll_side] > country.influence[roll_side.opp]:
-                print(f'More influence in {country_name} : +1 to {roll_side.name} roll.')
+                print(
+                    f'More influence in {country_name} : +1 to {roll_side.name} roll.')
                 rolls[roll_side] += 1
 
         for roll_side in Side.PLAYERS():
@@ -815,7 +827,8 @@ class Game:
         self.realign_state += RealignState(reps=-1, countries=[country_name])
 
         for effect_side, effect_name in self.iterate_effects():
-            effect = self.cards[effect_name].effect_realign_ops(self, effect_side, country_name)
+            effect = self.cards[effect_name].effect_realign_ops(
+                self, effect_side, country_name)
             if effect is not None:
                 self.realign_state += effect
                 print(f'{effect_name}: {effect}.')
@@ -847,8 +860,9 @@ class Game:
     def can_realign_all(self, side, defcon):
 
         options = set(self.map.can_realign_all(side, defcon=defcon))
-        for effect_side, effect_name in self.iterate_effects():
-            effect_country_list = self.cards[effect_name].effect_realign_country_restrict(self, side)
+        for _effect_side, effect_name in self.iterate_effects():
+            effect_country_list = self.cards[effect_name].effect_realign_country_restrict(
+                self, side)
             if effect_country_list is not None:
                 options.difference_update(effect_country_list)
 
@@ -870,7 +884,6 @@ class Game:
         self.realign_state = RealignState(side, reps=ops)
         self.stage_list.append(self.realign_after_stage)
         self.stage_list.append(self.realign_country_stage)
-        #self.cards[card_name].use_ops_realign(self, side)
 
     def coup(self, side, ops, country_name, roll):
         '''
@@ -898,7 +911,8 @@ class Game:
         '''
         print(f'Rolled {roll}.')
         for effect_side, effect_name in self.iterate_effects():
-            mod = self.cards[effect_name].effect_coup_roll(self, effect_side, side, country_name)
+            mod = self.cards[effect_name].effect_coup_roll(
+                self, effect_side, side, country_name)
             if mod is not None:
                 roll += mod
                 print(f'{effect_name}: {mod:+} to roll.')
@@ -912,14 +926,14 @@ class Game:
         else:
             print(f'Coup failed.')
 
-
         # Cuban Missile Crisis overrides Nuclear Subs
         # The Cuban Missile Crisis sets DEFCON in its method, instead of returning the changes,
         # so it's guaranteed to happen first.
 
         result = CoupEffects()
         for effect_side, effect_name in self.iterate_effects():
-            effect = self.cards[effect_name].effect_coup_after(self, effect_side, side, country_name, difference)
+            effect = self.cards[effect_name].effect_coup_after(
+                self, effect_side, side, country_name, difference)
             if effect is not None:
                 result += effect
                 print(f'{effect_name}: {effect}.')
@@ -932,9 +946,12 @@ class Game:
             print(f'Coup: Milops {ops:+}.')
             result += CoupEffects(milops=ops)
 
-        if result.defcon: self.change_defcon(result.defcon)
-        if result.vp: self.change_vp(result.vp)
-        if result.milops: self.change_milops(side, result.milops)
+        if result.defcon:
+            self.change_defcon(result.defcon)
+        if result.vp:
+            self.change_vp(result.vp)
+        if result.milops:
+            self.change_milops(side, result.milops)
 
     def coup_dice_callback(self, side, ops, country_name, roll_str):
         self.input_state.reps -= 1
@@ -944,7 +961,8 @@ class Game:
     def coup_country_callback(self, side, ops, country_name):
         self.input_state.reps -= 1
         for effect_side, effect_name in self.iterate_effects():
-            ops_mod = self.cards[effect_name].effect_coup_ops(self, effect_side, side, country_name)
+            ops_mod = self.cards[effect_name].effect_coup_ops(
+                self, effect_side, side, country_name)
             if ops_mod is not None:
                 ops += ops_mod
                 print(f'{effect_name}: {ops_mod:+} ops.')
@@ -959,8 +977,9 @@ class Game:
     def can_coup_all(self, side, defcon):
 
         options = set(self.map.can_coup_all(side, defcon=defcon))
-        for effect_side, effect_name in self.iterate_effects():
-            effect_country_list = self.cards[effect_name].effect_coup_country_restrict(self, side)
+        for _effect_side, effect_name in self.iterate_effects():
+            effect_country_list = self.cards[effect_name].effect_coup_country_restrict(
+                self, side)
             if effect_country_list is not None:
                 options.difference_update(effect_country_list)
 
@@ -1024,7 +1043,7 @@ class Game:
             partial(Country.remove_influence, Side.US).
         '''
         self.input_state.reps -= 1
-        status = country_function(self.map[name], side)
+        country_function(self.map[name], side)
         if not self.map[name].influence[side]:
             self.input_state.remove_option(name)
         return True
@@ -1045,8 +1064,6 @@ class Game:
         self.input_state.reps -= 1
         option_function_mapping[selected_option]()
         return True
-
-  # The following stages tend to be for cards that are a little more specific.
 
     def may_discard_callback(self, side: Side, opt: str, did_not_discard_fn: Callable[[], None] = lambda: None):
 
@@ -1195,10 +1212,6 @@ class Game:
         if self.turn_track == 1:
             # TEST CODE BELOW -- remove when done
             # '''For testing early-war cards'''
-            self.hand[Side.USSR].extend([self.cards.early_war.pop(i)
-                                         for i in range(8)])
-            self.hand[Side.US].extend([self.cards.early_war.pop(0)
-                                       for i in range(8)])
             # self.hand[Side.USSR].extend([self.cards.early_war.pop(i)
             #                              for i in range(20)])
             # self.hand[Side.US].extend([self.cards.early_war.pop(0)
@@ -1216,10 +1229,10 @@ class Game:
             #                              for i in range(11)])
             # TEST CODE ABOVE -- remove when done
             # # WORKING CODE BELOW -- uncomment if not using test code
-            self.draw_pile.extend(self.cards.early_war)
-            self.cards.in_play.extend(self.cards.early_war)
-            # self.hand[Side.USSR].append(self.draw_pile.pop(
-            #     self.draw_pile.index('The_China_Card')))
+            self.draw_pile.extend(reversed(self.cards.early_war))
+            self.cards.in_play.update(self.cards.early_war)
+            self.hand[Side.USSR].append(self.draw_pile.pop(
+                self.draw_pile.index('The_China_Card')))
             if 'The_China_Card' in self.hand[Side.USSR]:
                 self.players[Side.US].opp_hand.update(['The_China_Card'])
             else:
@@ -1228,13 +1241,13 @@ class Game:
             # self.cards.early_war = []
             # self.shuffle_draw_pile_stage()
         elif self.turn_track == 4:
-            self.draw_pile.extend(self.cards.mid_war)
-            self.cards.in_play.extend(self.cards.mid_war)
+            self.draw_pile.extend(reversed(self.cards.mid_war))
+            self.cards.in_play.update(self.cards.mid_war)
             self.cards.mid_war = []
             self.shuffle_draw_pile_stage()
         elif self.turn_track == 8:
-            self.draw_pile.extend(self.cards.late_war)
-            self.cards.in_play.extend(self.cards.late_war)
+            self.draw_pile.extend(reversed(self.cards.late_war))
+            self.cards.in_play.update(self.cards.late_war)
             self.cards.late_war = []
             self.shuffle_draw_pile_stage()
 
@@ -1242,7 +1255,7 @@ class Game:
 
         if first_side == Side.NEUTRAL:
             handsize_target = [3, 2]  # hardcoded for Ask Not..
-        if 1 <= self.turn_track <= 3:
+        elif 1 <= self.turn_track <= 3:
             handsize_target = [8, 8]
         else:
             handsize_target = [9, 9]
@@ -1313,7 +1326,7 @@ class Game:
         # 0. Clear all events that only last until the end of turn.
         def clear_baskets(self):
             for effect_side, effect_name in self.iterate_effects():
-                self.cards[effect_name].effect_end_turn()
+                self.cards[effect_name].effect_end_turn(self, effect_side)
 
         # 1. Check milops
         def check_milops(self):

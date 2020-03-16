@@ -6,6 +6,8 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 Sleep 1500
 
 ; Creates a new game
+Send, rng off
+sleep 50
 Send, new
 sleep 50
 Send, {Enter}
@@ -23,24 +25,23 @@ sleep 50
 Send, {Enter}
 sleep 50
 
-; Sets US handicap both to Iran
-Send, m 30 30
+; Sets US handicap to Iran and Italy
+Send, m 12 30
 sleep 50
 Send, {Enter}
 sleep 50
 
 ; Headlines 1-Asia Scoring for USSR
-;Send, m 1
-;sleep 50
-;Send, {Enter}
-;sleep 50
+Send, m 1
+sleep 50
+Send, {Enter}
+sleep 50
 
 ; Headlines 2-Europe Scoring for US
-;Send, m 2
-;sleep 50
-;Send, {Enter}
-;sleep 50
-
+Send, m 2
+sleep 50
+Send, {Enter}
+sleep 50
 
 ;s::
 ;ExitApp

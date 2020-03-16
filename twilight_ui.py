@@ -364,7 +364,10 @@ c dec           Returns the number of cards in the draw deck.
             print(
                 f'Listing {len(self.game.hand[self.input_state.side])} cards in hand.')
             for k, c in sorted(self.game.players[self.input_state.side].hand.info.items()):
-                print(f'{k:5} {c}')
+                if c == 'The_China_Card' and not self.game.cards[c].is_playable:
+                    print(f'{k:5} {c} (not currently playable)')
+                else:
+                    print(f'{k:5} {c}')
         elif comd == '?':
             print(UI.help_card)
         elif comd == 'opp':

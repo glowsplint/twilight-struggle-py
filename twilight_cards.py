@@ -5,9 +5,9 @@ from functools import partial
 from itertools import chain
 
 from twilight_input_output import Input
-from twilight_map import MapRegion, CountryInfo, Country
+from twilight_map import CountryInfo, Country
 from twilight_enums import Side, MapRegion, InputType, CardAction, CoupEffects, RealignState
-
+from twilight_effects import Effect
 
 class Card:
 
@@ -73,7 +73,7 @@ class Card:
 
     def use_ops_influence(self, game, side):
         eff_ops = game.get_global_effective_ops(side, self.ops)
-        game.operations_influence(side, eff_ops)        
+        game.operations_influence(side, eff_ops)
 
     def use_ops_coup(self, game, side):
         eff_ops = game.get_global_effective_ops(side, self.ops)
@@ -82,117 +82,6 @@ class Card:
     def use_ops_realignment(self, game, side):
         eff_ops = game.get_global_effective_ops(side, self.ops)
         game.operations_realign(side, eff_ops)
-
-    def effect_global_ops(self, game, effect_side, ops_side) -> Optional[int]:
-        '''
-        Returns the operations modifier for a player due to the effect.
-        :param effect_side: the side which activated the effect (who's basket the effect is in)
-        :param ops_side: the side conducting operations
-        :return: the change in ops, or None if no change
-        '''
-        pass
-
-    def effect_ar_function(self, game) -> Optional[Callable[[], None]]:
-        pass
-
-    def effect_end_turn(self, game, effect_side) -> None:
-        pass
-        
-    def effect_opsinf_region_ops(self, game, effect_side, ops_side) -> Optional[Tuple[MapRegion, int]]:
-        pass
-        
-    def effect_opsinf_country_select(self, game, effect_side, ops_side, country_name) -> Optional[Tuple[MapRegion, int]]:
-        pass
-        
-    def effect_opsinf_after(self, game, effect_side, ops_side) -> None:
-        '''
-        This function is called after influence has been placed as operations (and been used up).
-        :param effect_side: the side which activated the effect (who's basket the effect is in)
-        :param ops_side: the side which is conducting operations
-        '''
-        pass
-    
-    def effect_realign_country_restrict(self, game, side) -> Optional[Iterable[str]]:
-        '''
-        Returns the countries in which a realignment is not allowed if
-        the effect is active.
-        :param side: the side that is trying to perform realignments.
-        :return: The list of countries a realignment is NOT allowed in, or
-            None if no restriction
-        '''
-        pass
-
-    def effect_realign_roll(self, game, effect_side, roll_side, country_name) -> Optional[int]:
-        '''
-        Returns the realignment roll modifier for roll_side, given that
-        the effect is active for effect_side, and the country being realigned.
-        :param effect_side: the side which activated the effect (who's basket the effect is in)
-        :param roll_side: the side doing the roll
-        :param country_name: the country being realigned
-        :return: the change to the roll, or None if no change
-        '''
-        pass
-
-    def effect_realign_ops(self, game, effect_side, country_name) -> Optional[int]:
-        '''
-        Returns the realignment ops modifier for effect_side, Called after every
-        realignment.
-        :param effect_side: the side which activated the effect (who's basket the effect is in)
-        :param country_name: the country being realigned
-        :return: the change to ops, or None if no change.
-        '''
-        pass
-
-    def effect_realign_after(self, game, effect_side) -> None:
-        '''
-        This function is called after a series of realignments has been completed.
-        :param effect_side: the side which activated the effect (who's basket the effect is in)
-        '''
-        pass
-
-
-    def effect_coup_country_restrict(self, game, side) -> Optional[Iterable[str]]:
-        '''
-        Returns the countries in which a coup is not allowed if
-        the effect is active.
-        :param side: the side that is trying to coup.
-        :return: The list of countries a coup is NOT allowed in.
-        '''
-        pass
-
-    def effect_coup_ops(self, game, effect_side, coup_side, country_name) -> Optional[int]:
-        '''
-        Returns the ops change for a coup if the effect is active.
-        :param effect_side: the side which activated the effect (who's basket the effect is in)
-        :param coup_side: the side that is trying to coup
-        :param country_name: the country being couped
-        :return: the change in ops, or None if no change
-        '''
-        pass
-
-    def effect_coup_roll(self, game, effect_side, coup_side, country_name) -> Optional[int]:
-        '''
-        Returns the die roll modifier for a coup if the effect is active.
-        :param effect_side: the side which activated the effect (who's basket the effect is in)
-        :param coup_side: the side that is trying to coup
-        :param country_name: the country being couped
-        :return: the die roll modifier, or None if no change
-        '''
-        pass
-
-    def effect_coup_after(self, game, effect_side, coup_side, country_name, result) -> Optional[CoupEffects]:
-        '''
-        This function is called after a coup is completed.
-        :param effect_side: the side which activated the effect (who's basket the effect is in)
-        :param coup_side: the side that did the coup
-        :param country_name: the country being couped
-        :param result: the final result of the coup, positive for success.
-        :return: any effects to be applied. They will be all accumulated and
-            applied at the same time as the DEFCON reduction and milops change.
-            For cards like Cuban Missile Crisis that takes precedence, perform
-            the change in this function rather than returning the effect.
-        '''
-
 
 class GameCards:
 
@@ -215,7 +104,7 @@ class GameCards:
         self.early_war = []
         self.mid_war = []
         self.late_war = []
-        self.in_play = []
+        self.in_play = set()
 
         for card_name, CardClass in Card.ALL.items():
             self.ALL[card_name] = CardClass()
@@ -332,13 +221,13 @@ class Five_Year_Plan(Card):
             Side.NEUTRAL, InputType.SELECT_CARD,
             partial(self.callback, game),
             (n for n in game.hand[Side.USSR]
-             if n != 'Five_Year_Plan'),
+             if any((n != 'Five_Year_Plan', n != 'The_China_Card'))),
             prompt='Five Year Plan: USSR randomly discards a card.',
             reps=reps
         )
 
 
-class The_China_Card(Card):
+class The_China_Card(Card, Effect):
     name = 'The_China_Card'
     card_index = 6
     card_type = 'Event'
@@ -353,7 +242,7 @@ class The_China_Card(Card):
         super().__init__()
         self.realign_bonus_given = False
         self.opsinf_bonus_lost = False
-        
+
     def use_ops_influence(self, game, side):
         game.basket[side].append(self.name)
         self.opsinf_bonus_lost = False
@@ -376,7 +265,7 @@ class The_China_Card(Card):
                 and country_name not in CountryInfo.REGION_ALL[MapRegion.ASIA]):
             self.opsinf_bonus_lost = True
             return MapRegion.ASIA, -1
-            
+
     def effect_opsinf_after(self, game, effect_side, ops_side):
         game.basket[effect_side].remove(self.name)
 
@@ -420,7 +309,7 @@ class The_China_Card(Card):
     def dispose(self, game, side):
         self.move(game, side)
 
-        
+
 class Socialist_Governments(Card):
     name = 'Socialist_Governments'
     card_index = 7
@@ -430,8 +319,8 @@ class Socialist_Governments(Card):
     owner = Side.USSR
     event_text = 'Unplayable as an event if \'The Iron Lady\' is in effect. Remove US Influence in Western Europe by a total of 3 Influence points, removing no more than 2 per country.'
 
-    def can_event(self, game_instance, side):
-        return The_Iron_Lady.name not in game_instance.basket[Side.US]
+    def can_event(self, game, side):
+        return The_Iron_Lady.name not in game.basket[Side.US]
 
     def use_event(self, game, side: Side):
         if self.can_event(game, Side.USSR):
@@ -465,7 +354,7 @@ class Fidel(Card):
         cuba.set_influence(max(3, cuba.influence[Side.USSR]), 0)
 
 
-class Vietnam_Revolts(Card):
+class Vietnam_Revolts(Card, Effect):
     name = 'Vietnam_Revolts'
     card_index = 9
     card_type = 'Event'
@@ -509,13 +398,13 @@ class Vietnam_Revolts(Card):
 
     def effect_realign_ops(self, game, effect_side, country_name):
         if (game.realign_state.side == Side.USSR
-            and not self.realign_bonus_given # haven't gotten the bonus
-            and not game.realign_state.reps # finished all the other stuff
-            and all(c in CountryInfo.REGION_ALL[MapRegion.SOUTHEAST_ASIA]
-                for c in game.realign_state.countries) # all in SEA
-            and (The_China_Card.name not in game.basket[game.realign_state.side] # China not active
-                or game.cards[The_China_Card.name].realign_bonus_given) # or China bonus is done
-            ):
+                and not self.realign_bonus_given  # haven't gotten the bonus
+                and not game.realign_state.reps  # finished all the other stuff
+                and all(c in CountryInfo.REGION_ALL[MapRegion.SOUTHEAST_ASIA]
+                        for c in game.realign_state.countries)  # all in SEA
+                and (The_China_Card.name not in game.basket[game.realign_state.side]  # China not active
+                     or game.cards[The_China_Card.name].realign_bonus_given)  # or China bonus is done
+                ):
             self.realign_bonus_given = True
             return RealignState(reps=1)
 
@@ -524,13 +413,13 @@ class Vietnam_Revolts(Card):
 
     def effect_coup_ops(self, game, effect_side, coup_side, country_name):
         if (coup_side == Side.USSR
-            and country_name in CountryInfo.REGION_ALL[MapRegion.SOUTHEAST_ASIA]):
+                and country_name in CountryInfo.REGION_ALL[MapRegion.SOUTHEAST_ASIA]):
             return 1
 
-    def use_event(self, game_instance, side: Side):
+    def use_event(self, game, side: Side):
         self.event_occurred = True
-        game_instance.map.change_influence('Vietnam', Side.USSR, 2)
-        game_instance.basket[self.owner].append(self.name)
+        game.map.change_influence('Vietnam', Side.USSR, 2)
+        game.basket[self.owner].append(self.name)
 
 
 class Blockade(Card):
@@ -647,16 +536,16 @@ class Nasser(Card):
         egypt.change_influence(2, -math.ceil(egypt.influence[Side.US] / 2))
 
 
-class Warsaw_Pact_Formed(Card):
+class Warsaw_Pact_Formed(Card, Effect):
     name = 'Warsaw_Pact_Formed'
     card_index = 16
     card_type = 'Event'
     stage = 'Early War'
     ops = 3
     owner = Side.USSR
-    event_text = 'Remove all US Influence from four countries in Eastern Europe, or add 5 USSR Influence in Eastern Europe, adding no more than 2 per country. Allow play of NATO.'
+    event_text = 'Remove all US Influence from four countries in Eastern Europe, or add 5 USSR Influence in Eastern Europe, adding no more than 2 per country. Allows play of NATO.'
     event_unique = True
-    
+
     def event_remove_stage(self, game):
         game.input_state = Input(
             Side.USSR, InputType.SELECT_COUNTRY,
@@ -669,7 +558,7 @@ class Warsaw_Pact_Formed(Card):
             reps_unit='influence',
             max_per_option=1
         )
-        
+
     def event_add_stage(self, game, side):
         game.input_state = Input(
             Side.USSR, InputType.SELECT_COUNTRY,
@@ -681,30 +570,29 @@ class Warsaw_Pact_Formed(Card):
             reps_unit='influence',
             max_per_option=2
         )
-    
+
     def use_event(self, game, side):
         self.event_occurred = True
         game.basket[Side.US].append('Warsaw_Pact_Formed')
         option_function_mapping = {
             'Remove all US influence from 4 countries in Eastern Europe':
-                partial(game.stage_list.append, partial(self.event_remove_stage, game)),
+                partial(game.stage_list.append, partial(
+                    self.event_remove_stage, game)),
             'Add 5 USSR Influence to countries in Eastern Europe':
-                partial(game.stage_list.append, partial(self.event_add_stage, game))
+                partial(game.stage_list.append, partial(
+                    self.event_add_stage, game))
         }
 
-        if any(game.map[n].has_influence(Side.US) for n in CountryInfo.REGION_ALL[MapRegion.EASTERN_EUROPE]):
-            game.input_state = Input(
-                Side.USSR, InputType.SELECT_MULTIPLE,
-                partial(game.select_multiple_callback,
-                        option_function_mapping),
-                option_function_mapping.keys(),
-                prompt='Warsaw Pact: Choose between two options.'
-            )
-        else:
-            self.event_add_stage(game, side)
+        game.input_state = Input(
+            Side.USSR, InputType.SELECT_MULTIPLE,
+            partial(game.select_multiple_callback,
+                    option_function_mapping),
+            option_function_mapping.keys(),
+            prompt='Warsaw Pact: Choose between two options.'
+        )
 
 
-class De_Gaulle_Leads_France(Card):
+class De_Gaulle_Leads_France(Card, Effect):
     name = 'De_Gaulle_Leads_France'
     card_index = 17
     card_type = 'Event'
@@ -769,11 +657,11 @@ class Olympic_Games(Card):
 
     def event_participate_dice_callback(self, game, side, rolls):
         game.input_state.reps -= 1
-        if rolls[0] > rolls[1]: # sponsor wins
+        if rolls[0] > rolls[1]:  # sponsor wins
             game.change_vp(2 * side.vp_mult)
         else:
             game.change_vp(2 * side.opp.vp_mult)
-    
+
     def event_participate_stage(self, game, side):
         game.input_state = Input(
             Side.NEUTRAL, InputType.ROLL_DICE,
@@ -781,7 +669,7 @@ class Olympic_Games(Card):
             ((i+2, j) for i in range(1, 7) for j in range(1, 7) if i+2 != j),
             prompt='2d6 roll (Sponsor roll, Participant roll), no ties'
         )
-    
+
     def event_boycott(self, game, side):
         game.change_defcon(-1)
         game.select_action(
@@ -804,7 +692,7 @@ class Olympic_Games(Card):
         )
 
 
-class NATO(Card):
+class NATO(Card, Effect):
     name = 'NATO'
     card_index = 21
     card_type = 'Event'
@@ -814,14 +702,14 @@ class NATO(Card):
     event_text = 'Play after \'Marshall Plan\' or \'Warsaw Pact\'. USSR player may no longer make Coup or Realignment rolls in any US Controlled countries in Europe. US Controlled countries in Europe may not be attacked by play of the Brush War event.'
     event_unique = True
 
-    def can_event(self, game_instance, side):
-        return Warsaw_Pact_Formed.name in game_instance.basket[Side.US] \
-               or Marshall_Plan.name in game_instance.basket[Side.US]
+    def can_event(self, game, side):
+        return Warsaw_Pact_Formed.name in game.basket[Side.US] \
+            or Marshall_Plan.name in game.basket[Side.US]
 
     def use_event(self, game, side: Side):
         if self.can_event(game, Side.US):
             self.event_occurred = True
-            game_instance.basket[self.owner].append(self.name)
+            game.basket[self.owner].append(self.name)
 
     def effect_countries(self, game):
         cancelled = set()
@@ -835,11 +723,11 @@ class NATO(Card):
 
     def effect_realign_country_restrict(self, game, side):
         if side == Side.USSR:
-            return self.effect_countries(game, side)
+            return self.effect_countries(game)
 
     def effect_coup_country_restrict(self, game, side):
         if side == Side.USSR:
-            return self.effect_countries(game, side)
+            return self.effect_countries(game)
 
 
 class Independent_Reds(Card):
@@ -865,7 +753,7 @@ class Independent_Reds(Card):
         )
 
 
-class Marshall_Plan(Card):
+class Marshall_Plan(Card, Effect):
     name = 'Marshall_Plan'
     card_index = 23
     card_type = 'Event'
@@ -910,7 +798,7 @@ class Indo_Pakistani_War(Card):
         )
 
 
-class Containment(Card):
+class Containment(Card, Effect):
     name = 'Containment'
     card_index = 25
     card_type = 'Event'
@@ -924,11 +812,12 @@ class Containment(Card):
         game.basket[self.owner].remove(self.name)
 
     def effect_global_ops(self, game, effect_side, ops_side):
-        if ops_side == self.owner: return 1
+        if ops_side == self.owner:
+            return 1
 
-    def use_event(self, game_instance, side: Side):
+    def use_event(self, game, side: Side):
         self.event_occurred = True
-        game_instance.basket[self.owner].append(self.name)
+        game.basket[self.owner].append(self.name)
 
 
 class CIA_Created(Card):
@@ -949,7 +838,7 @@ class CIA_Created(Card):
             Side.US, f'Blank_1_Op_Card', is_event_resolved=True)
 
 
-class US_Japan_Mutual_Defense_Pact(Card):
+class US_Japan_Mutual_Defense_Pact(Card, Effect):
     name = 'US_Japan_Mutual_Defense_Pact'
     card_index = 27
     card_type = 'Event'
@@ -964,13 +853,16 @@ class US_Japan_Mutual_Defense_Pact(Card):
         japan = game.map['Japan']
         japan.set_influence(japan.influence[Side.USSR], max(
             japan.influence[Side.USSR] + 4, japan.influence[Side.US]))
-        game_instance.basket[self.owner].append(self.name)
+        game.basket[self.owner].append(self.name)
 
     def effect_realign_country_restrict(self, game, side):
-        if side == Side.USSR: return ['Japan']
+        if side == Side.USSR:
+            return ['Japan']
 
     def effect_coup_country_restrict(self, game, side):
-        if side == Side.USSR: return ['Japan']
+        if side == Side.USSR:
+            return ['Japan']
+
 
 class Suez_Crisis(Card):
     name = 'Suez_Crisis'
@@ -1048,7 +940,7 @@ class Decolonization(Card):
         )
 
 
-class Red_Scare_Purge(Card):
+class Red_Scare_Purge(Card, Effect):
     name = 'Red_Scare_Purge'
     card_index = 31
     card_type = 'Event'
@@ -1061,11 +953,12 @@ class Red_Scare_Purge(Card):
         game.basket[effect_side].remove(self.name)
 
     def effect_global_ops(self, game, effect_side, ops_side):
-        if ops_side == effect_side.opp: return -1
+        if ops_side == effect_side.opp:
+            return -1
 
-    def use_event(self, game_instance, side: Side):
+    def use_event(self, game, side: Side):
         self.event_occurred = True
-        game_instance.basket[side].append(self.name)
+        game.basket[side].append(self.name)
 
 
 class UN_Intervention(Card):
@@ -1128,14 +1021,15 @@ class De_Stalinization(Card):
     def event_remove_callback(self, game, side, country_name):
         if country_name == game.input_state.option_stop_early:
             game.input_state.reps = 0
-        else:    
+        else:
             self.ops_removed += 1
-            game.event_influence_callback(Country.decrement_influence, Side.USSR, country_name)
-                
+            game.event_influence_callback(
+                Country.decrement_influence, Side.USSR, country_name)
+
         return True
 
     def use_event(self, game, side: Side):
-        
+
         self.event_occurred = True
         self.ops_removed = 0
 
@@ -1151,7 +1045,6 @@ class De_Stalinization(Card):
             option_stop_early='Stop removing influence and proceed to relocate influence.'
         )
         game.stage_list.append(partial(self.event_add_stage, game))
-        
 
 
 class Nuclear_Test_Ban(Card):
@@ -1170,7 +1063,7 @@ class Nuclear_Test_Ban(Card):
         game.change_defcon(2)
 
 
-class Formosan_Resolution(Card):
+class Formosan_Resolution(Card, Effect):
     name = 'Formosan_Resolution'
     card_index = 35
     card_type = 'Event'
@@ -1222,11 +1115,12 @@ class The_Cambridge_Five(Card):
     def can_event(self, game, side):
         return game.turn_track < 8
 
-    def use_event(self, game_instance, side: Side):
-        if self.can_event(game_instance, Side.USSR):
-            us_scoring_cards = [n for n in game_instance.hand[Side.US]
-                                if game_instance.cards[n].info.card_type == 'Scoring']
-            countries = chain(*(CountryInfo.REGION_ALL[Card.ALL[n].scoring_region] for n in us_scoring_cards))
+    def use_event(self, game, side: Side):
+        if self.can_event(game, Side.USSR):
+            us_scoring_cards = [n for n in game.hand[Side.US]
+                                if game.cards[n].info.card_type == 'Scoring']
+            countries = chain(
+                *(CountryInfo.REGION_ALL[Card.ALL[n].scoring_region] for n in us_scoring_cards))
 
             if len(us_scoring_cards):
                 game.players[Side.USSR].opp_hand.update(us_scoring_cards)
@@ -1277,7 +1171,7 @@ class Special_Relationship(Card):
             )
 
 
-class NORAD(Card):
+class NORAD(Card, Effect):
     name = 'NORAD'
     card_index = 106
     card_type = 'Event'
@@ -1322,14 +1216,15 @@ class Brush_War(Card):
         self.event_occurred = True
 
         options = {n for n in game.map.ALL
-            if game.map[n].info.stability <= 2}
+                   if game.map[n].info.stability <= 2}
 
         if NATO.name in game.basket[NATO.owner]:
             options -= game.cards[NATO.name].effect_countries(game)
 
         game.input_state = Input(
             side, InputType.SELECT_COUNTRY,
-            partial(game.war_country_callback, side, lower=3, win_vp=1, win_milops=3),
+            partial(game.war_country_callback, side,
+                    lower=3, win_vp=1, win_milops=3),
             options,
             prompt='Brush War: Choose a target country.'
         )
@@ -1391,7 +1286,7 @@ class Arms_Race(Card):
                 game.change_vp(1 * side.vp_mult)
 
 
-class Cuban_Missile_Crisis(Card):
+class Cuban_Missile_Crisis(Card, Effect):
     name = 'Cuban_Missile_Crisis'
     card_index = 40
     card_type = 'Event'
@@ -1409,13 +1304,13 @@ class Cuban_Missile_Crisis(Card):
             print('Cuban Missile Crisis: game ends.')
             game.set_defcon(1)
 
-    def cmc_remove_callback(self, game_instance, side: Side, opt: str):
-        game_instance.input_state.reps -= 1
-        if opt != game_instance.input_state.option_stop_early:
-            game_instance.map[opt].decrement_influence(side, amt=2)
-            game_instance.basket[side.opp].remove(self.name)
+    def cmc_remove_callback(self, game, side: Side, opt: str):
+        game.input_state.reps -= 1
+        if opt != game.input_state.option_stop_early:
+            game.map[opt].decrement_influence(side, amt=2)
+            game.basket[side.opp].remove(self.name)
 
-    def cmc_remove_stage(self, game_instance, side: Side):
+    def cmc_remove_stage(self, game, side: Side):
         '''
         Gives an opportunity to the couping player to remove 2 influence from
         Cuba/(West Germany/Turkey) if USSR/US respectively. This stage triggers
@@ -1437,9 +1332,9 @@ class Cuban_Missile_Crisis(Card):
         if len(options) == 0:
             return False
 
-        game_instance.input_state = Input(
+        game.input_state = Input(
             side, InputType.SELECT_COUNTRY,
-            partial(self.cmc_remove_callback, game_instance, side),
+            partial(self.cmc_remove_callback, game, side),
             options,
             prompt='Cuban Missile Crisis: Remove 2 influence to de-escalate.',
             reps_unit='influence',
@@ -1448,11 +1343,11 @@ class Cuban_Missile_Crisis(Card):
 
     def use_event(self, game, side: Side):
         self.event_occurred = True
-        game_instance.change_defcon(2 - game_instance.defcon_track)
-        game_instance.basket[side].append(self.name)
+        game.change_defcon(2 - game.defcon_track)
+        game.basket[side].append(self.name)
 
 
-class Nuclear_Subs(Card):
+class Nuclear_Subs(Card, Effect):
     name = 'Nuclear_Subs'
     card_index = 41
     card_type = 'Event'
@@ -1469,12 +1364,12 @@ class Nuclear_Subs(Card):
         if coup_side == Side.US and game.map[country_name].info.battleground:
             return CoupEffects(no_defcon_bg=True)
 
-    def use_event(self, game_instance, side: Side):
+    def use_event(self, game, side: Side):
         self.event_occurred = True
-        game_instance.basket[self.owner].append(self.name)
+        game.basket[self.owner].append(self.name)
 
 
-class Quagmire(Card):
+class Quagmire(Card, Effect):
     name = 'Quagmire'
     card_index = 42
     card_type = 'Event'
@@ -1491,7 +1386,7 @@ class Quagmire(Card):
         game.basket[Side.US].append('Quagmire')
 
 
-class Salt_Negotiations(Card):
+class Salt_Negotiations(Card, Effect):
     name = 'Salt_Negotiations'
     card_index = 43
     card_type = 'Event'
@@ -1504,31 +1399,31 @@ class Salt_Negotiations(Card):
     def effect_end_turn(self, game, effect_side):
         game.basket[effect_side].remove(self.name)
 
-    def callback(self, game_instance, side: Side, card_name: str):
-        game_instance.input_state.reps -= 1
-        if card_name != game_instance.input_state.option_stop_early:
-            game_instance.discard_pile.remove(card_name)
+    def callback(self, game, side: Side, card_name: str):
+        game.input_state.reps -= 1
+        if card_name != game.input_state.option_stop_early:
+            game.discard_pile.remove(card_name)
             # TODO: reveal card to opponent
-            game_instance.hand[side].append(card_name)
+            game.hand[side].append(card_name)
         return True
 
     def effect_coup_roll(self, game, effect_side, coup_side, country_name):
         return -1
 
-    def use_event(self, game_instance, side: Side):
+    def use_event(self, game, side: Side):
         self.event_occurred = True
-        game_instance.change_defcon(2)
-        game_instance.basket[side].append(self.name)
+        game.change_defcon(2)
+        game.basket[side].append(self.name)
         game.input_state = Input(
             side, InputType.SELECT_CARD,
-            partial(self.callback, game_instance, side),
-            (n for n in game_instance.discard_pile if game_instance.cards[n].info.ops >= 1),
+            partial(self.callback, game, side),
+            (n for n in game.discard_pile if game.cards[n].info.ops >= 1),
             prompt=f'You may pick a non-scoring card from the discard pile.',
             option_stop_early='Do not take a card.'
         )
 
 
-class Bear_Trap(Card):
+class Bear_Trap(Card, Effect):
     name = 'Bear_Trap'
     card_index = 44
     card_type = 'Event'
@@ -1628,11 +1523,12 @@ class How_I_Learned_to_Stop_Worrying(Card):
     def use_event(self, game, side: Side):
         self.event_occurred = True
         option_function_mapping = {
-            f'DEFCON 1: Thermonuclear War. {side.opp} victory!': partial(game.change_defcon, 1 - game.defcon_track),
-            f'DEFCON 2': partial(game.change_defcon, 2 - game.defcon_track),
-            f'DEFCON 3': partial(game.change_defcon, 3 - game.defcon_track),
-            f'DEFCON 4': partial(game.change_defcon, 4 - game.defcon_track),
-            f'DEFCON 5': partial(game.change_defcon, 5 - game.defcon_track)
+            # is there any way to directly refer to the
+            f'DEFCON 1: Thermonuclear War. {side.opp} victory!': partial(game.set_defcon, 1),
+            f'DEFCON 2': partial(game.set_defcon, 2),
+            f'DEFCON 3': partial(game.set_defcon, 3),
+            f'DEFCON 4': partial(game.set_defcon, 4),
+            f'DEFCON 5': partial(game.set_defcon, 5)
         }
 
         game.input_state = Input(
@@ -1646,7 +1542,7 @@ class How_I_Learned_to_Stop_Worrying(Card):
         game.change_milops(side, 5)
 
 
-class Junta(Card):
+class Junta(Card, Effect):
     name = 'Junta'
     card_index = 47
     card_type = 'Event'
@@ -1694,16 +1590,16 @@ class Junta(Card):
         game.realign_state = RealignState(side, reps=eff_ops, defcon=5)
         game.stage_list.append(game.realign_country_stage)
 
-    def event_stage_2(self, game_instance, side):
+    def event_stage_2(self, game, side):
 
         option_function_mapping = {
-            'Free coup attempt': partial(self.event_coup_callback, game_instance, side),
-            'Free realignment rolls': partial(self.event_realign_callback, game_instance, side)
+            'Free coup attempt': partial(self.event_coup_callback, game, side),
+            'Free realignment rolls': partial(self.event_realign_callback, game, side)
         }
 
-        game_instance.input_state = Input(
+        game.input_state = Input(
             side, InputType.SELECT_MULTIPLE,
-            partial(game_instance.select_multiple_callback,
+            partial(game.select_multiple_callback,
                     option_function_mapping),
             option_function_mapping.keys(),
             prompt='Junta: Player may make free Coup attempt or realignment rolls in Central America or South America.'
@@ -1712,9 +1608,9 @@ class Junta(Card):
     def use_event(self, game, side: Side):
         self.event_occurred = True
 
-        game_instance.input_state = Input(
+        game.input_state = Input(
             side, InputType.SELECT_COUNTRY,
-            partial(game_instance.event_influence_callback,
+            partial(game.event_influence_callback,
                     partial(Country.increment_influence, amt=2), side),
             chain(CountryInfo.REGION_ALL[MapRegion.CENTRAL_AMERICA],
                   CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA]),
@@ -1722,8 +1618,8 @@ class Junta(Card):
             reps_unit='influence'
         )
 
-        game_instance.stage_list.append(
-            partial(self.event_stage_2, game_instance, side))
+        game.stage_list.append(
+            partial(self.event_stage_2, game, side))
 
 
 class Kitchen_Debates(Card):
@@ -1750,7 +1646,7 @@ class Kitchen_Debates(Card):
             game.change_vp(-2)
 
 
-class Missile_Envy(Card):
+class Missile_Envy(Card, Effect):
     name = 'Missile_Envy'
     card_index = 49
     card_type = 'Event'
@@ -1828,7 +1724,7 @@ class Missile_Envy(Card):
         )
 
 
-class We_Will_Bury_You(Card):
+class We_Will_Bury_You(Card, Effect):
     name = 'We_Will_Bury_You'
     card_index = 50
     card_type = 'Event'
@@ -1840,11 +1736,11 @@ class We_Will_Bury_You(Card):
 
     def use_event(self, game, side: Side):
         self.event_occurred = True
-        game_instance.change_defcon(-1)
-        game_instance.basket[self.owner].append(self.name)
+        game.change_defcon(-1)
+        game.basket[self.owner].append(self.name)
 
 
-class Brezhnev_Doctrine(Card):
+class Brezhnev_Doctrine(Card, Effect):
     name = 'Brezhnev_Doctrine'
     card_index = 51
     card_type = 'Event'
@@ -1858,11 +1754,12 @@ class Brezhnev_Doctrine(Card):
         game.basket[self.owner].remove(self.name)
 
     def effect_global_ops(self, game, effect_side, ops_side):
-        if ops_side == self.owner: return 1
+        if ops_side == self.owner:
+            return 1
 
-    def use_event(self, game_instance, side: Side):
+    def use_event(self, game, side: Side):
         self.event_occurred = True
-        game_instance.basket[self.owner].append(self.name)
+        game.basket[self.owner].append(self.name)
 
 
 class Portuguese_Empire_Crumbles(Card):
@@ -1940,7 +1837,7 @@ class Allende(Card):
         game.map['Chile'].change_influence(2, 0)
 
 
-class Willy_Brandt(Card):
+class Willy_Brandt(Card, Effect):
     name = 'Willy_Brandt'
     card_index = 55
     card_type = 'Event'
@@ -2025,7 +1922,7 @@ class Cultural_Revolution(Card):
             game.change_vp(1)
 
 
-class Flower_Power(Card):
+class Flower_Power(Card, Effect):
     name = 'Flower_Power'
     card_index = 59
     card_type = 'Event'
@@ -2044,7 +1941,7 @@ class Flower_Power(Card):
             game.basket[Side.USSR].append('Flower_Power')
 
 
-class U2_Incident(Card):
+class U2_Incident(Card, Effect):
     name = 'U2_Incident'
     card_index = 60
     card_type = 'Event'
@@ -2057,9 +1954,9 @@ class U2_Incident(Card):
     def effect_end_turn(self, game, effect_side):
         game.basket[self.owner].remove(self.name)
 
-    def use_event(self, game_instance, side: Side):
+    def use_event(self, game, side: Side):
         self.event_occurred = True
-        game_instance.basket[self.owner].append(self.name)
+        game.basket[self.owner].append(self.name)
 
 
 class OPEC(Card):
@@ -2142,7 +2039,7 @@ class Panama_Canal_Returned(Card):
             game.map[country].change_influence(0, 1)
 
 
-class Camp_David_Accords(Card):
+class Camp_David_Accords(Card, Effect):
     name = 'Camp_David_Accords'
     card_index = 65
     card_type = 'Event'
@@ -2249,7 +2146,7 @@ class Grain_Sales_to_Soviets(Card):
         )
 
 
-class John_Paul_II_Elected_Pope(Card):
+class John_Paul_II_Elected_Pope(Card, Effect):
     name = 'John_Paul_II_Elected_Pope'
     card_index = 68
     card_type = 'Event'
@@ -2265,7 +2162,7 @@ class John_Paul_II_Elected_Pope(Card):
         game.basket[Side.US].append('John_Paul_II_Elected_Pope')
 
 
-class Latin_American_Death_Squads(Card):
+class Latin_American_Death_Squads(Card, Effect):
     name = 'Latin_American_Death_Squads'
     card_index = 69
     card_type = 'Event'
@@ -2279,13 +2176,15 @@ class Latin_American_Death_Squads(Card):
 
     def effect_coup_roll(self, game, effect_side, coup_side, country_name):
         if (country_name in CountryInfo.REGION_ALL[MapRegion.CENTRAL_AMERICA]
-            or country_name in CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA]):
-            if effect_side == coup_side: return 1
-            else: return -1
+                or country_name in CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA]):
+            if effect_side == coup_side:
+                return 1
+            else:
+                return -1
 
-    def use_event(self, game_instance, side: Side):
+    def use_event(self, game, side: Side):
         self.event_occurred = True
-        game_instance.basket[side].append(self.name)
+        game.basket[side].append(self.name)
 
 
 class OAS_Founded(Card):
@@ -2348,7 +2247,7 @@ class Sadat_Expels_Soviets(Card):
         game.map['Egypt'].change_influence(0, 1)
 
 
-class Shuttle_Diplomacy(Card):
+class Shuttle_Diplomacy(Card, Effect):
     name = 'Shuttle_Diplomacy'
     card_index = 73
     card_type = 'Event'
@@ -2544,7 +2443,7 @@ class South_America_Scoring(Card):
         game.score(MapRegion.SOUTH_AMERICA)
 
 
-class Che(Card):
+class Che(Card, Effect):
     name = 'Che'
     card_index = 107
     card_type = 'Event'
@@ -2592,11 +2491,11 @@ class Che(Card):
             option_stop_early='Do not coup.'
         )
 
-    def use_event(self, game_instance, side: Side):
+    def use_event(self, game, side: Side):
         self.event_occurred = True
         self.coup_reps = 2
-        game_instance.basket[self.owner].append(self.name)
-        self.event_coup_stage(game_instance)
+        game.basket[self.owner].append(self.name)
+        self.event_coup_stage(game)
 
 
 class Our_Man_In_Tehran(Card):
@@ -2645,7 +2544,7 @@ class Our_Man_In_Tehran(Card):
 # --
 
 
-class Iranian_Hostage_Crisis(Card):
+class Iranian_Hostage_Crisis(Card, Effect):
     name = 'Iranian_Hostage_Crisis'
     card_index = 82
     card_type = 'Event'
@@ -2662,7 +2561,7 @@ class Iranian_Hostage_Crisis(Card):
         game.basket[Side.US].append('Iranian_Hostage_Crisis')
 
 
-class The_Iron_Lady(Card):
+class The_Iron_Lady(Card, Effect):
     name = 'The_Iron_Lady'
     card_index = 83
     card_type = 'Event'
@@ -2725,7 +2624,7 @@ class Star_Wars(Card):
             )
 
 
-class North_Sea_Oil(Card):
+class North_Sea_Oil(Card, Effect):
     name = 'North_Sea_Oil'
     card_index = 86
     card_type = 'Event'
@@ -2741,7 +2640,7 @@ class North_Sea_Oil(Card):
         game.ars_by_turn[Side.US][game.turn_track] = 8
 
 
-class The_Reformer(Card):
+class The_Reformer(Card, Effect):
     name = 'The_Reformer'
     card_index = 87
     card_type = 'Event'
@@ -2751,9 +2650,9 @@ class The_Reformer(Card):
     event_text = 'Add 4 Influence in Europe (no more than 2 per country). If USSR is ahead of US in VP, then 6 Influence may be added instead. USSR may no longer conduct Coup attempts in Europe. Improves effect of Glasnost event.'
     event_unique = True
 
-    def use_event(self, game_instance, side: Side):
-        reps = 6 if game_instance.vp_track * Side.USSR.vp_mult > 0 else 4
-        game_instance.input_state = Input(
+    def use_event(self, game, side: Side):
+        reps = 6 if game.vp_track * Side.USSR.vp_mult > 0 else 4
+        game.input_state = Input(
             Side.USSR, InputType.SELECT_COUNTRY,
             partial(game.event_influence_callback,
                     Country.increment_influence, Side.USSR),
@@ -2766,7 +2665,8 @@ class The_Reformer(Card):
         game.basket[Side.USSR].append('The_Reformer')
 
     def effect_coup_country_restrict(self, game, side):
-        if side == Side.USSR: return CountryInfo.REGION_ALL[MapRegion.EUROPE]
+        if side == Side.USSR:
+            return CountryInfo.REGION_ALL[MapRegion.EUROPE]
 
 
 class Marine_Barracks_Bombing(Card):
@@ -2832,7 +2732,7 @@ class Glasnost(Card):
                 Side.USSR, f'Blank_4_Op_Card', can_coup=False, is_event_resolved=True)
 
 
-class Ortega_Elected_in_Nicaragua(Card):
+class Ortega_Elected_in_Nicaragua(Card, Effect):
     name = 'Ortega_Elected_in_Nicaragua'
     card_index = 91
     card_type = 'Event'
@@ -2851,21 +2751,22 @@ class Ortega_Elected_in_Nicaragua(Card):
             return True
         return game.coup_country_callback(self.owner, ops, country_name)
 
-    def use_event(self, game_instance, side: Side):
-      
+    def use_event(self, game, side: Side):
+
         self.event_occurred = True
-        game_instance.map['Nicaragua'].remove_influence(Side.US)
-        game_instance.basket[self.owner].append(self.name)
-        eff_ops = game_instance.get_global_effective_ops(self.owner, self.ops)
-        
-        game_instance.input_state = Input(
+        game.map['Nicaragua'].remove_influence(Side.US)
+        game.basket[self.owner].append(self.name)
+        eff_ops = game.get_global_effective_ops(self.owner, self.ops)
+
+        game.input_state = Input(
             self.owner, InputType.SELECT_COUNTRY,
-            partial(self.event_coup_callback, game_instance, eff_ops),
-            (n for n in game_instance.can_coup_all(self.owner, defcon=5)
-                if n in game_instance.map['Nicaragua'].info.adjacent_countries),
+            partial(self.event_coup_callback, game, eff_ops),
+            (n for n in game.can_coup_all(self.owner, defcon=5)
+                if n in game.map['Nicaragua'].info.adjacent_countries),
             prompt=f'Select a country to coup using {eff_ops} operations points.',
             option_stop_early='Do not coup.'
         )
+
 
 class Terrorism(Card):
     name = 'Terrorism'
@@ -2899,7 +2800,7 @@ class Terrorism(Card):
         )
 
 
-class Iran_Contra_Scandal(Card):
+class Iran_Contra_Scandal(Card, Effect):
     name = 'Iran_Contra_Scandal'
     card_index = 93
     card_type = 'Event'
@@ -2912,16 +2813,16 @@ class Iran_Contra_Scandal(Card):
     def effect_end_turn(self, game, effect_side):
         game.basket[self.owner].remove(self.name)
 
-    def use_event(self, game_instance, side: Side):
+    def use_event(self, game, side: Side):
         self.event_occurred = True
-        game_instance.basket[self.owner].append(self.name)
+        game.basket[self.owner].append(self.name)
 
     def effect_realign_roll(self, game, effect_side, roll_side, country_name):
         if roll_side == Side.US:
             return -1
 
 
-class Chernobyl(Card):
+class Chernobyl(Card, Effect):
     name = 'Chernobyl'
     card_index = 94
     card_type = 'Event'
@@ -2942,9 +2843,9 @@ class Chernobyl(Card):
         if ops_side == Side.USSR:
             return self.region, -999
 
-    def use_event(self, game_instance, side: Side):
+    def use_event(self, game, side: Side):
 
-        game_instance.basket[self.owner].append(self.name)
+        game.basket[self.owner].append(self.name)
 
         option_function_mapping = {
             r.name: partial(self.set_region, r) for r in MapRegion.main_regions()
@@ -2957,7 +2858,7 @@ class Chernobyl(Card):
             option_function_mapping,
             prompt='Chernobyl: Designate a single Region where USSR cannot place influence using operations for the rest of the turn.'
         )
-    
+
     def effect_end_turn(self, game, effect_side):
         game.basket[effect_side].remove(self.name)
         self.region = None
@@ -3006,7 +2907,7 @@ class Latin_American_Debt_Crisis(Card):
         )
 
 
-class Tear_Down_This_Wall(Card):
+class Tear_Down_This_Wall(Card, Effect):
     name = 'Tear_Down_This_Wall'
     card_index = 96
     card_type = 'Event'
@@ -3018,7 +2919,7 @@ class Tear_Down_This_Wall(Card):
 
     def __init__(self):
         super().__init__()
-        self.event_realign_active = False # IF the event is currently happening
+        self.event_realign_active = False  # IF the event is currently happening
 
     def effect_coup_after(self, game, effect_side, coup_side, country_name, result):
         game.basket[coup_side].remove(self.name)
@@ -3052,16 +2953,16 @@ class Tear_Down_This_Wall(Card):
         game.realign_state = RealignState(self.owner, reps=eff_ops, defcon=5)
         game.stage_list.append(game.realign_country_stage)
 
-    def use_event(self, game_instance, side: Side):
+    def use_event(self, game, side: Side):
         self.event_occurred = True
-        if Willy_Brandt.name in game_instance.basket[Willy_Brandt.owner]:
-            game_instance.basket[Willy_Brandt.owner].remove(Willy_Brandt.name)
-        game_instance.map['East_Germany'].increment_influence(Side.US, amt=3)
-        game_instance.basket[self.owner].append(self.name)
+        if Willy_Brandt.name in game.basket[Willy_Brandt.owner]:
+            game.basket[Willy_Brandt.owner].remove(Willy_Brandt.name)
+        game.map['East_Germany'].increment_influence(Side.US, amt=3)
+        game.basket[self.owner].append(self.name)
 
         option_function_mapping = {
-            'Free coup attempt': partial(self.event_coup_callback, game_instance),
-            'Free realignment rolls': partial(self.event_realign_callback, game_instance)
+            'Free coup attempt': partial(self.event_coup_callback, game),
+            'Free realignment rolls': partial(self.event_realign_callback, game)
         }
 
         game.input_state = Input(
@@ -3073,7 +2974,7 @@ class Tear_Down_This_Wall(Card):
         )
 
 
-class An_Evil_Empire(Card):
+class An_Evil_Empire(Card, Effect):
     name = 'An_Evil_Empire'
     card_index = 97
     card_type = 'Event'
@@ -3199,7 +3100,7 @@ class Iran_Iraq_War(Card):
         )
 
 
-class Yuri_and_Samantha(Card):
+class Yuri_and_Samantha(Card, Effect):
     name = 'Yuri_and_Samantha'
     card_index = 109
     card_type = 'Event'
@@ -3217,12 +3118,12 @@ class Yuri_and_Samantha(Card):
         if coup_side == Side.US:
             return CoupEffects(vp=Side.USSR.vp_mult)
 
-    def use_event(self, game_instance, side: Side):
+    def use_event(self, game, side: Side):
         self.event_occurred = True
-        game_instance.basket[self.owner].append(self.name)
+        game.basket[self.owner].append(self.name)
 
 
-class AWACS_Sale_to_Saudis(Card):
+class AWACS_Sale_to_Saudis(Card, Effect):
     name = 'AWACS_Sale_to_Saudis'
     card_index = 110
     card_type = 'Event'

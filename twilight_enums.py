@@ -1,9 +1,10 @@
 import enum
 from typing import Iterable, Callable
 
-class TrackEffects():
 
-    def __init__(self, defcon: int=0, vp: int=0, milops: int=0):
+class TrackEffects:
+
+    def __init__(self, defcon: int = 0, vp: int = 0, milops: int = 0):
         self.defcon = defcon
         self.vp = vp
         self.milops = milops
@@ -27,9 +28,10 @@ class TrackEffects():
 
         return '; '.join(items)
 
+
 class CoupEffects(TrackEffects):
 
-    def __init__(self, no_milops: bool=False, no_defcon_bg: bool=False, **kwargs):
+    def __init__(self, no_milops: bool = False, no_defcon_bg: bool = False, **kwargs):
         super().__init__(**kwargs)
         self.no_milops = no_milops
         self.no_defcon_bg = no_defcon_bg
@@ -44,7 +46,8 @@ class CoupEffects(TrackEffects):
         items = []
         prefix = super().__repr__()
 
-        if prefix: items.append(prefix)
+        if prefix:
+            items.append(prefix)
         if self.no_milops:
             items.append('No mil. ops. gained')
 
@@ -54,7 +57,7 @@ class CoupEffects(TrackEffects):
         return '; '.join(items)
 
 
-class RealignState():
+class RealignState:
 
     def __init__(self, side=None, reps=0, countries=None, defcon=None):
         '''
@@ -81,7 +84,8 @@ class RealignState():
 
         return '; '.join(items)
 
-class OpsInfState():
+
+class OpsInfState:
 
     def __init__(self, ops, countries=None):
         self.ops = ops
@@ -98,6 +102,7 @@ class OpsInfState():
             items.append(f'Remaining realignments {self.ops:+}')
 
         return '; '.join(items)
+
 
 class Side(enum.IntEnum):
 
