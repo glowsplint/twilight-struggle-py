@@ -79,7 +79,6 @@ class GameMap:
         return [country.info.name for country in self.ALL.values() if country.influence[Side.USSR] > 0 and country.info.superpower == False]
 
     def can_coup_all(self, side, defcon=5):
-
         restricted_regions = set()
 
         if defcon < 5:
@@ -356,6 +355,7 @@ class Country:
             self.influence[side] -= opp_inf
         else:
             self.influence[side.opp] = opp_inf
+
 
 USSR = {
     'name': 'USSR',

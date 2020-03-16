@@ -363,13 +363,21 @@ c dec           Returns the number of cards in the draw deck.
         if comd == '':
             print(
                 f'Listing {len(self.game.hand[self.input_state.side])} cards in hand.')
-            for c in self.game.hand[self.input_state.side]:
-                print(f'{Card.ALL[c].card_index:5} {c}')
+            for k, c in sorted(self.game.players[self.input_state.side].hand.info.items()):
+                print(f'{k:5} {c}')
         elif comd == '?':
             print(UI.help_card)
         elif comd == 'opp':
             print(
-                f'Cards in opponent hand: {len(self.game.hand[self.input_state.side.opp])}')
+                f'Card(s) in opponent hand: {len(self.game.hand[self.input_state.side.opp])}')
+            if self.game.players[self.input_state.side].opp_hand.info:
+                print(
+                    f'Listing {len(self.game.players[self.input_state.side].opp_hand.info)} known card(s) in opponent\'s hand.')
+                for k, c in sorted(self.game.players[self.input_state.side].opp_hand.info.items()):
+                    if c == 'The_China_Card' and not self.game.cards[c].is_playable:
+                        print(f'{c} (not currently playable)')
+                    else:
+                        print(f'{c}')
         elif comd == 'dis':
             print(f'Listing {len(self.game.discard_pile)} discarded cards.')
             for c in sorted(self.game.discard_pile):
@@ -434,7 +442,7 @@ s turn                  Displays information on the current turn and action roun
             print('=== Game state ===')
             ar_output = 'Headline phase' if self.game.ar_track == 0 else 'AR' + \
                 str(self.game.ar_track)
-            side = self.game.ar_side.toStr()
+            side = self.game.ar_side.toStr
 
             game_values = {
                 'VP': self.game.vp_track,

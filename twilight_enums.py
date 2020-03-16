@@ -120,6 +120,7 @@ class Side(enum.IntEnum):
         else:
             raise NameError('Invalid string for Side.fromStr')
 
+    @property
     def toStr(self):
         if self == Side.US:
             return 'US'

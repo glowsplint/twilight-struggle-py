@@ -78,10 +78,13 @@ class Game:
         self.milops_track = [0, 0]  # ussr first
         self.space_track = [0, 0]  # 0 is start, 1 is earth satellite etc
         self.spaced_turns = [0, 0]
+        self.handicap = handicap  # positive in favour of ussr
+
         self.map = GameMap()
         self.cards = GameCards()
         self.players = [PlayerView(Side.USSR), PlayerView(Side.US)]
-        self.handicap = handicap  # positive in favour of ussr
+        self.players[Side.USSR].create_links(self)
+        self.players[Side.US].create_links(self)
 
         self.stage_list = [
             self.expand_deck,
@@ -111,7 +114,7 @@ class Game:
         '''
         self.stage_list.clear()
         if side != Side.NEUTRAL:
-            winner = side.toStr()
+            winner = side.toStr
         else:
             winner = 'USSR' if self.vp_track > 0 else 'US'
         print(f'{winner} victory!')
@@ -256,7 +259,6 @@ class Game:
     def headline_callback(self, side: Side, name: str):
         self.input_state.reps -= 1
         self.headline_bin[side] = name
-        self.hand[side].remove(name)
         return True
 
     def choose_headline(self, side: Side):
@@ -303,7 +305,7 @@ class Game:
             Side's headline is displayed
         '''
         print(
-            f'{side.toStr()} selected {self.headline_bin[side]} for headline.')
+            f'{side.toStr} selected {self.headline_bin[side]} for headline.')
 
     def resolve_headline_order(self):
         '''
@@ -339,16 +341,12 @@ class Game:
                 partial(self.trigger_event, side, card_name))
 
     def dispose_headline(self, side):
-        # TODO use card.dispose
         if self.headline_bin[side] == 'Missile_Envy':
             self.hand[side.opp].append('Missile_Envy')
             self.cards['Missile_Envy'].exchange = False
         elif self.headline_bin[side]:
             c = self.headline_bin[side]
-            if self.cards[c].event_unique:
-                self.removed_pile.append(c)
-            else:
-                self.discard_pile.append(c)
+            self.cards[c].dispose(self, side)
         self.headline_bin[side] = ''
 
     def ars_remaining(self, side):
@@ -460,7 +458,7 @@ class Game:
                 return False
             if self.space_track[side] == 7 and self.get_global_effective_ops(side, card_name.info.ops) == 4:
                 return True
-            elif self.space_track[side] >= 5 and self.get_global_effective_ops(side, card_name.info.ops) >= 3:
+            elif self.space_track[side] >= 4 and self.get_global_effective_ops(side, card_name.info.ops) >= 3:
                 return True
             elif self.get_global_effective_ops(side, self.cards[card_name].info.ops) >= 2:
                 return True
@@ -1031,7 +1029,7 @@ class Game:
             self.input_state.remove_option(name)
         return True
 
-    def select_multiple_callback(self, option_function_mapping: dict, selected_option: list):
+    def select_multiple_callback(self, option_function_mapping: dict, selected_option: str):
         '''
         Stage where a player is given the opportunity to select from multiple choices.
 
@@ -1065,7 +1063,7 @@ class Game:
         self.input_state.reps -= 1
         return True
 
-    def war_dice_callback(self, name, side, modifier, min_roll, win_vp, win_milops, num: str):
+    def war_dice_callback(self, name: str, side: Side, modifier: int, min_roll: int, win_vp: int, win_milops: int, num: str):
 
         self.input_state.reps -= 1
         outcome = 'Success' if int(num) - modifier >= min_roll else 'Failure'
@@ -1110,8 +1108,10 @@ class Game:
 
     def qbt_dice_callback(self, side: Side, trap_name: str, num: str):
         self.input_state.reps -= 1
-        if int(num) <= 4:
+        outcome = 'Success' if int(num) <= 4 else 'Failure'
+        if outcome == 'Success':
             self.basket[side].remove(trap_name)
+        print(f'{outcome} with roll of {num}')
         return True
 
     def qbt_discard_callback(self, side: Side, trap_name: str, card_name: str):
@@ -1194,42 +1194,54 @@ class Game:
 
         if self.turn_track == 1:
             # TEST CODE BELOW -- remove when done
-            '''For testing early-war cards'''
+            # '''For testing early-war cards'''
             self.hand[Side.USSR].extend([self.cards.early_war.pop(i)
-                                         for i in range(20)])
+                                         for i in range(8)])
             self.hand[Side.US].extend([self.cards.early_war.pop(0)
-                                       for i in range(19)])
-            '''For testing mid-war cards'''
-            self.hand[Side.US].extend([self.cards.mid_war.pop(i)
-                                       for i in range(24)])
-            self.hand[Side.USSR].extend([self.cards.mid_war.pop(0)
-                                         for i in range(24)])
-            '''For testing late-war cards'''
-            self.hand[Side.US].extend([self.cards.late_war.pop(i)
-                                       for i in range(12)])
-            self.hand[Side.USSR].extend([self.cards.late_war.pop(0)
-                                         for i in range(11)])
+                                       for i in range(8)])
+            # self.hand[Side.USSR].extend([self.cards.early_war.pop(i)
+            #                              for i in range(20)])
+            # self.hand[Side.US].extend([self.cards.early_war.pop(0)
+            #                            for i in range(19)])
+            # self.players[Side.USSR].opp_hand.update(['The_China_Card'])
+            # '''For testing mid-war cards'''
+            # self.hand[Side.US].extend([self.cards.mid_war.pop(i)
+            #                            for i in range(24)])
+            # self.hand[Side.USSR].extend([self.cards.mid_war.pop(0)
+            #                              for i in range(24)])
+            # '''For testing late-war cards'''
+            # self.hand[Side.US].extend([self.cards.late_war.pop(i)
+            #                            for i in range(12)])
+            # self.hand[Side.USSR].extend([self.cards.late_war.pop(0)
+            #                              for i in range(11)])
             # TEST CODE ABOVE -- remove when done
-            self.draw_pile.extend(self.cards.early_war)
             # # WORKING CODE BELOW -- uncomment if not using test code
+            self.draw_pile.extend(self.cards.early_war)
+            self.cards.in_play.extend(self.cards.early_war)
             # self.hand[Side.USSR].append(self.draw_pile.pop(
             #     self.draw_pile.index('The_China_Card')))
+            if 'The_China_Card' in self.hand[Side.USSR]:
+                self.players[Side.US].opp_hand.update(['The_China_Card'])
+            else:
+                self.players[Side.USSR].opp_hand.update(['The_China_Card'])
             # # WORKING CODE ABOVE -- uncomment if not using test code
-            self.cards.early_war = []
-            self.shuffle_draw_pile_stage()
+            # self.cards.early_war = []
+            # self.shuffle_draw_pile_stage()
         elif self.turn_track == 4:
             self.draw_pile.extend(self.cards.mid_war)
+            self.cards.in_play.extend(self.cards.mid_war)
             self.cards.mid_war = []
             self.shuffle_draw_pile_stage()
         elif self.turn_track == 8:
             self.draw_pile.extend(self.cards.late_war)
+            self.cards.in_play.extend(self.cards.late_war)
             self.cards.late_war = []
             self.shuffle_draw_pile_stage()
 
     def deal(self, first_side=Side.USSR):
 
         if first_side == Side.NEUTRAL:
-            handsize_target = [3, 2]
+            handsize_target = [3, 2]  # hardcoded for Ask Not..
         if 1 <= self.turn_track <= 3:
             handsize_target = [8, 8]
         else:
@@ -1247,22 +1259,31 @@ class Game:
                 next_side = next_side.opp
                 continue
 
-            self.hand[next_side].append(self.draw_pile.pop())
-            next_side = next_side.opp
-
             if not self.draw_pile:
                 # if draw pile exhausted, shuffle the discard pile and put it as the new draw pile
-                self.draw_pile = self.discard_pile
+                self.draw_pile += self.discard_pile
                 self.discard_pile = []
+                self.stage_list.append(self.infer_hand_info)
                 self.stage_list.append(
                     partial(self.deal, first_side=next_side))
                 self.shuffle_draw_pile_stage()
                 return
 
+            self.hand[next_side].append(self.draw_pile.pop())
+            next_side = next_side.opp
+
+        for s in [Side.USSR, Side.US]:
+            self.players[s].opp_hand.no_scoring_cards = False
+
+    def infer_hand_info(self):
+        for s in [Side.USSR, Side.US]:
+            self.players[s].opp_hand.infer(self.players[s])
+
     # need to make sure next_turn is only called after all extra rounds
     def end_of_turn(self):
 
-        print('-------------------- End of turn --------------------')
+        print(
+            f'-------------------- End of Turn {self.turn_track} --------------------')
         # -2. Check for held scoring card (originally #2. but moved up to prevent held scoring cards)
 
         def check_for_scoring_cards(self):
@@ -1277,14 +1298,13 @@ class Game:
 
         # -1. Check if any player may discard held cards, also resets space turns
         def space_discard(self):
-            # Will hardcode to prevent discarding The China Card via Eagle/Bear has landed
             for s in [Side.USSR, Side.US]:
                 if self.space_track[s] >= 6 and self.space_track[s.opp] < 6:
                     self.input_state = Input(
                         s, InputType.SELECT_CARD,
                         partial(self.may_discard_callback, s),
                         (n for n in self.hand[s] if n != 'The_China_Card'),
-                        prompt='You may discard a held card via Eagle/Bear has landed.',
+                        prompt='You may discard a held card via Eagle/Bear Has Landed.',
                         option_stop_early='Do not discard.'
                     )
                     break

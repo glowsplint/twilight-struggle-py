@@ -30,16 +30,16 @@ Send, {Enter}
 sleep 50
 
 ; Headlines 1-Asia Scoring for USSR
-Send, m 1
-sleep 50
-Send, {Enter}
-sleep 50
+;Send, m 1
+;sleep 50
+;Send, {Enter}
+;sleep 50
 
 ; Headlines 2-Europe Scoring for US
-Send, m 2
-sleep 50
-Send, {Enter}
-sleep 50
+;Send, m 2
+;sleep 50
+;Send, {Enter}
+;sleep 50
 
 
 ;s::
