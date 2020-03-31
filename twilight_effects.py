@@ -2,7 +2,8 @@ from typing import Callable, Optional, Iterable, Tuple
 from twilight_map import MapRegion
 from twilight_enums import Side, MapRegion, CoupEffects, RealignState
 
-class Effect():
+
+class Effect:
 
     def effect_global_ops(self, game, effect_side, ops_side) -> Optional[int]:
         '''
@@ -112,4 +113,4 @@ class Effect():
             For cards like Cuban Missile Crisis that takes precedence, perform
             the change in this function rather than returning the effect.
         '''
-
+        pass

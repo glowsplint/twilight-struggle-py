@@ -258,7 +258,7 @@ class Game:
                     Country.increment_influence, side),
             self.map.has_influence(side),
             prompt='Place additional starting influence.',
-            reps=side.vp_mult * self.handicap,
+            reps=self.handicap,
             reps_unit='influence'
         )
 
@@ -281,8 +281,7 @@ class Game:
         Due to UI constraints, USSR player chooses first, then the US player.
         All choices are then displayed.
         '''
-        special_case = False
-        for s in [Side.USSR, Side.US]:
+        for s in (Side.USSR, Side.US):
             if self.space_track[s] >= 4 and self.space_track[s.opp] < 4:
                 self.stage_list.append(self.ar_complete)
                 self.stage_list.append(self.resolve_headline_order)
@@ -290,16 +289,14 @@ class Game:
                 self.stage_list.append(partial(self.choose_headline, s))
                 self.stage_list.append(partial(self.show_headline, s.opp))
                 self.stage_list.append(partial(self.choose_headline, s.opp))
-                special_case = True
-                break
+                return
 
-        if not special_case:
-            self.stage_list.append(self.ar_complete)
-            self.stage_list.append(self.resolve_headline_order)
-            self.stage_list.append(partial(self.show_headline, Side.US))
-            self.stage_list.append(partial(self.show_headline, Side.USSR))
-            self.stage_list.append(partial(self.choose_headline, Side.US))
-            self.stage_list.append(partial(self.choose_headline, Side.USSR))
+        self.stage_list.append(self.ar_complete)
+        self.stage_list.append(self.resolve_headline_order)
+        self.stage_list.append(partial(self.show_headline, Side.US))
+        self.stage_list.append(partial(self.show_headline, Side.USSR))
+        self.stage_list.append(partial(self.choose_headline, Side.US))
+        self.stage_list.append(partial(self.choose_headline, Side.USSR))
 
     def show_headline(self, side: Side):
         '''
@@ -321,12 +318,10 @@ class Game:
         us_hl = self.headline_bin[Side.US]
 
         if us_hl == 'Defectors' or self.cards[us_hl].ops >= self.cards[ussr_hl].info.ops:
-            # must append triggers in backwards order
             self.stage_list.append(partial(self.resolve_headline, Side.USSR))
             self.stage_list.append(partial(self.resolve_headline, Side.US))
 
         else:
-            # must append triggers in backwards order
             self.stage_list.append(partial(self.resolve_headline, Side.US))
             self.stage_list.append(partial(self.resolve_headline, Side.USSR))
 
@@ -1357,11 +1352,12 @@ class Game:
                 self._Central_America_Scoring()
                 self._South_America_Scoring()
                 self._Africa_Scoring()
-            for s in [Side.USSR, Side.US]:
-                if 'The_China_Card' in self.hand[s]:
-                    self.change_vp(s.vp_mult)
-            print(f'Final scoring complete.')
-            self.terminate()
+
+                for s in [Side.USSR, Side.US]:
+                    if 'The_China_Card' in self.hand[s]:
+                        self.change_vp(s.vp_mult)
+                print(f'Final scoring complete.')
+                self.terminate()
 
         # 6. Increase DEFCON status
         # 7. Deal Cards -- written outside the next_turn function

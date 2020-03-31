@@ -9,6 +9,7 @@ from twilight_map import CountryInfo, Country
 from twilight_enums import Side, MapRegion, InputType, CardAction, CoupEffects, RealignState
 from twilight_effects import Effect
 
+
 class Card:
 
     ALL = dict()
@@ -82,6 +83,7 @@ class Card:
     def use_ops_realignment(self, game, side):
         eff_ops = game.get_global_effective_ops(side, self.ops)
         game.operations_realign(side, eff_ops)
+
 
 class GameCards:
 
@@ -221,7 +223,7 @@ class Five_Year_Plan(Card):
             Side.NEUTRAL, InputType.SELECT_CARD,
             partial(self.callback, game),
             (n for n in game.hand[Side.USSR]
-             if any((n != 'Five_Year_Plan', n != 'The_China_Card'))),
+             if not (n == 'Five_Year_Plan' or n == 'The_China_Card')),
             prompt='Five Year Plan: USSR randomly discards a card.',
             reps=reps
         )
@@ -404,7 +406,7 @@ class Vietnam_Revolts(Card, Effect):
                         for c in game.realign_state.countries)  # all in SEA
                 and (The_China_Card.name not in game.basket[game.realign_state.side]  # China not active
                      or game.cards[The_China_Card.name].realign_bonus_given)  # or China bonus is done
-                ):
+            ):
             self.realign_bonus_given = True
             return RealignState(reps=1)
 
@@ -2136,12 +2138,17 @@ class Grain_Sales_to_Soviets(Card):
 
     def use_event(self, game, side: Side):
         self.event_occurred = True
+        restricted_ussr_hand = [n for n in game.hand[Side.USSR] if not (n == 'Grain_Sales_to_Soviets' or n == 'The_China_Card')]
+
+
+        if not len(restricted_ussr_hand):
+            game.stage_list.append(
+                partial(game.select_action, Side.US, 'Blank_2_Op_Card', is_event_resolved=True))
 
         game.input_state = Input(
             Side.NEUTRAL, InputType.SELECT_CARD,
             partial(self.random_card_callback, game),
-            (n for n in game.hand[Side.USSR]
-             if n != 'Grain_Sales_to_Soviets'),
+            restricted_ussr_hand,
             prompt='Grain Sales to Soviets: US player randomly selects a card from USSR player\'s hand.'
         )
 

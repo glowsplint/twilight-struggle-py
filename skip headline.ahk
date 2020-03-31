@@ -8,6 +8,8 @@ Sleep 1500
 ; Creates a new game
 Send, rng off
 sleep 50
+Send, {Enter}
+sleep 50
 Send, new
 sleep 50
 Send, {Enter}
