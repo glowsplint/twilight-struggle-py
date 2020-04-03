@@ -258,7 +258,7 @@ class Game:
                     Country.increment_influence, side),
             self.map.has_influence(side),
             prompt='Place additional starting influence.',
-            reps=self.handicap,
+            reps=abs(self.handicap),
             reps_unit='influence'
         )
 

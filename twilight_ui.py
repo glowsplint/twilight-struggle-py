@@ -45,7 +45,7 @@ quit            Exit the game.
         self.debug_save = None
         self.options = dict()
         self.auto_rng = True
-        self.auto_commit = True
+        self.auto_commit = False
 
         self.game_in_progress = False
 
