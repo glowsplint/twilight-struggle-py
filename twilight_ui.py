@@ -221,7 +221,15 @@ quit            Exit the game.
         print('Initalising game.')
         while True:
 
-            user_choice = input('> ').split(' ', 1)
+            if __name__ == '__main__':
+                # if running this python file directly for the CLI
+                user_choice = input('> ').split(' ', 1)
+            else:
+                # if another python file (like the GUI) imports this file
+                # (we need to assign the input from GUI to user_choice)
+                # how can i make the game loop wait on json
+                # user_choice =
+                pass
 
             if len(user_choice) == 1:
                 user_choice.append('')
@@ -574,3 +582,6 @@ dbg rollback                        Restores the state before debugging started.
         print('Game loaded.')
         self.game_state_changed()
         f.close()
+
+
+UI().run()
