@@ -4,11 +4,11 @@ from functools import partial
 from itertools import chain
 from typing import Sequence, Iterable, Callable, Tuple
 
-from twilight_map import GameMap, CountryInfo, Country
-from twilight_enums import Side, MapRegion, InputType, CardAction, CoupEffects, RealignState
-from twilight_cards import GameCards, Card
-from twilight_input_output import Input, Output
-from twilight_playerview import PlayerView
+from world_map import GameMap, CountryInfo, Country
+from enums import Side, MapRegion, InputType, CardAction, CoupEffects, RealignState
+from cards import GameCards, Card
+from input_output import Input, Output
+from player_view import PlayerView
 
 
 class Game:

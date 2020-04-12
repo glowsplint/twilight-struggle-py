@@ -6,10 +6,10 @@ from datetime import datetime
 from textwrap import wrap
 
 from game_mechanics import Game
-from twilight_enums import Side, InputType, CardAction
-from twilight_map import MapRegion, CountryInfo
-from twilight_cards import Card
-from twilight_input_output import Input
+from enums import Side, InputType, CardAction
+from world_map import MapRegion, CountryInfo
+from cards import Card
+from input_output import Input
 
 
 class UI:
