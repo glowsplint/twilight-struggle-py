@@ -1,20 +1,19 @@
 <template>
   <v-app>
-    <NavBar />
     <v-content>
-      <!-- <HelloWorld /> -->
+      <router-view></router-view>
     </v-content>
+    <NavBar />
+    <Footer />
   </v-app>
 </template>
 
 <script>
 import NavBar from "./components/NavBar";
+import Footer from "./components/Footer";
 
 export default {
-  components: { NavBar },
   name: "App",
-  data: () => ({
-    //
-  })
+  components: { NavBar, Footer }
 };
 </script>
