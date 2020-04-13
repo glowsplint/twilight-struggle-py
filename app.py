@@ -1,6 +1,6 @@
 from pathlib import Path
-from flask import Flask, render_template, request
-# from twilight_ui import UI
+from flask import Flask, render_template
+from flask_socketio import SocketIO, emit
 
 
 class VueFlask(Flask):
@@ -19,6 +19,7 @@ dist = Path("front-end/vue/dist/")
 app = VueFlask(__name__,
                static_folder=str(dist/"static"),
                template_folder=str(dist))
+socketio = SocketIO(app)
 
 
 @app.route('/')
@@ -26,12 +27,14 @@ def index():
     return render_template("index.html")
 
 
-@app.route('/game/', methods=['GET', 'POST'])
-def game():
-    clicked = None
-    if request.method == "POST":
-        clicked = request.json['data']
-    return {'clicked': clicked}
+@socketio.on('connect')
+def test_connect():
+    emit('Initial connection', {'data': 'Connected'})
+
+
+@socketio.on('my event')
+def handle_json(json):
+    print('Received JSON: ' + str(json))
 
 
 app.run(debug=True)
