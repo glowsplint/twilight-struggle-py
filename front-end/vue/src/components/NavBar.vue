@@ -1,5 +1,5 @@
 <template>
-  <v-app>
+  <div>
     <!-- Navigation Bar -->
     <v-navigation-drawer v-model="drawer" color="rgb(245,245,245)" app clipped>
       <v-list dense>
@@ -19,7 +19,7 @@
       <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
       <v-toolbar-title>Twilight Struggle</v-toolbar-title>
     </v-app-bar>
-  </v-app>
+  </div>
 </template>
 
 <script>
@@ -31,17 +31,17 @@ export default {
     return {
       drawer: false,
       sidebar: [
-        { title: "Home", link: "/", icon: "mdi-home" },
-        { title: "Game", link: "/game", icon: "mdi-gamepad" },
+        { title: 'Home', link: '/', icon: 'mdi-home' },
+        { title: 'Game', link: '/game', icon: 'mdi-gamepad' },
         {
-          title: "Analysis",
-          link: "/analysis",
-          icon: "mdi-hexagon-slice-2"
+          title: 'Analysis',
+          link: '/analysis',
+          icon: 'mdi-hexagon-slice-2'
         }
       ]
-    };
+    }
   }
-};
+}
 </script>
 
 <style>

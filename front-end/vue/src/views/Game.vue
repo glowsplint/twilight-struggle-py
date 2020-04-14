@@ -12,22 +12,26 @@
 </template>
 
 <script>
-import Vue from "vue";
+import Vue from 'vue'
 export default {
-  name: "Game",
+  name: 'Game',
   methods: {
     post() {
-      console.log("posting..");
-      Vue.$socket.emit("emit_method", "data");
+      console.log('posting..')
+      Vue.$socket.emit('emit_method', 'data')
     }
   },
   data() {
-    return {};
+    return {}
   }
-};
+}
 </script>
 
 <style>
+html {
+  overflow: hidden;
+}
+
 .img-wrapper {
   overflow: hidden;
   height: 80vh;

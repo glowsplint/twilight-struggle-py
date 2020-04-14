@@ -5,3 +5,9 @@
     </v-row>
   </v-container>
 </template>
+
+<style>
+html {
+  overflow: hidden;
+}
+</style>
