@@ -4,8 +4,28 @@
       <v-row class="img-wrapper" v-dragscroll="true">
         <img src="@/assets/big.jpg" />
       </v-row>
-      <v-row justify="center">
-        <v-btn v-on:click="post">Click to POST</v-btn>
+      <v-row class="mt-4" justify="center" align="center">
+        <v-text-field
+          v-model="clientAction"
+          label="Action for this turn"
+          hide-details
+          style="margin-right: 15px; max-width: 460px"
+          @keyup.enter="post"
+          clearable
+          autocomplete="false"
+          dense
+        >
+          <template slot="append">
+            <v-btn
+              outlined
+              style="margin-bottom: 6px"
+              @click="post"
+              :disabled="clientAction == ``"
+            >
+              <v-icon left>mdi-chevron-triple-right</v-icon>Submit
+            </v-btn>
+          </template>
+        </v-text-field>
       </v-row>
     </v-container>
   </div>
@@ -17,12 +37,27 @@ export default {
   name: 'Game',
   methods: {
     post() {
-      console.log('posting..')
-      Vue.$socket.emit('emit_method', 'data')
+      if (this.clientAction != '') {
+        console.log('posting..')
+        this.$socket.emit('client-move', { move: this.clientAction })
+        this.clientAction = ''
+      }
+    }
+  },
+  sockets: {
+    'server-move': function(data) {
+      console.log(
+        `this method was fired by the socket server. data = ${data.data}`
+      )
     }
   },
   data() {
-    return {}
+    return {
+      clientAction: '',
+      socket: {},
+      context: {},
+      state: {}
+    }
   }
 }
 </script>
@@ -34,13 +69,8 @@ html {
 
 .img-wrapper {
   overflow: hidden;
-  height: 80vh;
+  height: 70vh;
   background-color: black;
   position: relative;
-}
-
-.img-wrapper > img {
-  height: 400%;
-  vertical-align: bottom;
 }
 </style>

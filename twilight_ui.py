@@ -221,73 +221,69 @@ quit            Exit the game.
         print('Initalising game.')
         while True:
 
-            if __name__ == '__main__':
-                # if running this python file directly for the CLI
-                user_choice = input('> ').split(' ', 1)
-            else:
-                # if another python file (like the GUI) imports this file
-                # (we need to assign the input from GUI to user_choice)
-                # how can i make the game loop wait on json
-                # user_choice =
-                pass
-
-            if len(user_choice) == 1:
-                user_choice.append('')
-
-            # parse the input
-            if len(user_choice) == 0 or user_choice[0] == '?':
-                print(UI.help)
-
-            elif user_choice[0] == 'quit' or user_choice[0] == 'exit' or user_choice[0].lower() == 'q':
-                if self.logging:
-                    self.log_write_out()
+            user_choice = input('> ').split(' ', 1)
+            end_loop = self.parse_input(user_choice)
+            if end_loop:
                 break
 
-            elif user_choice[0].lower() == 'new':
-                if self.game_in_progress:
-                    print('Game already in progress.')
-                    continue
-                print('Starting new game.')
-                self.new_game()
-                self.game_rollback = deepcopy(self.game)
-                self.game_state_changed()
+    def parse_input(self, user_choice):
+        if len(user_choice) == 1:
+            user_choice.append('')
 
-            elif user_choice[0].lower() == 'dbg':
-                self.parse_debug(user_choice[1])
+        # parse the input
+        if len(user_choice) == 0 or user_choice[0] == '?':
+            print(UI.help)
 
-            elif user_choice[0].lower() == 'rng':
-                if user_choice[1].lower() == 'on':
-                    self.auto_rng = True
-                elif user_choice[1].lower() == 'off':
-                    self.auto_rng = False
-                else:
-                    print('Invalid command. Enter ? for help.')
+        elif user_choice[0] == 'quit' or user_choice[0] == 'exit' or user_choice[0].lower() == 'q':
+            if self.logging:
+                self.log_write_out()
+            return True
 
-            elif user_choice[0].lower() == 'commit':
-                if user_choice[1].lower() == 'on':
-                    self.auto_commit = True
-                elif user_choice[1].lower() == 'off':
-                    self.auto_commit = False
-                else:
-                    print('Invalid command. Enter ? for help.')
+        elif user_choice[0].lower() == 'new':
+            if self.game_in_progress:
+                print('Game already in progress.')
+                return False
+            print('Starting new game.')
+            self.new_game()
+            self.game_rollback = deepcopy(self.game)
+            self.game_state_changed()
 
-            elif user_choice[0].lower() == 'log':
-                self.parse_log(user_choice[1])
+        elif user_choice[0].lower() == 'dbg':
+            self.parse_debug(user_choice[1])
 
-            elif user_choice[0].lower() == 'load':
-                self.parse_load(user_choice[1])
-
-            elif user_choice[0].lower() == 'c':
-                self.parse_card(user_choice[1])
-
-            elif user_choice[0].lower() == 's':
-                self.parse_state(user_choice[1])
-
-            elif user_choice[0].lower() == 'm':
-                self.parse_move(user_choice[1])
-
+        elif user_choice[0].lower() == 'rng':
+            if user_choice[1].lower() == 'on':
+                self.auto_rng = True
+            elif user_choice[1].lower() == 'off':
+                self.auto_rng = False
             else:
                 print('Invalid command. Enter ? for help.')
+
+        elif user_choice[0].lower() == 'commit':
+            if user_choice[1].lower() == 'on':
+                self.auto_commit = True
+            elif user_choice[1].lower() == 'off':
+                self.auto_commit = False
+            else:
+                print('Invalid command. Enter ? for help.')
+
+        elif user_choice[0].lower() == 'log':
+            self.parse_log(user_choice[1])
+
+        elif user_choice[0].lower() == 'load':
+            self.parse_load(user_choice[1])
+
+        elif user_choice[0].lower() == 'c':
+            self.parse_card(user_choice[1])
+
+        elif user_choice[0].lower() == 's':
+            self.parse_state(user_choice[1])
+
+        elif user_choice[0].lower() == 'm':
+            self.parse_move(user_choice[1])
+
+        else:
+            print('Invalid command. Enter ? for help.')
 
     help_move = '''
 m                   Lists all possible moves, along with their respective enum.
@@ -584,4 +580,6 @@ dbg rollback                        Restores the state before debugging started.
         f.close()
 
 
-UI().run()
+if __name__ == '__main__':
+    ui = UI()
+    ui.run()

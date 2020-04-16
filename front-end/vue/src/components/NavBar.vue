@@ -36,7 +36,7 @@ export default {
         {
           title: 'Analysis',
           link: '/analysis',
-          icon: 'mdi-hexagon-slice-2'
+          icon: 'mdi-chart-scatter-plot'
         }
       ]
     }

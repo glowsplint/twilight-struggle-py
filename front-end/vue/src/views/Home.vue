@@ -28,11 +28,14 @@ export default {
   methods: {
     newGame() {
       this.$router.push('/game')
+      this.$socket.emit('client-new-game')
     },
     loadGame() {
+      this.$socket.emit('client-load-game')
       console.log('Game loading..')
     },
     saveGame() {
+      this.$socket.emit('client-save-game')
       console.log('Game saving..')
     }
   },
