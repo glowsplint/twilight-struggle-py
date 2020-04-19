@@ -7,7 +7,7 @@ from typing import Sequence, Iterable, Callable, Tuple
 from world_map import GameMap, CountryInfo, Country
 from enums import Side, MapRegion, InputType, CardAction, CoupEffects, RealignState
 from cards import GameCards, Card
-from input_output import Input, Output
+from interfacing import Input
 from player_view import PlayerView
 
 

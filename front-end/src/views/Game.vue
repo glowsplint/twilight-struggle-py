@@ -39,23 +39,27 @@ export default {
     post() {
       if (this.clientAction != '') {
         console.log('Sending to server..')
-        this.$socket.emit('client-move', { move: this.clientAction })
+        if (this.clientAction === 'new') {
+          this.isGameRunning()
+        } else {
+          this.$socket.client.emit('client_move', { move: this.clientAction })
+        }
         this.clientAction = ''
       }
+    },
+    isGameRunning() {
+      console.log('Checking if game has already started..')
+      this.$socket.client.emit('client_move', { move: 'new' })
     }
   },
   sockets: {
-    'server-move': function(data) {
-      console.log(
-        `Received from server: data = ${data.data}`
-      )
+    'server-move': data => {
+      console.log(`Received from server: data = ${data.server_move}`)
     }
   },
   data() {
     return {
       clientAction: '',
-      socket: {},
-      context: {},
       state: {}
     }
   }

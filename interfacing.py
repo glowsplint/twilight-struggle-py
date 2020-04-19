@@ -108,32 +108,39 @@ class Input:
         Returns True if no more input is required, False if input is not
         complete.
         '''
-        return not self.reps or len(self.selection) == len(self.discarded_options) or not len(list(self.available_options))
+        return (not self.reps or len(self.selection) == len(self.discarded_options)
+                or not len(list(self.available_options)))
 
     def change_max_per_option(self, n: int):
         self.max_per_option += n
 
 
 class Output:
+    '''
+    Creates an output that works with both CLI and the GUI.
+    Outputs are templates for what will be displayed to the user. A single Output
+        class is initialised at the start of a cycle of the game loop. It is built
+        up additively in multiple stages. The entire output is displayed only when
+        the show() method is called.
 
-    class Notification:
+    Instructions are the headers that you see at the top of the steam screen.
+    Input_types are the corresponding InputType enumeration from enums.
+    Available options is a list of all available options.
 
-        def __init__(self, turn, ar, ar_side=None, prompt=''):
-            self.turn = turn
-            self.ar = ar
-            self.ar_side = ar_side
-            self.prompt = prompt
+    To edit an active Output instance:
+        output_instance.instruction = 'Instruction'
+    '''
 
-        @staticmethod
-        def fromInput(turn, ar, ar_side, input):
+    def __init__(self, side='', instruction='', input_type='',
+                 available_options='', cli_specific=''):
+        self.side = side
+        self.instruction = instruction
+        self.input_type = input_type
+        self.available_options = available_options
+        self.cli_specific = cli_specific
 
-            if input.side == Side.US or input.side == Side.USSR:
-                msg = f'{input.side} selected '
-
-            return Game.Output.Notification(
-                turn, ar, ar_side,
-            )
-
-    def output_both(self, out):
-        self.output_queue[Side.USSR].append(out)
-        self.output_queue[Side.US].append(out)
+    def show(self):
+        for item in [self.side, self.instruction, self.input_type,
+                     self.available_options, self.cli_specific]:
+            if item:
+                print(item)

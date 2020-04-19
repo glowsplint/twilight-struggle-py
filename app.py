@@ -1,9 +1,12 @@
+import os
 import threading
+import webbrowser
+import argparse
 
 from pathlib import Path
 from copy import deepcopy
-from flask import Flask, render_template, json
-from flask_socketio import SocketIO, emit
+from flask import Flask, render_template, json, request
+from flask_socketio import SocketIO, emit, join_room, leave_room
 from twilight_ui import UI
 
 
@@ -25,15 +28,16 @@ class GUI(threading.Thread, UI):
         threading.Thread.__init__(self, **kwargs)
         UI.__init__(self)
         self.user_choice = []
+        self.server_move = []
 
     def run(self):
 
         print('Initalising game.')
         while True:
 
-            self.response_handler = threading.Event()
-            self.response_handler.wait()
-            self.response_handler.clear()
+            self.client_response = threading.Event()
+            self.client_response.wait()
+            self.client_response.clear()
 
             user_choice = self.user_choice.split(' ', 1)
             # below lines are identical to those in game loop in twilight_ui
@@ -41,14 +45,27 @@ class GUI(threading.Thread, UI):
             if end_loop:
                 break
 
+    def output(self, *args, **kwargs):
+        print(*args, **kwargs)
+        self.server_response = {'server': 41}
+        app.server_response.set()
 
-dist = Path("front-end/vue/dist/")
+
+# Starts game engine, back-end and socket connection
+dist = Path("./front-end/dist/")
 app = VueCompatibleFlask(__name__,
                          static_folder=str(dist/"static"),
                          template_folder=str(dist))
 socketio = SocketIO(app, json=json,
                     cors_allowed_origins=['http://localhost:8080'])
 gui = GUI(daemon=True)
+
+# Provides -n command line argument
+parser = argparse.ArgumentParser(
+    description='Runs the Flask development server for twilight-struggle-py.')
+parser.add_argument(
+    '-n', '--no_browser', action='store_true', help='Silences the automatic opening of a browser window.')
+args = parser.parse_args()
 
 
 @app.route('/')
@@ -58,7 +75,6 @@ def index():
 
 @socketio.on('connect')
 def connect():
-    emit('Initial connection', {'data': 'Connected'})
     print('Client connected.')
 
 
@@ -67,24 +83,21 @@ def disconnect():
     print('Client disconnected.')
 
 
-@socketio.on('client-new-game')
-def new_game():
-    print('New game requested.')
-
-
-@socketio.on('client-move')
-def move(json):
-    # Receive a move and immediately send back a response
-    # emit('server-move', server_to_client_data())
+@socketio.on('client_move')
+def client_move(json):
+    # Receive a move and wait for GUI to provide an output
     print('Received JSON: ' + json['move'])
-    gui.user_choice = json['move']
-    gui.response_handler.set()
+    gui.user_choice = str(json['move'])
+    gui.client_response.set()  # allows GUI to start processing
+    app.server_response = threading.Event()
+    app.server_response.wait()  # waits on GUI for server_response
+    emit('server_move', gui.server_move)
 
 
-def server_to_client_data():
-    # to add printouts here
-    return {'data': 41}
-
-
-gui.start()
-app.run(debug=True)
+if __name__ == '__main__':
+    url = "http://localhost:5000"
+    if 'WERKZEUG_RUN_MAIN' not in os.environ and not args.no_browser:
+        threading.Timer(
+            1.25, lambda: webbrowser.open(url)).start()
+    gui.start()
+    app.run(debug=True)

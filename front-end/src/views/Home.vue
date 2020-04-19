@@ -11,7 +11,12 @@
     <v-row justify="center">
       <v-tooltip top v-for="clickable in clickables" :key="clickable.title">
         <template v-slot:activator="{ on }">
-          <v-btn class="ma-2" @click="clickable.onPress" :disabled="clickable.disabled" v-on="on">
+          <v-btn
+            class="ma-2"
+            @click="clickable.onPress"
+            :disabled="clickable.disabled"
+            v-on="on"
+          >
             <v-icon class="mr-3">{{ clickable.icon }}</v-icon>
             {{ clickable.title }}
           </v-btn>
@@ -27,15 +32,15 @@ export default {
   name: 'Home',
   methods: {
     newGame() {
+      this.$socket.client.emit('client-move', { move: 'new' })
       this.$router.push('/game')
-      this.$socket.emit('client-new-game')
     },
     loadGame() {
-      this.$socket.emit('client-load-game')
+      this.$socket.client.emit('client-load-game')
       console.log('Game loading..')
     },
     saveGame() {
-      this.$socket.emit('client-save-game')
+      this.$socket.client.emit('client-save-game')
       console.log('Game saving..')
     }
   },

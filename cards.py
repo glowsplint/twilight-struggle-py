@@ -4,7 +4,7 @@ from typing import Callable, Optional, Iterable, Tuple
 from functools import partial
 from itertools import chain
 
-from input_output import Input
+from interfacing import Input
 from world_map import CountryInfo, Country
 from enums import Side, MapRegion, InputType, CardAction, CoupEffects, RealignState
 from effects import Effect
