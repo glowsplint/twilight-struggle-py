@@ -3,21 +3,21 @@
     <v-row justify="center">
       <v-col>
         <v-row style="height:400px">
-          <v-img src="../assets/TitleSplash.png" height="400px" contain eager />
+          <v-img src="@/assets/TitleSplash.png" height="400px" contain eager />
         </v-row>
       </v-col>
     </v-row>
 
     <v-row justify="center">
-      <v-btn
-        class="ma-2"
-        v-for="clickable in clickables"
-        :key="clickable.title"
-        @click="clickable.onPress"
-      >
-        <v-icon class="mr-3">{{ clickable.icon }}</v-icon>
-        {{ clickable.title }}
-      </v-btn>
+      <v-tooltip top v-for="clickable in clickables" :key="clickable.title">
+        <template v-slot:activator="{ on }">
+          <v-btn class="ma-2" @click="clickable.onPress" :disabled="clickable.disabled" v-on="on">
+            <v-icon class="mr-3">{{ clickable.icon }}</v-icon>
+            {{ clickable.title }}
+          </v-btn>
+        </template>
+        <span>{{ clickable.tooltip }}</span>
+      </v-tooltip>
     </v-row>
   </v-container>
 </template>
@@ -46,17 +46,23 @@ export default {
         {
           title: 'New Game',
           icon: 'mdi-controller-classic-outline',
-          onPress: this.newGame
+          onPress: this.newGame,
+          disabled: false,
+          tooltip: 'Start a new game.'
         },
         {
           title: 'Load Game',
           icon: 'mdi-folder-upload-outline',
-          onPress: this.loadGame
+          onPress: this.loadGame,
+          disabled: true,
+          tooltip: 'Load a .tsg file for playback.'
         },
         {
           title: 'Save Game',
           icon: 'mdi-content-save-move-outline',
-          onPress: this.saveGame
+          onPress: this.saveGame,
+          disabled: true,
+          tooltip: 'Save the current game to a .tsg file.'
         }
       ]
     }

@@ -3,7 +3,12 @@
     <!-- Navigation Bar -->
     <v-navigation-drawer v-model="drawer" color="rgb(245,245,245)" app clipped>
       <v-list dense>
-        <v-list-item v-for="item in sidebar" :key="item.title" :to="item.link">
+        <v-list-item
+          v-for="item in sidebar"
+          :key="item.title"
+          :to="item.link"
+          :disabled="item.disabled"
+        >
           <v-list-item-action>
             <v-icon>{{ item.icon }}</v-icon>
           </v-list-item-action>
@@ -18,6 +23,8 @@
     <v-app-bar color="rgb(68, 102, 143)" dark app clipped-left>
       <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
       <v-toolbar-title>Twilight Struggle</v-toolbar-title>
+      <v-spacer></v-spacer>
+      <v-img src="@/assets/ts_icon_1024.png" max-height="40" max-width="40" />
     </v-app-bar>
   </div>
 </template>
@@ -31,12 +38,13 @@ export default {
     return {
       drawer: false,
       sidebar: [
-        { title: 'Home', link: '/', icon: 'mdi-home' },
-        { title: 'Game', link: '/game', icon: 'mdi-gamepad' },
+        { title: 'Home', link: '/', icon: 'mdi-home', disabled: false },
+        { title: 'Game', link: '/game', icon: 'mdi-gamepad', disabled: false },
         {
           title: 'Analysis',
           link: '/analysis',
-          icon: 'mdi-chart-scatter-plot'
+          icon: 'mdi-chart-scatter-plot',
+          disabled: true
         }
       ]
     }

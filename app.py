@@ -2,7 +2,6 @@ import threading
 
 from pathlib import Path
 from copy import deepcopy
-
 from flask import Flask, render_template, json
 from flask_socketio import SocketIO, emit
 from twilight_ui import UI

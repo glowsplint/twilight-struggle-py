@@ -38,7 +38,7 @@ export default {
   methods: {
     post() {
       if (this.clientAction != '') {
-        console.log('posting..')
+        console.log('Sending to server..')
         this.$socket.emit('client-move', { move: this.clientAction })
         this.clientAction = ''
       }
@@ -47,7 +47,7 @@ export default {
   sockets: {
     'server-move': function(data) {
       console.log(
-        `this method was fired by the socket server. data = ${data.data}`
+        `Received from server: data = ${data.data}`
       )
     }
   },
