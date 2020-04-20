@@ -66,9 +66,15 @@ export default {
           disabled: true
         },
         {
-          title: 'Replay viewer',
+          title: 'Replay Viewer',
           link: 'replay',
           icon: 'mdi-play-speed',
+          disabled: true
+        },
+        {
+          title: 'Card Gallery',
+          link: 'cards',
+          icon: 'mdi-cards-outline',
           disabled: true
         }
       ]

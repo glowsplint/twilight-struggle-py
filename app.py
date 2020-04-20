@@ -4,9 +4,9 @@ import webbrowser
 import argparse
 
 from pathlib import Path
-from copy import deepcopy
 from flask import Flask, render_template, json, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
+from interfacing import Output
 from twilight_ui import UI
 
 
@@ -23,12 +23,31 @@ class VueCompatibleFlask(Flask):
 
 
 class GUI(threading.Thread, UI):
+    """
+    GUI runs in its own thread concurrently with Flask when called by the start() method.
+
+    Methods
+    -------
+    run :
+        Contains the game loop.
+        Waits on a socket event to update the self.user_choice variable.
+        Called by the start() method inherited by threading.Thread.
+
+    Variables
+    ---------
+    self.user_choice :
+        Contains the string of actions sent by the client.
+        Updated when the socket listener receives the socket event 'client_move'.
+
+    self.server_move :
+        Contains the dictionary which serves as the JSON payload sent to the client.
+    """
 
     def __init__(self, **kwargs):
         threading.Thread.__init__(self, **kwargs)
         UI.__init__(self)
         self.user_choice = []
-        self.server_move = []
+        self.server_move = {}
 
     def run(self):
 
@@ -63,8 +82,8 @@ gui = GUI(daemon=True)
 # Provides -n command line argument
 parser = argparse.ArgumentParser(
     description='Runs the Flask development server for twilight-struggle-py.')
-parser.add_argument(
-    '-n', '--no_browser', action='store_true', help='Silences the automatic opening of a browser window.')
+parser.add_argument('-n', '--no_browser', action='store_true',
+                    help='Silences the automatic opening of a browser window.')
 args = parser.parse_args()
 
 

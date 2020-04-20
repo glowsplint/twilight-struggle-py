@@ -561,7 +561,7 @@ class Warsaw_Pact_Formed(Card, Effect):
             max_per_option=1
         )
 
-    def event_add_stage(self, game, side):
+    def event_add_stage(self, game):
         game.input_state = Input(
             Side.USSR, InputType.SELECT_COUNTRY,
             partial(game.event_influence_callback,

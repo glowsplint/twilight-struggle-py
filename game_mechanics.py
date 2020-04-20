@@ -7,7 +7,7 @@ from typing import Sequence, Iterable, Callable, Tuple
 from world_map import GameMap, CountryInfo, Country
 from enums import Side, MapRegion, InputType, CardAction, CoupEffects, RealignState
 from cards import GameCards, Card
-from interfacing import Input
+from interfacing import Input, Output
 from player_view import PlayerView
 
 
@@ -47,7 +47,7 @@ class Game:
         self.players = None
 
         self.input_state = None
-        self.output_queue = [[], []]
+        self.output_state = Output()
 
         self.hand = [[], [], []]  # neutral hand necessary
         self.removed_pile = []

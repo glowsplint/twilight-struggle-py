@@ -121,26 +121,56 @@ class Output:
     Outputs are templates for what will be displayed to the user. A single Output
         class is initialised at the start of a cycle of the game loop. It is built
         up additively in multiple stages. The entire output is displayed only when
-        the show() method is called.
+        the show() method is called, after which it is cleared.
 
-    Instructions are the headers that you see at the top of the steam screen.
+    Notifications are used for general 'public' alerts that need to come first.
+    - 
     Input_types are the corresponding InputType enumeration from enums.
+    Prompts are similar to the headers at the top of the Steam version.
+
     Available options is a list of all available options.
 
     To edit an active Output instance:
         output_instance.instruction = 'Instruction'
     '''
 
-    def __init__(self, side='', instruction='', input_type='',
-                 available_options='', cli_specific=''):
-        self.side = side
-        self.instruction = instruction
-        self.input_type = input_type
-        self.available_options = available_options
-        self.cli_specific = cli_specific
+    def __init__(self, side='', input_type='', prompt='', current_selection='',
+                 reps='', available_options_header='', available_options='',
+                 notification='', commit=''):
 
-    def show(self):
-        for item in [self.side, self.instruction, self.input_type,
-                     self.available_options, self.cli_specific]:
+        self.notification = notification
+        self.side = side
+        self.input_type = input_type
+        self.prompt = prompt
+        self.current_selection = current_selection
+        self.reps = reps
+        self.available_options_header = 'Available options:'
+        self.available_options = available_options
+        self.commit = commit
+
+    def show(self, include_new_line=True):
+
+        for item in [self.notification, self.side, self.input_type, self.prompt,
+                     self.current_selection, self.reps, self.available_options_header,
+                     self.available_options, self.commit]:
             if item:
-                print(item)
+                if include_new_line:
+                    print(item)
+                else:
+                    print(item, end='')
+        self._clear()
+
+    '''Can shift commit to prompt, and then do a check if input_type is commit show prompt last'''
+
+    def to_json(self):
+        pass
+
+    def _clear(self):
+        self.notification = ''
+        self.side = ''
+        self.input_type = ''
+        self.prompt = ''
+        self.current_selection = ''
+        self.reps = ''
+        self.available_options = ''
+        self.commit = ''

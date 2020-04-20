@@ -5,27 +5,30 @@
         <img src="@/assets/big.jpg" />
       </v-row>
       <v-row class="mt-4" justify="center" align="center">
-        <v-text-field
-          v-model="clientAction"
-          label="Action for this turn"
-          hide-details
-          style="margin-right: 15px; max-width: 460px"
-          @keyup.enter="post"
-          clearable
-          autocomplete="false"
-          dense
-        >
-          <template slot="append">
-            <v-btn
-              outlined
-              style="margin-bottom: 6px"
-              @click="post"
-              :disabled="clientAction == ``"
-            >
-              <v-icon left>mdi-chevron-triple-right</v-icon>Submit
-            </v-btn>
-          </template>
-        </v-text-field>
+        <transition name="console-fade"
+          ><v-text-field
+            v-model="clientAction"
+            v-if="isConsoleShown"
+            label="Action for this turn"
+            style="margin-right: 15px; max-width: 460px"
+            @keyup.enter="post"
+            autocomplete="false"
+            hide-details
+            clearable
+            dense
+          >
+            <template slot="append">
+              <v-btn
+                outlined
+                style="margin-bottom: 6px"
+                @click="post"
+                :disabled="clientAction == ``"
+              >
+                <v-icon left>mdi-chevron-triple-right</v-icon>Submit
+              </v-btn>
+            </template>
+          </v-text-field>
+        </transition>
       </v-row>
     </v-container>
   </div>
@@ -35,6 +38,15 @@
 import Vue from 'vue'
 export default {
   name: 'Game',
+  mounted() {
+    this.$nextTick(function() {
+      window.addEventListener('keydown', event => {
+        if (event.ctrlKey && event.key === 'q') {
+          this.toggleConsole()
+        }
+      })
+    })
+  },
   methods: {
     post() {
       if (this.clientAction != '') {
@@ -46,6 +58,9 @@ export default {
         }
         this.clientAction = ''
       }
+    },
+    toggleConsole() {
+      this.isConsoleShown = !this.isConsoleShown
     },
     isGameRunning() {
       console.log('Checking if game has already started..')
@@ -60,7 +75,8 @@ export default {
   data() {
     return {
       clientAction: '',
-      state: {}
+      state: {},
+      isConsoleShown: true
     }
   }
 }
@@ -76,5 +92,20 @@ html {
   height: 70vh;
   background-color: black;
   position: relative;
+}
+
+.console-fade-enter {
+  transform: translateY(-10px);
+  opacity: 0;
+}
+
+.console-fade-enter-active,
+.console-fade-leave-active {
+  transition: all 0.2s ease;
+}
+
+.console-fade-leave-to {
+  transform: translateY(10px);
+  opacity: 0;
 }
 </style>

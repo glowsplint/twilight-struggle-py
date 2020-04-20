@@ -9,7 +9,7 @@ from game_mechanics import Game
 from enums import Side, InputType, CardAction
 from world_map import MapRegion, CountryInfo
 from cards import Card
-from interfacing import Input
+from interfacing import Input, Output
 
 
 class UI:
@@ -58,13 +58,17 @@ quit            Exit the game.
         self.debug_save = None
         self.options = dict()
         self.auto_rng = True
-        self.auto_commit = False
+        self.auto_commit = True
 
         self.game_in_progress = False
 
         self.temp_log = []
         self.logging = False
         self.log_filepath = None
+
+    @property
+    def output_state(self) -> Output:
+        return self.game.output_state
 
     @property
     def input_state(self) -> Input:
@@ -191,59 +195,51 @@ quit            Exit the game.
         if prompt:
             self.prompt()
 
-    def output(self, *args, **kwargs):
-        print(*args, **kwargs)
-
     def prompt(self):
 
         if self.input_state.side == Side.USSR:
-            self.output(UI.ussr_prompt)
+            self.output_state.side += UI.ussr_prompt
         elif self.input_state.side == Side.US:
-            self.output(UI.us_prompt)
+            self.output_state.side += UI.us_prompt
         else:
-            self.output(UI.rng_prompt)
+            self.output_state.side += UI.rng_prompt
 
-        self.output(self.input_state.prompt)
+        self.output_state.prompt += self.input_state.prompt
 
-        # self.output the already selected options
-        first = True
-        for k, v in self.input_state.selection.items():
-            for _i in range(v):
-                if first:
-                    self.output('You have selected', k, end='.')
-                    first = False
-                else:
-                    self.output(',', k, end='')
-        if not first:
-            self.output()  # newline
+        selection = "".join(
+            [(k + ", ")*v for k, v in self.input_state.selection.items()])[:-2]
+        if selection:
+            self.output_state.current_selection += (
+                'You have selected ' + selection + '.')
 
         if self.input_state.reps_unit:
-            self.output(
-                f'Remaining {self.input_state.reps_unit}: {self.input_state.reps}')
+            self.output_state.reps += f'Remaining {self.input_state.reps_unit}: {self.input_state.reps}'
 
         if self.awaiting_commit:
-            self.output('Commit your actions? (Yes/No)')
+            self.output_state.commit += 'Commit your actions? (Yes/No)'
         else:
-            self.output('Available options:')
-            for k, v in sorted(self.options.items()):
-                self.output(f'{k:5} {v}')
+            available_options = "".join(
+                f'{k:5} {v}' + '\n' for k, v in sorted(self.options.items()))[:-1]
+            self.output_state.available_options += available_options
 
     def run(self):
 
-        self.output('Initalising game.')
+        self.output_state.notification += 'Initalising game.'
         while True:
 
+            self.output_state.show()
             user_choice = input('> ').split(' ', 1)
             end_loop = self.parse_input(user_choice)
             if end_loop:
                 break
 
     def parse_input(self, user_choice):
+
         if len(user_choice) == 1:
             user_choice.append('')
 
         if len(user_choice) == 0 or user_choice[0] == '?':
-            self.output(UI.help)
+            self.output_state.notification += UI.help
 
         elif user_choice[0] == 'quit' or user_choice[0] == 'exit' or user_choice[0] == 'q':
             if self.logging:
@@ -252,9 +248,9 @@ quit            Exit the game.
 
         elif user_choice[0].lower() == 'new':
             if self.game_in_progress:
-                self.output('Game already in progress.')
+                self.output_state.notification += 'Game already in progress.'
                 return False
-            self.output('Starting new game.')
+            self.output_state.notification += 'Starting new game.'
             self.new_game()
             self.game_rollback = deepcopy(self.game)
             self.game_state_changed()
@@ -268,7 +264,7 @@ quit            Exit the game.
             elif user_choice[1].lower() == 'off':
                 self.auto_rng = False
             else:
-                self.output('Invalid command. Enter ? for help.')
+                self.output_state.notification += 'Invalid command. Enter ? for help.'
 
         elif user_choice[0].lower() == 'commit':
             if user_choice[1].lower() == 'on':
@@ -276,7 +272,7 @@ quit            Exit the game.
             elif user_choice[1].lower() == 'off':
                 self.auto_commit = False
             else:
-                self.output('Invalid command. Enter ? for help.')
+                self.output_state.notification += 'Invalid command. Enter ? for help.'
 
         elif user_choice[0].lower() == 'log':
             self.parse_log(user_choice[1])
@@ -294,7 +290,7 @@ quit            Exit the game.
             self.parse_move(user_choice[1])
 
         else:
-            self.output('Invalid command. Enter ? for help.')
+            self.output_state.notification += 'Invalid command. Enter ? for help.'
 
     help_move = '''
 m                   Lists all possible moves, along with their respective enum.
@@ -305,7 +301,7 @@ m <m1 m2 m3 ...>    Makes multiple moves in order m1, m2, m3, ...
     def parse_move(self, comd):
 
         if not self.game_in_progress:
-            self.output('Game not in progress.')
+            self.output_state.notification += 'Game not in progress.'
             return
 
         if not comd:  # empty string
@@ -314,7 +310,7 @@ m <m1 m2 m3 ...>    Makes multiple moves in order m1, m2, m3, ...
             # Each move should be deterministically assigned an ID (so it
             # can be referenced later).
         elif comd == '?':
-            self.output(UI.help_move)
+            self.output_state.notification += UI.help_move
 
         else:
             comd = comd.lower()
@@ -323,10 +319,10 @@ m <m1 m2 m3 ...>    Makes multiple moves in order m1, m2, m3, ...
                 if 'yes'.startswith(comd):
                     self.commit()
                 elif 'no'.startswith(comd):
-                    self.output('Actions undone.')
+                    self.output_state.notification += 'Actions undone.'
                     self.revert()
                 else:
-                    self.output('Invalid input.')
+                    self.output_state.notification += 'Invalid input.'
                     self.prompt()
 
             else:
@@ -350,21 +346,22 @@ m <m1 m2 m3 ...>    Makes multiple moves in order m1, m2, m3, ...
                                 matched = opt
 
                     if not matched:
-                        self.output(f'Error: no matching option for {m}!')
+                        self.output_state.notification += f'Error: no matching option for {m}!'
                         break
                     if ambiguous:
-                        self.output(
-                            f'Error: multiple matching options for {m}!')
+                        self.output_state.notification += f'Error: multiple matching options for {m}!'
                         break
 
-                    self.output(f'Selected: {matched}')
+                    self.output_state.current_selection += (
+                        f'Selected: {matched}' + '\n')
+                    self.output_state.show(include_new_line=False)
                     self.move(matched)
                     self.game_state_changed(prompt=False)
                 self.prompt()
 
     help_card = '''
 c               Display a list of cards in the current player's hand.
-c <name|ID#>    Display information about the card with the given name or card index.
+c <name|#ID>    Display information about the card with the given name or card index.
 c opp           Returns the number cards in the opponent's hand.
 c dis           Display a list of cards in the discard pile.
 c rem           Display a list of removed cards.
@@ -373,42 +370,44 @@ c dec           Returns the number of cards in the draw deck.
     def parse_card(self, comd):
 
         if not self.game_in_progress:
-            self.output('Game not in progress.')
+            self.output_state.notification += 'Game not in progress.'
             return
 
         if comd == '':
-            self.output(
-                f'Listing {len(self.game.hand[self.input_state.side])} cards in hand.')
+            self.output_state.notification = f'Listing {len(self.game.hand[self.input_state.side])} cards in hand.'
             for k, c in sorted(self.game.players[self.input_state.side].hand.info.items()):
                 if c == 'The_China_Card' and not self.game.cards[c].is_playable:
-                    self.output(f'{k:5} {c} (not currently playable)')
+                    self.output_state.notification += (
+                        '\n' + f'{k:5} {c} (not currently playable)')
                 else:
-                    self.output(f'{k:5} {c}')
+                    self.output_state.notification += ('\n' + f'{k:5} {c}')
+
         elif comd == '?':
-            self.output(UI.help_card)
+            self.output_state.notification += UI.help_card
+
         elif comd == 'opp':
-            self.output(
-                f'Card(s) in opponent hand: {len(self.game.hand[self.input_state.side.opp])}')
+            self.output_state.notification += f'Card(s) in opponent hand: {len(self.game.hand[self.input_state.side.opp])}'
             if self.game.players[self.input_state.side].opp_hand.info:
-                self.output(
-                    f'Listing {len(self.game.players[self.input_state.side].opp_hand.info)} known card(s) in opponent\'s hand.')
+                self.output_state.notification += f'Listing {len(self.game.players[self.input_state.side].opp_hand.info)} known card(s) in opponent\'s hand.'
                 for k, c in sorted(self.game.players[self.input_state.side].opp_hand.info.items()):
                     if c == 'The_China_Card' and not self.game.cards[c].is_playable:
-                        self.output(f'{c} (not currently playable)')
+                        self.output_state.notification += f'{c} (not currently playable)'
                     else:
-                        self.output(f'{c}')
+                        self.output_state.notification += f'{c}'
+
         elif comd == 'dis':
-            self.output(
-                f'Listing {len(self.game.discard_pile)} discarded cards.')
+            self.output_state.notification += f'Listing {len(self.game.discard_pile)} discarded cards.'
             for c in sorted(self.game.discard_pile):
-                self.output(c)
+                self.output_state.notification += ('\n' + c)
+
         elif comd == 'rem':
-            self.output(
-                f'Listing {len(self.game.removed_pile)} removed cards.')
+            self.output_state.notification += f'Listing {len(self.game.removed_pile)} removed cards.'
             for c in sorted(self.game.removed_pile):
-                self.output(c)
+                self.output_state.notification += ('\n' + c)
+
         elif comd == 'dec':
-            self.output(f'Cards in draw pile: {len(self.game.draw_pile)}.')
+            self.output_state.notification += f'Cards in draw pile: {len(self.game.draw_pile)}'
+
         else:
             matched = None
             ambiguous = False
@@ -419,20 +418,21 @@ c dec           Returns the number of cards in the draw deck.
                 keys = ['name', 'card_index', 'card_type', 'stage', 'optional', 'ops', 'owner',
                         'can_headline', 'scoring_region', 'event_text', 'may_be_held', 'event_unique']
 
-                self.output(f'Displaying information on card {comd}:')
+                self.output_state.notification += f'Displaying information on card {comd}:'
                 for key in keys:
                     value = getattr(card, key)
                     value = wrap(str(value), width=UI.event_text_width)
                     indent = '\n'+(UI.left_margin_big+1)*' '
                     value = indent.join(value)
                     if str(value):
-                        self.output(f'{key:>{UI.left_margin_big}} {value}')
+                        self.output_state.notification += (
+                            '\n' + f'{key:>{UI.left_margin_big}} {value}')
 
             if comd.isdigit():
                 if int(comd) in Card.INDEX.keys():
                     _print_card_info(comd, text=False)
                 else:
-                    self.output(f'Card {comd} not found!')
+                    self.output_state.notification += f'Card {comd} not found!'
             else:
                 for opt in Card.ALL.keys():
                     if opt.lower().startswith(comd):
@@ -441,12 +441,11 @@ c dec           Returns the number of cards in the draw deck.
                             break
                         matched = opt
                 if ambiguous:
-                    self.output(
-                        f'Error: multiple matching options for {comd}!')
+                    self.output_state.notification += f'Error: multiple matching options for {comd}!'
                 elif matched:
                     _print_card_info(matched, text=True)
                 else:
-                    self.output('Invalid command. Enter ? for help.')
+                    self.output_state.notification += 'Invalid command. Enter ? for help.'
 
     help_state = '''
 s <eu|as|me|af|na|sa>   Displays the scoring state and country data for the given region.
@@ -456,12 +455,12 @@ s turn                  Displays information on the current turn and action roun
     def parse_state(self, comd):
 
         if not self.game_in_progress:
-            self.output('Game not in progress.')
+            self.output_state.notification += 'Game not in progress.'
             return
 
         if comd == '':
             # eventually needs to be ported to access PlayerView
-            self.output('=== Game state ===')
+            self.output_state.notification += '=== Game state ==='
             ar_output = 'Headline phase' if self.game.ar_track == 0 else 'AR' + \
                 str(self.game.ar_track)
             side = self.game.ar_side.toStr
@@ -477,22 +476,22 @@ s turn                  Displays information on the current turn and action roun
                 'ARs this turn': (self.game.ars_by_turn[0][self.game.turn_track], self.game.ars_by_turn[1][self.game.turn_track])
             }
 
-            self.output(
-                f'T{self.game.turn_track} {ar_output}, {side}\'s turn.')
+            self.output_state.notification += f'T{self.game.turn_track} {ar_output}, {side}\'s turn.'
             for k, v in game_values.items():
-                self.output(f'{k:>{UI.left_margin_small}} {v}')
+                self.output_state.notification += f'{k:>{UI.left_margin_small}} {v}'
 
         elif comd == '?':
-            self.output(UI.help_state)
+            self.output_state.notification += UI.help_state
         else:
             # remember to check if comd is a valid ID
             region = MapRegion.fromStr(comd)
             if region is None:
-                self.output('Invalid region name.')
+                self.output_state.notification += 'Invalid region name.'
                 return
-            self.output(f'State of {region.name}:')
+            self.output_state.notification += f'State of {region.name}:'
             for n in sorted(CountryInfo.REGION_ALL[region]):
-                self.output(self.game.map[n].get_state_str())
+                self.output_state.notification += ('\n'
+                                                   + self.game.map[n].get_state_str())
             self.game.score(region, check_only=True)
 
     help_debug = '''
@@ -504,95 +503,99 @@ dbg rollback                        Restores the state before debugging started.
     def parse_debug(self, comd):
 
         if not self.game_in_progress:
-            self.output('Game not in progress.')
+            self.output_state.notification += 'Game not in progress.'
             return
 
         if not comd:
-            self.output('Debugging mode started.')
+            self.output_state.notification += 'Debugging mode started.'
             self.debug_save = (deepcopy(self.game),
                                deepcopy(self.game_rollback))
             return
         elif comd == '?':
-            self.output(UI.help_debug)
+            self.output_state.notification += UI.help_debug
             return
         elif not self.debug_save:
-            self.output('Error: Not in debug mode.')
+            self.output_state.notification += 'Error: Not in debug mode.'
             return
+
         user_choice = comd.split(' ')
         if user_choice[0] == 'inf':
             if len(user_choice) != 4:
-                self.output('Invalid command. Enter ? for help.')
+                self.output_state.notification += 'Invalid command. Enter ? for help.'
             elif user_choice[2] not in CountryInfo.ALL:
-                self.output('Invalid country name.')
+                self.output_state.notification += 'Invalid country name.'
             elif user_choice[1] == 'set':
                 inf = user_choice[3].split(':')
                 if len(inf) != 2:
-                    self.output('Invalid command. Enter ? for help.')
+                    self.output_state.notification += 'Invalid command. Enter ? for help.'
                 else:
                     self.game.map[user_choice[2]
                                   ].influence[Side.US] = int(inf[0])
                     self.game.map[user_choice[2]
                                   ].influence[Side.USSR] = int(inf[1])
+
         elif user_choice[0] == 'card':
             if len(user_choice) != 3:
-                self.output('Invalid command. Enter ? for help.')
+                self.output_state.notification += 'Invalid command. Enter ? for help.'
             elif user_choice[1] not in Card.ALL:
-                self.output('Invalid card name.')
+                self.output_state.notification += 'Invalid card name.'
             elif user_choice[2].lower() not in ['us', 'ussr']:
-                self.output('Invalid side.')
+                self.output_state.notification += 'Invalid side.'
             else:
                 input_state_rollback = deepcopy(self.game.input_state)
 
                 def end_of_event():
                     self.game.input_state = input_state_rollback
-                    self.output(
-                        f'\n=== {user_choice[1]} event complete. ===\n')
+                    self.output_state.notification += f'\n=== {user_choice[1]} event complete. ===\n'
                 self.game.stage_list.append(end_of_event)
                 self.game.card_function_mapping[user_choice[1]](
                     self.game, Side.fromStr(user_choice[2]))
                 self.game_state_changed()
+
         elif user_choice[0] == 'rollback':
-            self.output('Restoring pre-debugging state.')
+            self.output_state.notification += 'Restoring pre-debugging state.'
             self.game = self.debug_save[0]
             self.game_rollback = self.debug_save[1]
             self.game_state_changed()
+
         else:
-            self.output('Invalid command. Enter ? for help.')
+            self.output_state.notification += 'Invalid command. Enter ? for help.'
 
     def parse_log(self, comd):
 
         if self.game_in_progress:
-            self.output('Cannot toggle logging while game is in progress.')
+            self.output_state.notification += 'Cannot toggle logging while game is in progress.'
             return
         if comd.lower() == 'on':
             self.logging = True
         elif comd.lower() == 'off':
             self.logging = False
         else:
-            self.output('Invalid command. Enter ? for help.')
+            self.output_state.notification += 'Invalid command. Enter ? for help.'
 
     def parse_load(self, comd):
 
         if self.game_in_progress:
-            self.output('Cannot load game while game is in progress.')
+            self.output_state.notification += 'Cannot load game while game is in progress.'
             return
 
         try:
             f = open(f'log{path.sep}{comd}')
         except:
-            self.output('Cannot open file.')
+            self.output_state.notification += 'Cannot open file.'
             return
 
         self.new_game()
         for i, line in enumerate(f):
             line = line.strip()
             if line not in self.input_state.available_options:
-                self.output(f'Invalid move on line {i}:{line}')
+                self.output_state.notification += f'Invalid move on line {i}:{line}'
                 break
             self.move(line)
             if self.game.input_state.complete:
                 self.advance_game()
-        self.output('Game loaded.')
+
+        self.output_state.notification += 'Game loaded.'
         self.game_state_changed()
         f.close()
 
