@@ -4,7 +4,7 @@ from typing import Callable, Optional, Iterable, Tuple
 from functools import partial
 from itertools import chain
 
-from interfacing import Input
+from interfacing import Input, Output
 from world_map import CountryInfo, Country
 from enums import Side, MapRegion, InputType, CardAction, CoupEffects, RealignState
 from effects import Effect
@@ -201,7 +201,7 @@ class Five_Year_Plan(Card):
 
     def callback(self, game, card_name: str):
         game.input_state.reps -= 1
-        print(f'{card_name} was selected by Five_Year_Plan.')
+        game.output_state.notification += f'{card_name} was selected by Five_Year_Plan.\n'
         if game.cards[card_name].info.owner == Side.US:
             # must append backwards!
             game.stage_list.append(
@@ -400,13 +400,13 @@ class Vietnam_Revolts(Card, Effect):
 
     def effect_realign_ops(self, game, effect_side, country_name):
         if (game.realign_state.side == Side.USSR
-                and not self.realign_bonus_given  # haven't gotten the bonus
-                and not game.realign_state.reps  # finished all the other stuff
-                and all(c in CountryInfo.REGION_ALL[MapRegion.SOUTHEAST_ASIA]
-                        for c in game.realign_state.countries)  # all in SEA
-                and (The_China_Card.name not in game.basket[game.realign_state.side]  # China not active
-                     or game.cards[The_China_Card.name].realign_bonus_given)  # or China bonus is done
-            ):
+                    and not self.realign_bonus_given  # haven't gotten the bonus
+                    and not game.realign_state.reps  # finished all the other stuff
+                    and all(c in CountryInfo.REGION_ALL[MapRegion.SOUTHEAST_ASIA]
+                            for c in game.realign_state.countries)  # all in SEA
+                    and (The_China_Card.name not in game.basket[game.realign_state.side]  # China not active
+                         or game.cards[The_China_Card.name].realign_bonus_given)  # or China bonus is done
+                ):
             self.realign_bonus_given = True
             return RealignState(reps=1)
 
@@ -1127,7 +1127,7 @@ class The_Cambridge_Five(Card):
             if len(us_scoring_cards):
                 game.players[Side.USSR].opp_hand.update(us_scoring_cards)
             else:
-                print('US player has no scoring cards.')
+                game.output_state.notification += 'US player has no scoring cards.\n'
                 game.players[Side.USSR].opp_hand.no_scoring_cards = True
 
             self.event_occurred = True
@@ -1266,7 +1266,7 @@ class Southeast_Asia_Scoring(Card):
             vps[Side.US] * Side.US.vp_mult
 
         swing += game.map['Thailand'].control.vp_mult
-        print(f'Southeast Asia scores for {swing} VP')
+        game.output_state.notification += f'Southeast Asia scores for {swing} VP\n'
         game.change_vp(swing)
 
 
@@ -1303,7 +1303,7 @@ class Cuban_Missile_Crisis(Card, Effect):
 
     def effect_coup_after(self, game, effect_side, coup_side, country_name, result):
         if coup_side != effect_side:
-            print('Cuban Missile Crisis: game ends.')
+            game.output_state.notification += 'Cuban Missile Crisis: game ends.\n'
             game.set_defcon(1)
 
     def cmc_remove_callback(self, game, side: Side, opt: str):
@@ -1479,8 +1479,8 @@ class Summit(Card):
             self.choices(game, Side.USSR)
         elif outcome == 'US success':
             self.choices(game, Side.US)
-        print(
-            f'{outcome} with (USSR, US) modified rolls of ({num[Side.USSR]}, {num[Side.US]}). ussr_advantage is {ussr_advantage}.')
+        game.output_state.notification += (
+            f'{outcome} with (USSR, US) modified rolls of ({num[Side.USSR]}, {num[Side.US]}). ussr_advantage is {ussr_advantage}.\n')
         return True
 
     def use_event(self, game, side: Side):
@@ -1644,7 +1644,7 @@ class Kitchen_Debates(Card):
     def use_event(self, game, side: Side):
         self.event_occurred = True
         if self.can_event(game, Side.US):
-            print('USSR poked in the chest by US player!')
+            game.output_state.notification += 'USSR poked in the chest by US player!\n'
             game.change_vp(-2)
 
 
@@ -2036,7 +2036,7 @@ class Panama_Canal_Returned(Card):
 
     def use_event(self, game, side: Side):
         self.event_occurred = True
-        countries = ['Panama', 'Costa_Rica', 'Venezuela']
+        countries = ('Panama', 'Costa_Rica', 'Venezuela')
         for country in countries:
             game.map[country].change_influence(0, 1)
 
@@ -2054,7 +2054,7 @@ class Camp_David_Accords(Card, Effect):
     def use_event(self, game, side: Side):
         self.event_occurred = True
         game.change_vp(-1)
-        countries = ['Israel', 'Jordan', 'Egypt']
+        countries = ('Israel', 'Jordan', 'Egypt')
         for country in countries:
             game.map[country].change_influence(0, 1)
         game.basket[Side.US].append('Camp_David_Accords')
@@ -2130,7 +2130,7 @@ class Grain_Sales_to_Soviets(Card):
 
     def random_card_callback(self, game, card_name: str):
         game.input_state.reps -= 1
-        print(f'{card_name} was selected by Grain Sales to Soviets.')
+        game.output_state.notification += f'{card_name} was selected by Grain Sales to Soviets.\n'
         game.hand[Side.USSR].remove(card_name)
         game.hand[Side.US].append(card_name)
         game.stage_list.append(
@@ -2138,8 +2138,8 @@ class Grain_Sales_to_Soviets(Card):
 
     def use_event(self, game, side: Side):
         self.event_occurred = True
-        restricted_ussr_hand = [n for n in game.hand[Side.USSR] if not (n == 'Grain_Sales_to_Soviets' or n == 'The_China_Card')]
-
+        restricted_ussr_hand = [n for n in game.hand[Side.USSR] if not (
+            n == 'Grain_Sales_to_Soviets' or n == 'The_China_Card')]
 
         if not len(restricted_ussr_hand):
             game.stage_list.append(

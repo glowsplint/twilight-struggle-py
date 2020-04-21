@@ -124,14 +124,22 @@ class Output:
         the show() method is called, after which it is cleared.
 
     Notifications are used for general 'public' alerts that need to come first.
-    - 
     Input_types are the corresponding InputType enumeration from enums.
     Prompts are similar to the headers at the top of the Steam version.
-
     Available options is a list of all available options.
 
     To edit an active Output instance:
         output_instance.instruction = 'Instruction'
+
+    Methods
+    -------
+    show :
+        Built for printing to the CLI. Usage within CLI only.
+
+    _clear :
+        Empties the Output object for subsequent use.
+        Will be automatically called at the end of a show() method call.
+
     '''
 
     def __init__(self, side='', input_type='', prompt='', current_selection='',
@@ -144,7 +152,7 @@ class Output:
         self.prompt = prompt
         self.current_selection = current_selection
         self.reps = reps
-        self.available_options_header = 'Available options:'
+        self.available_options_header = available_options_header
         self.available_options = available_options
         self.commit = commit
 
@@ -162,8 +170,18 @@ class Output:
 
     '''Can shift commit to prompt, and then do a check if input_type is commit show prompt last'''
 
-    def to_json(self):
-        pass
+    @property
+    def json(self):
+        return {
+            'notification': self.notification,
+            'side': self.side,
+            'input_type': self.input_type,
+            'prompt': self.prompt,
+            'current_selection': self.current_selection,
+            'reps': self.reps,
+            'available_options': self.available_options,
+            'commit': self.commit,
+        }
 
     def _clear(self):
         self.notification = ''
@@ -172,5 +190,6 @@ class Output:
         self.prompt = ''
         self.current_selection = ''
         self.reps = ''
+        self.available_options_header = ''
         self.available_options = ''
         self.commit = ''

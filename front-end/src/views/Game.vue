@@ -41,7 +41,7 @@ export default {
   mounted() {
     this.$nextTick(function() {
       window.addEventListener('keydown', event => {
-        if (event.ctrlKey && event.key === 'q') {
+        if (event.ctrlKey && event.key === '`') {
           this.toggleConsole()
         }
       })

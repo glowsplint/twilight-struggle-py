@@ -51,15 +51,15 @@ class GUI(threading.Thread, UI):
 
     def run(self):
 
-        print('Initalising game.')
+        self.output_state.notification += 'Initalising game.'
         while True:
 
             self.client_response = threading.Event()
             self.client_response.wait()
             self.client_response.clear()
 
-            user_choice = self.user_choice.split(' ', 1)
-            # below lines are identical to those in game loop in twilight_ui
+            self.output_state.show()
+            user_choice = self.user_choice.split(' ', 1)  # different
             end_loop = self.parse_input(user_choice)
             if end_loop:
                 break

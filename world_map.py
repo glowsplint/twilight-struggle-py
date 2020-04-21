@@ -42,8 +42,8 @@ class CountryInfo:
         elif region == '':
             self.regions = set()
         else:
-            print(f'Unrecognized region string: {region}')
             self.regions = set()
+            ValueError(f'Unrecognized region string: {region}')
 
         for r in self.regions:
             CountryInfo.REGION_ALL[r].add(name)

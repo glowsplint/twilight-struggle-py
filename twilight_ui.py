@@ -218,6 +218,7 @@ quit            Exit the game.
         if self.awaiting_commit:
             self.output_state.commit += 'Commit your actions? (Yes/No)'
         else:
+            self.output_state.available_options_header = 'Available options:'
             available_options = "".join(
                 f'{k:5} {v}' + '\n' for k, v in sorted(self.options.items()))[:-1]
             self.output_state.available_options += available_options
