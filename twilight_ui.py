@@ -44,9 +44,6 @@ new             Start a new game.
 quit            Exit the game.
 '''
 
-    ussr_prompt = '----- USSR Player: -----'
-    us_prompt = '----- US Player: -----'
-    rng_prompt = '----- RNG: -----'
     left_margin_big = 25
     left_margin_small = 15
     event_text_width = 100
@@ -142,7 +139,6 @@ quit            Exit the game.
             self.options = {i: opt
                             for i, opt in
                             enumerate(self.input_state.available_options)}
-
         if self.game.input_state.option_stop_early:
             self.options[0] = self.game.input_state.option_stop_early
 
@@ -187,6 +183,7 @@ quit            Exit the game.
                         break
 
             # if we get here it's time for player input. We will break at the end.
+            self.output_state.state = self.game.input_state.state
             self.generate_options()
 
             # time for player input
@@ -197,14 +194,7 @@ quit            Exit the game.
 
     def prompt(self):
 
-        if self.input_state.side == Side.USSR:
-            self.output_state.side += UI.ussr_prompt
-        elif self.input_state.side == Side.US:
-            self.output_state.side += UI.us_prompt
-        else:
-            self.output_state.side += UI.rng_prompt
-
-        self.output_state.prompt += self.input_state.prompt
+        self.output_state._side = self.input_state.side
 
         selection = "".join(
             [(k + ", ")*v for k, v in self.input_state.selection.items()])[:-2]
@@ -219,9 +209,7 @@ quit            Exit the game.
             self.output_state.commit += 'Commit your actions? (Yes/No)'
         else:
             self.output_state.available_options_header = 'Available options:'
-            available_options = "".join(
-                f'{k:5} {v}' + '\n' for k, v in sorted(self.options.items()))[:-1]
-            self.output_state.available_options += available_options
+            self.output_state._available_options = self.options.copy()
 
     def run(self):
 

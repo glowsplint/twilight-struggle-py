@@ -30,7 +30,7 @@ class Input:
         prompt : str
             The prompt to display to the user.
         reps : int
-            The number of times this input is required. Defaults to 1.
+            The number of times this input is reqOutputred. Defaults to 1.
         reps_unit : str
             The unit to provide to the user when notifying them about the
             number of input repetitions remaining. Defaults to empty string,
@@ -105,7 +105,7 @@ class Input:
     @property
     def complete(self):
         '''
-        Returns True if no more input is required, False if input is not
+        Returns True if no more input is reqOutputred, False if input is not
         complete.
         '''
         return (not self.reps or len(self.selection) == len(self.discarded_options)
@@ -117,14 +117,14 @@ class Input:
 
 class Output:
     '''
-    Creates an output that works with both CLI and the GUI.
+    Creates an output that works with both CLI and the GOutput.
     Outputs are templates for what will be displayed to the user. A single Output
-        class is initialised at the start of a cycle of the game loop. It is built
-        up additively in multiple stages. The entire output is displayed only when
-        the show() method is called, after which it is cleared.
+        class is initialised (with no arguments) at the start of a cycle of the game
+        loop. It is bOutputlt up additively in multiple stages. The entire output is
+        displayed only when the show() method is called, after which it is cleared.
 
     Notifications are used for general 'public' alerts that need to come first.
-    Input_types are the corresponding InputType enumeration from enums.
+    states are the corresponding InputType enumeration from enums.
     Prompts are similar to the headers at the top of the Steam version.
     Available options is a list of all available options.
 
@@ -134,62 +134,82 @@ class Output:
     Methods
     -------
     show :
-        Built for printing to the CLI. Usage within CLI only.
+        BOutputlt for printing to the CLI. Usage within CLI only.
 
     _clear :
         Empties the Output object for subsequent use.
         Will be automatically called at the end of a show() method call.
 
+    _process_<variable_name> :
+        Sets self.<variable_name> from the value of self._<variable_name>
     '''
 
-    def __init__(self, side='', input_type='', prompt='', current_selection='',
-                 reps='', available_options_header='', available_options='',
-                 notification='', commit=''):
+    ussr_prompt = '----- USSR Player: -----'
+    us_prompt = '----- US Player: -----'
+    rng_prompt = '----- RNG: -----'
 
-        self.notification = notification
-        self.side = side
-        self.input_type = input_type
-        self.prompt = prompt
-        self.current_selection = current_selection
-        self.reps = reps
-        self.available_options_header = available_options_header
-        self.available_options = available_options
-        self.commit = commit
+    def __init__(self):
 
-    def show(self, include_new_line=True):
-
-        for item in [self.notification, self.side, self.input_type, self.prompt,
-                     self.current_selection, self.reps, self.available_options_header,
-                     self.available_options, self.commit]:
-            if item:
-                if include_new_line:
-                    print(item)
-                else:
-                    print(item, end='')
-        self._clear()
-
-    '''Can shift commit to prompt, and then do a check if input_type is commit show prompt last'''
-
-    @property
-    def json(self):
-        return {
-            'notification': self.notification,
-            'side': self.side,
-            'input_type': self.input_type,
-            'prompt': self.prompt,
-            'current_selection': self.current_selection,
-            'reps': self.reps,
-            'available_options': self.available_options,
-            'commit': self.commit,
-        }
-
-    def _clear(self):
         self.notification = ''
         self.side = ''
-        self.input_type = ''
+        self.state = ''
         self.prompt = ''
         self.current_selection = ''
         self.reps = ''
         self.available_options_header = ''
         self.available_options = ''
         self.commit = ''
+
+        self._available_options = {}
+        self._side = None
+        self._state = None
+
+    def _process_options(self):
+        available_options = "".join(
+            f'{k:5} {v}' + '\n' for k, v in sorted(self._available_options.items()))[:-1]
+        self.available_options += available_options
+
+    def _process_side(self):
+        if self._side == Side.USSR:
+            self.side += Output.ussr_prompt
+        elif self._side == Side.US:
+            self.side += Output.us_prompt
+        elif self._side == Side.NEUTRAL:
+            self.side += Output.rng_prompt
+
+    def _process_state(self):
+        if self._state != None:
+            self.state = {int(self._state): str(self._state)}
+
+    def show(self, include_new_line=True):
+
+        self._process_options()
+        self._process_side()
+        self._process_state()
+
+        shown_items = (self.notification, self.side, self.prompt,
+                       self.current_selection, self.reps, self.available_options_header,
+                       self.available_options, self.commit)
+
+        for item in shown_items:
+            if item:
+                if include_new_line:
+                    print(item)
+                else:
+                    print(item, end='')
+        self.__init__()  # reset object
+
+    '''Can shift commit to prompt, and then do a check if state is commit show prompt last'''
+
+    @property
+    def json(self):
+        return {
+            'notification': self.notification,
+            'side': self.side,
+            'state': self.state,
+            'prompt': self.prompt,
+            'current_selection': self.current_selection,
+            'reps': self.reps,
+            'available_options': self._available_options,
+            'commit': self.commit,
+        }

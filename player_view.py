@@ -4,6 +4,7 @@ from typing import Sequence, Iterable
 from enums import Side, InputType, CardAction
 from world_map import MapRegion, CountryInfo, GameMap
 from cards import Card, GameCards
+from interfacing import Output
 
 
 class PlayerView:

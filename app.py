@@ -52,22 +52,24 @@ class GUI(threading.Thread, UI):
     def run(self):
 
         self.output_state.notification += 'Initalising game.'
+        self.client_response = threading.Event()
+
         while True:
 
-            self.client_response = threading.Event()
+            self.prepare_json()
+            self.output_state.show()  # different -- this line is not printing anything!!
+
             self.client_response.wait()
             self.client_response.clear()
-
-            self.output_state.show()
             user_choice = self.user_choice.split(' ', 1)  # different
             end_loop = self.parse_input(user_choice)
             if end_loop:
                 break
 
-    def output(self, *args, **kwargs):
-        print(*args, **kwargs)
-        self.server_response = {'server': 41}
-        app.server_response.set()
+    def prepare_json(self):
+        self.server_move = self.output_state.json.copy()
+        if hasattr(app, 'server_response'):
+            app.server_response.set()
 
 
 # Starts game engine, back-end and socket connection
@@ -104,19 +106,19 @@ def disconnect():
 
 @socketio.on('client_move')
 def client_move(json):
-    # Receive a move and wait for GUI to provide an output
+    # Receive a move and wait on GUI to provide an output
     print('Received JSON: ' + json['move'])
     gui.user_choice = str(json['move'])
     gui.client_response.set()  # allows GUI to start processing
     app.server_response = threading.Event()
     app.server_response.wait()  # waits on GUI for server_response
     emit('server_move', gui.server_move)
+    print(f'server is sending: {gui.server_move}')
 
 
-if __name__ == '__main__':
-    url = "http://localhost:5000"
-    if 'WERKZEUG_RUN_MAIN' not in os.environ and not args.no_browser:
-        threading.Timer(
-            1.25, lambda: webbrowser.open(url)).start()
-    gui.start()
-    app.run(debug=True)
+url = "http://localhost:5000"
+if 'WERKZEUG_RUN_MAIN' not in os.environ and not args.no_browser:
+    threading.Timer(
+        1.25, lambda: webbrowser.open(url)).start()
+gui.start()
+app.run(debug=True)

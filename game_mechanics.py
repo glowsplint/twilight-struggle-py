@@ -189,7 +189,7 @@ class Game:
             self.cards['NORAD'].place_norad_influence(self)
 
         verb = 'improved' if n > 0 else 'degraded'
-        self.output_state.notification += f'DEFCON level {verb} to {self.defcon_track}.'
+        self.output_state.notification += f'DEFCON level {verb} to {self.defcon_track}.\n'
 
     def change_milops(self, side: Side, n: int):
         '''
