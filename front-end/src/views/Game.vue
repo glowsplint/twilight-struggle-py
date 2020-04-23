@@ -35,7 +35,8 @@
 </template>
 
 <script>
-import Vue from 'vue'
+import { mapState } from 'vuex'
+
 export default {
   name: 'Game',
   mounted() {
@@ -45,6 +46,15 @@ export default {
           this.toggleConsole()
         }
       })
+    })
+  },
+  computed: {
+    moreComputed() {
+      return null
+    },
+    ...mapState({
+      gameInProgress: state => state.locals.gameInProgress,
+      replaceInProgress: state => state.locals.replaceInProgress
     })
   },
   methods: {

@@ -16,6 +16,7 @@
             @click="clickable.onPress"
             :disabled="clickable.disabled"
             v-on="on"
+            v-if="clickable.display"
           >
             <v-icon class="mr-3">{{ clickable.icon }}</v-icon>
             {{ clickable.title }}
@@ -28,6 +29,8 @@
 </template>
 
 <script>
+import { mapState } from 'vuex'
+
 export default {
   name: 'Home',
   methods: {
@@ -43,6 +46,24 @@ export default {
       this.$socket.client.emit('client-save-game')
       console.log('Game saving..')
     }
+    // gameString() {
+    // return this.$store.locals.gameInProgress ? 'Continue Game' :
+    // }
+  },
+  mounted() {
+    if (this.gameInProgress) {
+      this.clickables.find(item => item.title == 'New Game').display = false
+      this.clickables.find(item => item.title == 'Continue Game').display = true
+    }
+  },
+  computed: {
+    moreComputed() {
+      return null
+    },
+    ...mapState({
+      gameInProgress: state => state.locals.gameInProgress,
+      replaceInProgress: state => state.locals.replaceInProgress
+    })
   },
   data() {
     return {
@@ -53,21 +74,32 @@ export default {
           icon: 'mdi-controller-classic-outline',
           onPress: this.newGame,
           disabled: false,
-          tooltip: 'Start a new game.'
+          tooltip: 'Start a new game.',
+          display: true
+        },
+        {
+          title: 'Continue Game',
+          icon: 'mdi-controller-classic-outline',
+          onPress: this.newGame,
+          disabled: false,
+          tooltip: 'Continue the current game.',
+          display: false
         },
         {
           title: 'Load Game',
           icon: 'mdi-folder-upload-outline',
           onPress: this.loadGame,
           disabled: true,
-          tooltip: 'Load a .tsg file for playback.'
+          tooltip: 'Load a .tsg file for playback.',
+          display: true
         },
         {
           title: 'Save Game',
           icon: 'mdi-content-save-move-outline',
           onPress: this.saveGame,
           disabled: true,
-          tooltip: 'Save the current game to a .tsg file.'
+          tooltip: 'Save the current game to a .tsg file.',
+          display: true
         }
       ]
     }

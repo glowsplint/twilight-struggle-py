@@ -109,9 +109,11 @@ def client_move(json):
     # Receive a move and wait on GUI to provide an output
     print('Received JSON: ' + json['move'])
     gui.user_choice = str(json['move'])
-    gui.client_response.set()  # allows GUI to start processing
+    gui.client_response.set()
     app.server_response = threading.Event()
-    app.server_response.wait()  # waits on GUI for server_response
+    app.server_response.wait()
+
+    # When gui.server_move is ready
     emit('server_move', gui.server_move)
     print(f'server is sending: {gui.server_move}')
 

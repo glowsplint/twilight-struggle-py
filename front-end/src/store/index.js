@@ -8,19 +8,37 @@ export default new Vuex.Store({
     locals: {
       gameInProgress: false,
       replayInProgress: false
+    },
+    globals: {
+      notification: '',
+      side: '',
+      state: '',
+      prompt: '',
+      current_selection: '',
+      reps: '',
+      available_options: '',
+      commit: ''
     }
   },
   mutations: {
-    SOCKET_SERVER_MOVE(gameInProgress, payload) {
-      gameInProgress = payload
-      console.log('mutation called')
+    SERVER_MOVE(state, payload) {
+      state.locals.gameInProgress =
+        payload.notification == 'Game already in progress.'
+      state.globals.notification = payload.notification
+      state.globals.side = payload.side
+      state.globals.state = payload.state
+      state.globals.prompt = prompt.notification
+      state.globals.current_selection = payload.current_selection
+      state.globals.reps = payload.reps
+      state.globals.available_options = payload.available_options
+      state.globals.commit = payload.commit
+
       console.log(payload)
     }
   },
   actions: {
-    socket_serverMove({ context }) {
-      commit('SOCKET_CLIENT_MOVE', payload)
-      console.log('action called')
+    socket_serverMove({ commit }, payload) {
+      commit('SERVER_MOVE', payload)
     }
   }
 })

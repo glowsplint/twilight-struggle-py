@@ -23,8 +23,10 @@
     <v-app-bar color="rgb(68, 102, 143)" dark app clipped-left>
       <v-app-bar-nav-icon @click.stop="toggleDrawer" />
       <v-toolbar-title>Twilight Struggle</v-toolbar-title>
-      <v-spacer></v-spacer>
-      <v-img src="@/assets/ts_icon_1024.png" max-height="40" max-width="40" />
+      <v-spacer />
+      <router-link to="/"
+        ><v-img src="@/assets/ts_icon_1024.png" max-height="40" max-width="40"
+      /></router-link>
     </v-app-bar>
   </div>
 </template>
@@ -38,10 +40,11 @@ export default {
   methods: {
     toggleDrawer() {
       this.drawer = !this.drawer
-    },
-    toggleGameDisabled() {
-      this.sidebar.find(item => item.title === 'Game').disabled = false
-      console.log('toggled game disable')
+    }
+  },
+  mounted() {
+    if (this.gameInProgress) {
+      this.sidebar.find(item => item.title == 'Game').disabled = false
     }
   },
   computed: {
