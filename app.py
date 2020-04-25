@@ -115,7 +115,24 @@ def client_move(json):
 
     # When gui.server_move is ready
     emit('server_move', gui.server_move)
-    print(f'server is sending: {gui.server_move}')
+
+
+@socketio.on('client_restart')
+def client_restart():
+    print('Received request to restart.')
+    if not gui.is_alive():
+        gui.start()
+        print('GUI restarted.')
+    else:
+        print('GUI is running - no restart was conducted.')
+
+
+@socketio.on('client_request_game_state')
+def client_request_game_state():
+    print('Received query on game state.')
+    emit('server_request_game_state', {'response': gui.is_alive()})
+    print(
+        f'Sending via server_request_game_state: {gui.is_alive()}')
 
 
 url = "http://localhost:5000"

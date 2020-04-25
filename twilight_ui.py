@@ -238,6 +238,8 @@ quit            Exit the game.
         elif user_choice[0].lower() == 'new':
             if self.game_in_progress:
                 self.output_state.notification += 'Game already in progress.'
+                # send playerview instance to output_state
+                self.output_state.player_view = self.game.players[self.input_state.side]
                 return False
             self.output_state.notification += 'Starting new game.'
             self.new_game()

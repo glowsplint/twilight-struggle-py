@@ -25,6 +25,7 @@
         <span>{{ clickable.tooltip }}</span>
       </v-tooltip>
     </v-row>
+    <v-row justify="center"> </v-row>
   </v-container>
 </template>
 
@@ -35,20 +36,20 @@ export default {
   name: 'Home',
   methods: {
     newGame() {
-      this.$socket.client.emit('client-move', { move: 'new' })
+      this.$socket.client.emit('client_move', { move: 'new' })
+      this.$router.push('/game')
+    },
+    continueGame() {
       this.$router.push('/game')
     },
     loadGame() {
-      this.$socket.client.emit('client-load-game')
+      this.$socket.client.emit('client_load_game')
       console.log('Game loading..')
     },
     saveGame() {
-      this.$socket.client.emit('client-save-game')
+      this.$socket.client.emit('client_save_game')
       console.log('Game saving..')
     }
-    // gameString() {
-    // return this.$store.locals.gameInProgress ? 'Continue Game' :
-    // }
   },
   mounted() {
     if (this.gameInProgress) {
@@ -80,7 +81,7 @@ export default {
         {
           title: 'Continue Game',
           icon: 'mdi-controller-classic-outline',
-          onPress: this.newGame,
+          onPress: this.continueGame,
           disabled: false,
           tooltip: 'Continue the current game.',
           display: false

@@ -24,6 +24,16 @@
       <v-app-bar-nav-icon @click.stop="toggleDrawer" />
       <v-toolbar-title>Twilight Struggle</v-toolbar-title>
       <v-spacer />
+      <transition name="error-fade" mode="out-in">
+        <v-chip
+          class="ma-2"
+          :color="connectionStatus ? `green` : `red`"
+          text-color="white"
+          v-bind:key="connectionStatus"
+        >
+          {{ connectionStatus ? 'Connected' : 'Disconnected' }}
+        </v-chip>
+      </transition>
       <router-link to="/"
         ><v-img src="@/assets/ts_icon_1024.png" max-height="40" max-width="40"
       /></router-link>
@@ -40,16 +50,14 @@ export default {
   methods: {
     toggleDrawer() {
       this.drawer = !this.drawer
-    }
-  },
-  mounted() {
-    if (this.gameInProgress) {
-      this.sidebar.find(item => item.title == 'Game').disabled = false
+      if (this.gameInProgress) {
+        this.sidebar.find(item => item.title == 'Game').disabled = false
+      }
     }
   },
   computed: {
-    moreComputed() {
-      return null
+    connectionStatus() {
+      return this.$socket.connected
     },
     ...mapState({
       gameInProgress: state => state.locals.gameInProgress,
@@ -94,5 +102,20 @@ a,
   text-decoration: none;
   background-color: none;
   font-weight: normal;
+}
+
+#error {
+  color: red;
+  font-weight: bold;
+}
+
+.error-fade-enter,
+.error-fade-leave-to {
+  opacity: 0;
+}
+
+.error-fade-enter-active,
+.error-fade-leave-active {
+  transition: all 0.2s ease;
 }
 </style>

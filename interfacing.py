@@ -120,28 +120,32 @@ class Output:
     Creates an output that works with both CLI and the GOutput.
     Outputs are templates for what will be displayed to the user. A single Output
         class is initialised (with no arguments) at the start of a cycle of the game
-        loop. It is bOutputlt up additively in multiple stages. The entire output is
+        loop. It is built up additively in multiple stages. The entire output is
         displayed only when the show() method is called, after which it is cleared.
 
-    Notifications are used for general 'public' alerts that need to come first.
-    states are the corresponding InputType enumeration from enums.
-    Prompts are similar to the headers at the top of the Steam version.
-    Available options is a list of all available options.
-
-    To edit an active Output instance:
+    To edit an active Output instance (usage only within twilight_ui.py):
         output_instance.instruction = 'Instruction'
+
+    Notifications are used for general 'public' alerts that need to come first.
+    Input_types are the corresponding InputType enumeration from enums.
+    Prompts are similar to the headers at the top of the Steam version.
+
+    There are two types of attributes; those with underscore prefixes and those without.
+    Underscored attributes are the "raw form" and need to be processed via the _process()
+        methods before display on the CLI, but are suitable for sending as JSON payloads
+        to the client GUI.
 
     Methods
     -------
     show :
-        BOutputlt for printing to the CLI. Usage within CLI only.
+        Prints to the CLI - intended for use within the CLI only.
 
     _clear :
         Empties the Output object for subsequent use.
-        Will be automatically called at the end of a show() method call.
+        Automatically called at the end of a show() method call.
 
-    _process_<variable_name> :
-        Sets self.<variable_name> from the value of self._<variable_name>
+    _process_<attribute_name> :
+        Sets self.<attribute_name> from the value of self._<attribute_name>
     '''
 
     ussr_prompt = '----- USSR Player: -----'
@@ -152,17 +156,18 @@ class Output:
 
         self.notification = ''
         self.side = ''
-        self.state = ''
+        self.input_type = ''
         self.prompt = ''
         self.current_selection = ''
         self.reps = ''
         self.available_options_header = ''
         self.available_options = ''
         self.commit = ''
+        self.player_view = None
 
         self._available_options = {}
         self._side = None
-        self._state = None
+        self._input_type = None
 
     def _process_options(self):
         available_options = "".join(
@@ -177,15 +182,15 @@ class Output:
         elif self._side == Side.NEUTRAL:
             self.side += Output.rng_prompt
 
-    def _process_state(self):
-        if self._state != None:
-            self.state = {int(self._state): str(self._state)}
+    def _process_input_type(self):
+        if self._input_type != None:
+            self.input_type = {int(self._input_type): str(self._input_type)}
 
     def show(self, include_new_line=True):
 
         self._process_options()
         self._process_side()
-        self._process_state()
+        self._process_input_type()
 
         shown_items = (self.notification, self.side, self.prompt,
                        self.current_selection, self.reps, self.available_options_header,
@@ -199,17 +204,18 @@ class Output:
                     print(item, end='')
         self.__init__()  # reset object
 
-    '''Can shift commit to prompt, and then do a check if state is commit show prompt last'''
+    '''Can shift commit to prompt, and then do a check if input_type is commit show prompt last'''
 
     @property
     def json(self):
         return {
             'notification': self.notification,
-            'side': self.side,
-            'state': self.state,
+            'side': self._side,
+            'input_type': self.input_type,
             'prompt': self.prompt,
             'current_selection': self.current_selection,
             'reps': self.reps,
             'available_options': self._available_options,
             'commit': self.commit,
+            'player_view': self.player_view.json if self.player_view else ''
         }

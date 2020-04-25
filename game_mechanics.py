@@ -84,8 +84,8 @@ class Game:
         self.map = GameMap()
         self.cards = GameCards()
         self.players = [PlayerView(Side.USSR), PlayerView(Side.US)]
-        self.players[Side.USSR].create_links(self)
-        self.players[Side.US].create_links(self)
+        self.players[Side.USSR].link(self)
+        self.players[Side.US].link(self)
 
         self.stage_list = [
             self.expand_deck,
@@ -1280,11 +1280,7 @@ class Game:
             next_side = next_side.opp
 
         for s in [Side.USSR, Side.US]:
-            self.players[s].opp_hand.no_scoring_cards = False
-
-    def infer_hand_info(self):
-        for s in [Side.USSR, Side.US]:
-            self.players[s].opp_hand.infer(self.players[s])
+            self.players[s].opp_hand_no_scoring_cards = False
 
     # need to make sure next_turn is only called after all extra rounds
     def end_of_turn(self):

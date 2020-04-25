@@ -1,14 +1,19 @@
 <template>
   <div>
     <v-container class="my-n3" fluid app>
-      <v-row class="img-wrapper" v-dragscroll="true">
+      <v-row class="mt-4" justify="center" align="center">
+        <transition name="console-fade">
+          <Console id="code" v-show="isConsoleShown" />
+        </transition>
+      </v-row>
+      <v-row class="img-wrapper" v-dragscroll="true" v-if="false">
         <img src="@/assets/big.jpg" />
       </v-row>
       <v-row class="mt-4" justify="center" align="center">
-        <transition name="console-fade"
-          ><v-text-field
+        <transition name="console-fade">
+          <v-text-field
             v-model="clientAction"
-            v-if="isConsoleShown"
+            v-show="isConsoleInputShown"
             label="Action for this turn"
             style="margin-right: 15px; max-width: 460px"
             @keyup.enter="post"
@@ -36,14 +41,17 @@
 
 <script>
 import { mapState } from 'vuex'
+import Console from '@/components/Console'
 
 export default {
   name: 'Game',
+  components: { Console },
   mounted() {
     this.$nextTick(function() {
       window.addEventListener('keydown', event => {
         if (event.ctrlKey && event.key === '`') {
           this.toggleConsole()
+          this.toggleConsoleInput()
         }
       })
     })
@@ -60,9 +68,9 @@ export default {
   methods: {
     post() {
       if (this.clientAction != '') {
-        console.log('Sending to server..')
-        if (this.clientAction === 'new') {
-          this.isGameRunning()
+        console.log(`Sending to server: ${this.clientAction}`)
+        if (this.clientAction === 'restart') {
+          this.restart()
         } else {
           this.$socket.client.emit('client_move', { move: this.clientAction })
         }
@@ -72,9 +80,12 @@ export default {
     toggleConsole() {
       this.isConsoleShown = !this.isConsoleShown
     },
-    isGameRunning() {
-      console.log('Checking if game has already started..')
-      this.$socket.client.emit('client_move', { move: 'new' })
+    toggleConsoleInput() {
+      this.isConsoleInputShown = !this.isConsoleInputShown
+    },
+    restart() {
+      console.log('Requesting for game restart.')
+      this.$socket.client.emit('client_restart')
     }
   },
   sockets: {
@@ -86,7 +97,9 @@ export default {
     return {
       clientAction: '',
       state: {},
-      isConsoleShown: true
+      isConsoleShown: true,
+      isConsoleInputShown: true,
+      consoleGameLog: 'Console Game Log'
     }
   }
 }
@@ -104,9 +117,11 @@ html {
   position: relative;
 }
 
-.console-fade-enter {
+.console-fade-enter,
+.console-fade-leave-to {
   transform: translateY(-10px);
   opacity: 0;
+  height: 0;
 }
 
 .console-fade-enter-active,
@@ -114,8 +129,12 @@ html {
   transition: all 0.2s ease;
 }
 
-.console-fade-leave-to {
-  transform: translateY(10px);
-  opacity: 0;
+.console-fade-enter-to,
+.console-fade-leave {
+  height: auto;
+}
+
+#code {
+  font-family: 'Inconsolata', 'Monaco', 'Consolas', 'Courier New', 'Courier';
 }
 </style>

@@ -12,7 +12,7 @@ export default new Vuex.Store({
     globals: {
       notification: '',
       side: '',
-      state: '',
+      input_type: '',
       prompt: '',
       current_selection: '',
       reps: '',
@@ -22,11 +22,9 @@ export default new Vuex.Store({
   },
   mutations: {
     SERVER_MOVE(state, payload) {
-      state.locals.gameInProgress =
-        payload.notification == 'Game already in progress.'
       state.globals.notification = payload.notification
       state.globals.side = payload.side
-      state.globals.state = payload.state
+      state.globals.input_type = payload.input_type
       state.globals.prompt = prompt.notification
       state.globals.current_selection = payload.current_selection
       state.globals.reps = payload.reps
@@ -34,11 +32,17 @@ export default new Vuex.Store({
       state.globals.commit = payload.commit
 
       console.log(payload)
+    },
+    SERVER_REQUEST_GAME_STATE(state, payload) {
+      state.locals.gameInProgress = payload.response
     }
   },
   actions: {
     socket_serverMove({ commit }, payload) {
       commit('SERVER_MOVE', payload)
+    },
+    socket_serverRequestGameState({ commit }, payload) {
+      commit('SERVER_REQUEST_GAME_STATE', payload)
     }
   }
 })

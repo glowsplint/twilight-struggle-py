@@ -63,8 +63,8 @@ class Card:
         else:
             game.discard_pile.append(self.name)
             self.event_occurred = False
-        if self.info.name in game.players[side.opp].opp_hand.info.values():
-            game.players[side.opp].opp_hand.remove([self.name])
+        if self.info.name in game.players[side.opp].opp_hand:
+            game.players[side.opp].opp_hand.difference_update([self.name])
 
     def available_actions(self, game, side):
         pass
@@ -1128,7 +1128,7 @@ class The_Cambridge_Five(Card):
                 game.players[Side.USSR].opp_hand.update(us_scoring_cards)
             else:
                 game.output_state.notification += 'US player has no scoring cards.\n'
-                game.players[Side.USSR].opp_hand.no_scoring_cards = True
+                game.players[Side.USSR].opp_hand_no_scoring_cards = True
 
             self.event_occurred = True
             game.input_state = Input(
