@@ -33,7 +33,6 @@ export default {
       console.log('Socket connected: now querying game state..')
     },
     disconnect() {
-      this.gameInProgress = false
       console.log('Socket disconnected.')
     },
     server_request_game_state() {

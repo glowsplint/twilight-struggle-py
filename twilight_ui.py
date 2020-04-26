@@ -183,7 +183,6 @@ quit            Exit the game.
                         break
 
             # if we get here it's time for player input. We will break at the end.
-            self.output_state.state = self.game.input_state.state
             self.generate_options()
 
             # time for player input
@@ -194,6 +193,8 @@ quit            Exit the game.
 
     def prompt(self):
 
+        self.output_state._input_type = {
+            int(self.game.input_state.state): str(self.game.input_state.state)}
         self.output_state._side = self.input_state.side
 
         selection = "".join(
@@ -203,6 +204,7 @@ quit            Exit the game.
                 'You have selected ' + selection + '.')
 
         if self.input_state.reps_unit:
+            self.output_state._reps = [self.input_state.reps_unit, self.input_state.reps]
             self.output_state.reps += f'Remaining {self.input_state.reps_unit}: {self.input_state.reps}'
 
         if self.awaiting_commit:
@@ -343,9 +345,8 @@ m <m1 m2 m3 ...>    Makes multiple moves in order m1, m2, m3, ...
                         self.output_state.notification += f'Error: multiple matching options for {m}!'
                         break
 
-                    self.output_state.current_selection += (
+                    self.output_state.selected_this_turn += (
                         f'Selected: {matched}' + '\n')
-                    self.output_state.show(include_new_line=False)
                     self.move(matched)
                     self.game_state_changed(prompt=False)
                 self.prompt()

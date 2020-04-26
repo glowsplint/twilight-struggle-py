@@ -9,12 +9,17 @@
       <v-row class="img-wrapper" v-dragscroll="true" v-if="false">
         <img src="@/assets/big.jpg" />
       </v-row>
+      <v-row><v-spacer></v-spacer></v-row>
       <v-row class="mt-4" justify="center" align="center">
         <transition name="console-fade">
           <v-text-field
             v-model="clientAction"
             v-show="isConsoleInputShown"
-            label="Action for this turn"
+            :label="
+              gameLog
+                ? `Action for this turn`
+                : `Enter 'new' to begin or 'm' to continue`
+            "
             style="margin-right: 15px; max-width: 460px"
             @keyup.enter="post"
             autocomplete="false"
@@ -40,7 +45,7 @@
 </template>
 
 <script>
-import { mapState } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import Console from '@/components/Console'
 
 export default {
@@ -63,6 +68,9 @@ export default {
     ...mapState({
       gameInProgress: state => state.locals.gameInProgress,
       replaceInProgress: state => state.locals.replaceInProgress
+    }),
+    ...mapGetters({
+      gameLog: 'gameLog'
     })
   },
   methods: {
@@ -107,7 +115,8 @@ export default {
 
 <style>
 html {
-  overflow: hidden;
+  /* overflow: hidden; */
+  overflow: auto;
 }
 
 .img-wrapper {

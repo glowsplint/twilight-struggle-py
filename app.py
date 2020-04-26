@@ -66,19 +66,25 @@ class GUI(threading.Thread, UI):
             if end_loop:
                 break
 
+        print('Thread temporarily suspended.')
+
     def prepare_json(self):
         self.server_move = self.output_state.json.copy()
         if hasattr(app, 'server_response'):
             app.server_response.set()
 
 
-# Starts game engine, back-end and socket connection
+# Constant definitions
 dist = Path("./front-end/dist/")
+flask_url = "http://localhost:5000"
+vue_url = "http://localhost:8080"
+
+# Starts game engine, back-end and socket connection
 app = VueCompatibleFlask(__name__,
                          static_folder=str(dist/"static"),
                          template_folder=str(dist))
 socketio = SocketIO(app, json=json,
-                    cors_allowed_origins=['http://localhost:8080'])
+                    cors_allowed_origins=[vue_url, flask_url])
 gui = GUI(daemon=True)
 
 # Provides -n command line argument
@@ -115,14 +121,15 @@ def client_move(json):
 
     # When gui.server_move is ready
     emit('server_move', gui.server_move)
+    # print(f'Sending to client: {gui.server_move}')
 
 
 @socketio.on('client_restart')
 def client_restart():
     print('Received request to restart.')
     if not gui.is_alive():
-        gui.start()
-        print('GUI restarted.')
+        gui.run()
+        print('GUI restarted from previous run.')
     else:
         print('GUI is running - no restart was conducted.')
 
@@ -135,9 +142,8 @@ def client_request_game_state():
         f'Sending via server_request_game_state: {gui.is_alive()}')
 
 
-url = "http://localhost:5000"
 if 'WERKZEUG_RUN_MAIN' not in os.environ and not args.no_browser:
     threading.Timer(
-        1.25, lambda: webbrowser.open(url)).start()
+        1.25, lambda: webbrowser.open(flask_url)).start()
 gui.start()
-app.run(debug=True)
+socketio.run(app, debug=True)

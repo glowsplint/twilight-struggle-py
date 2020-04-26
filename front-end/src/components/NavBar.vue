@@ -26,7 +26,7 @@
       <v-spacer />
       <transition name="error-fade" mode="out-in">
         <v-chip
-          class="ma-2"
+          class="ma-4"
           :color="connectionStatus ? `green` : `red`"
           text-color="white"
           v-bind:key="connectionStatus"

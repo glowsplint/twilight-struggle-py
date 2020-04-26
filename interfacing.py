@@ -133,7 +133,7 @@ class Output:
     There are two types of attributes; those with underscore prefixes and those without.
     Underscored attributes are the "raw form" and need to be processed via the _process()
         methods before display on the CLI, but are suitable for sending as JSON payloads
-        to the client GUI.
+        to the client GUI. We send underscored attribute to the client GUI if they exist.
 
     Methods
     -------
@@ -154,9 +154,10 @@ class Output:
 
     def __init__(self):
 
+        self.selected_this_turn = ''
         self.notification = ''
         self.side = ''
-        self.input_type = ''
+        self.input_type = {}
         self.prompt = ''
         self.current_selection = ''
         self.reps = ''
@@ -165,8 +166,9 @@ class Output:
         self.commit = ''
         self.player_view = None
 
-        self._available_options = {}
         self._side = None
+        self._reps = []
+        self._available_options = {}
         self._input_type = None
 
     def _process_options(self):
@@ -182,17 +184,12 @@ class Output:
         elif self._side == Side.NEUTRAL:
             self.side += Output.rng_prompt
 
-    def _process_input_type(self):
-        if self._input_type != None:
-            self.input_type = {int(self._input_type): str(self._input_type)}
-
     def show(self, include_new_line=True):
 
         self._process_options()
         self._process_side()
-        self._process_input_type()
 
-        shown_items = (self.notification, self.side, self.prompt,
+        shown_items = (self.selected_this_turn, self.notification, self.side, self.prompt,
                        self.current_selection, self.reps, self.available_options_header,
                        self.available_options, self.commit)
 
@@ -209,12 +206,13 @@ class Output:
     @property
     def json(self):
         return {
+            'selected_this_turn': self.selected_this_turn,
             'notification': self.notification,
             'side': self._side,
-            'input_type': self.input_type,
+            'input_type': self._input_type,
             'prompt': self.prompt,
             'current_selection': self.current_selection,
-            'reps': self.reps,
+            'reps': self._reps,
             'available_options': self._available_options,
             'commit': self.commit,
             'player_view': self.player_view.json if self.player_view else ''

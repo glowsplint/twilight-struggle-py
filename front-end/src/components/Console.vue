@@ -1,16 +1,17 @@
 <template>
-  <div>
-    Boop
+  <div id="console">
+    <pre>
+      {{ gameLog }}
+    </pre>
   </div>
 </template>
 
 <script>
-import { mapState } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 
 export default {
   name: 'Console',
   methods: {},
-  mounted() {},
   computed: {
     moreComputed() {
       return null
@@ -18,18 +19,18 @@ export default {
     ...mapState({
       gameInProgress: state => state.locals.gameInProgress,
       replaceInProgress: state => state.locals.replaceInProgress
+    }),
+    ...mapGetters({
+      gameLog: 'gameLog'
     })
-  },
-  data() {
-    return {
-      justify: 'space-around'
-    }
   }
 }
 </script>
 
 <style>
-html {
-  overflow: true;
+pre {
+  height: 70vh;
+  overflow: auto;
+  font-size: 90%;
 }
 </style>
