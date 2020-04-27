@@ -34,37 +34,11 @@ import { mapState } from 'vuex'
 
 export default {
   name: 'Home',
-  methods: {
-    newGame() {
-      this.$socket.client.emit('client_move', { move: 'new' })
-      this.$router.push('/game')
-    },
-    continueGame() {
-      this.$router.push('/game')
-    },
-    loadGame() {
-      this.$socket.client.emit('client_load_game')
-      console.log('Game loading..')
-    },
-    saveGame() {
-      this.$socket.client.emit('client_save_game')
-      console.log('Game saving..')
-    }
-  },
   mounted() {
     if (this.gameInProgress) {
       this.clickables.find(item => item.title == 'New Game').display = false
       this.clickables.find(item => item.title == 'Continue Game').display = true
     }
-  },
-  computed: {
-    moreComputed() {
-      return null
-    },
-    ...mapState({
-      gameInProgress: state => state.locals.gameInProgress,
-      replaceInProgress: state => state.locals.replaceInProgress
-    })
   },
   data() {
     return {
@@ -103,6 +77,32 @@ export default {
           display: true
         }
       ]
+    }
+  },
+  computed: {
+    moreComputed() {
+      return null
+    },
+    ...mapState({
+      gameInProgress: state => state.locals.gameInProgress,
+      replaceInProgress: state => state.locals.replaceInProgress
+    })
+  },
+  methods: {
+    newGame() {
+      this.$socket.client.emit('client_move', { move: 'new' })
+      this.$router.push('/game')
+    },
+    continueGame() {
+      this.$router.push('/game')
+    },
+    loadGame() {
+      this.$socket.client.emit('client_load_game')
+      console.log('Game loading..')
+    },
+    saveGame() {
+      this.$socket.client.emit('client_save_game')
+      console.log('Game saving..')
     }
   }
 }
