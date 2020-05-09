@@ -30,13 +30,11 @@
           :color="connectionStatus ? `green` : `red`"
           text-color="white"
           v-bind:key="connectionStatus"
-        >
-          {{ connectionStatus ? 'Connected' : 'Disconnected' }}
-        </v-chip>
+        >{{ connectionStatus ? 'Connected' : 'Disconnected' }}</v-chip>
       </transition>
-      <router-link to="/"
-        ><v-img src="@/assets/ts_icon_1024.png" max-height="40" max-width="40"
-      /></router-link>
+      <router-link to="/">
+        <v-img src="@/assets/ts_icon_1024.png" max-height="40" max-width="40" />
+      </router-link>
     </v-app-bar>
   </div>
 </template>
@@ -44,12 +42,21 @@
 <script>
 import { mapState } from 'vuex'
 export default {
-  props: {
-    source: String
+  mounted() {
+    this.$nextTick(function() {
+      window.addEventListener('keydown', event => {
+        if (!event.ctrlKey && event.key === '`') {
+          this.toggleDrawer()
+        }
+      })
+    })
   },
   methods: {
     toggleDrawer() {
       this.drawer = !this.drawer
+      updateGameListItem()
+    },
+    updateGameListItem() {
       if (this.gameInProgress) {
         this.sidebar.find(item => item.title == 'Game').disabled = false
       }
