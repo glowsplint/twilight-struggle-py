@@ -1,8 +1,18 @@
 <template>
   <div>
     <v-stage ref="stage" :config="stageSize" id="stage">
-      <v-layer ref="layer">
+      <v-layer ref="baseLayer">
         <v-image ref="image" :config="imageConfig" />
+        <v-rect
+          v-for="country in countries"
+          :key="country.name"
+          :config="countriesDataBlue(country)"
+        />
+        <v-rect
+          v-for="country in countries"
+          :key="country.name"
+          :config="countriesDataRed(country)"
+        />
       </v-layer>
     </v-stage>
     <img src="@/assets/big.jpg" alt="Twilight Map" ref="imgSrc" id="source" />
@@ -11,6 +21,7 @@
 
 <script>
 import { mapState, mapGetters } from 'vuex'
+import { countryData } from './countryData'
 
 export default {
   name: 'Map',
@@ -22,7 +33,7 @@ export default {
   },
   mounted() {
     const stage = this.$refs.stage.getNode()
-    const layer = this.$refs.layer.getNode()
+    const layer = this.$refs.baseLayer.getNode()
     const image = new Image()
 
     // Initialising the canvas image
@@ -33,9 +44,8 @@ export default {
       this.imageConfig.image = image
     }
 
-    let initialScaleLevel = { x: 0.5, y: 0.5 }
-    stage.scale(initialScaleLevel)
-    this.currentScaleLevel = 0.5
+    let initialScaleLevel = (this.currentScaleLevel = 0.5)
+    stage.scale({ x: initialScaleLevel, y: initialScaleLevel })
 
     // Zooming functionality
     let scaleBy = 0.9,
@@ -60,48 +70,32 @@ export default {
       ) {
         return
       } else {
-        let newScaleLevel =
-          event.evt.deltaY > 0 ? oldScale * scaleBy : oldScale / scaleBy
-        this.currentScaleLevel = newScaleLevel
+        let newScaleLevel = (this.currentScaleLevel =
+          event.evt.deltaY > 0 ? oldScale * scaleBy : oldScale / scaleBy)
         stage.scale({ x: this.currentScaleLevel, y: this.currentScaleLevel })
 
-        this.limits.x = window.innerWidth - 5100 * this.currentScaleLevel
-        this.limits.y = window.innerHeight * 0.7 - 3300 * this.currentScaleLevel
-
+        this.setLimits()
         let newPos = {
           x: pointer.x - mousePointTo.x * this.currentScaleLevel,
           y: pointer.y - mousePointTo.y * this.currentScaleLevel
         }
 
-        if (newPos.x > 0) {
-          newPos.x = 0
-        } else if (newPos.x < this.limits.x) {
-          newPos.x = this.limits.x
-        }
-        if (newPos.y > 0) {
-          newPos.y = 0
-        } else if (newPos.y < this.limits.y) {
-          newPos.y = this.limits.y
-        }
-
+        newPos = this.setCurrentCoordinates(newPos)
         stage.position(newPos)
         stage.batchDraw()
-
-        console.log(
-          this.currentScaleLevel.toFixed(3),
-          newPos.x,
-          newPos.y
-          // this.limits.x.toFixed(0),
-          // this.limits.y.toFixed(0)
-        )
       }
     })
 
-    layer.on('click', event => {
-      console.log(
-        stage.absolutePosition().x.toFixed(0),
-        stage.absolutePosition().y.toFixed(0)
-      )
+    // this shows where on the IMAGE we are clicking (adjusted for zoom/pan)
+    stage.on('click', event => {
+      // const pointer = stage.getPointerPosition()
+      const pointer = { x: 0, y: 0 }
+      pointer.x =
+        (this.currentX - stage.getPointerPosition().x) / this.currentScaleLevel
+      pointer.y =
+        (this.currentY - stage.getPointerPosition().y) / this.currentScaleLevel
+
+      console.log(`x: ${-pointer.x.toFixed(0)}, y: ${-pointer.y.toFixed(0)},`)
     })
   },
   data() {
@@ -116,8 +110,8 @@ export default {
       currentX: 0,
       currentY: 0,
       limits: {
-        x: window.innerWidth - 5100 * this.currentScaleLevel,
-        y: window.innerHeight * 0.7 - 3300 * this.currentScaleLevel
+        x: window.innerWidth - this.imageHeight * this.currentScaleLevel,
+        y: window.innerHeight * 0.7 - this.imageWidth * this.currentScaleLevel
       },
       imageWidth: 0,
       imageHeight: 0,
@@ -125,21 +119,22 @@ export default {
         image: null,
         draggable: true,
         dragBoundFunc: pos => {
-          this.limits.x = window.innerWidth - 5100 * this.currentScaleLevel
-          this.limits.y =
-            window.innerHeight * 0.7 - 3300 * this.currentScaleLevel
-          let newX = (this.currentX =
-            pos.x > 0 ? 0 : pos.x < this.limits.x ? this.limits.x : pos.x)
-          let newY = (this.currentY =
-            pos.y > 0 ? 0 : pos.y < this.limits.y ? this.limits.y : pos.y)
-          this.$refs.stage.getNode().absolutePosition({ x: newX, y: newY })
-          console.log(newX.toFixed(0), newY.toFixed(0))
-          return {
-            x: newX,
-            y: newY
-          }
+          this.setLimits()
+          const oldPos = { x: pos.x, y: pos.y }
+          const newPos = this.setCurrentCoordinates(oldPos)
+          this.$refs.stage
+            .getNode()
+            .absolutePosition({ x: newPos.x, y: newPos.y })
+          // console.log(newPos.x.toFixed(0), newPos.y.toFixed(0))
+          return newPos
         }
-      }
+      },
+      rectConfig: {
+        sides: 4,
+        width: 99,
+        height: 99
+      },
+      countries: countryData
     }
   },
   computed: {
@@ -152,6 +147,34 @@ export default {
     })
   },
   methods: {
+    countriesDataBlue(country) {
+      return { ...country, ...this.rectConfig, fill: 'blue' }
+    },
+    countriesDataRed(country) {
+      let { name, x, y, opacity } = country
+      x += 99
+      const redCountry = { name: name, x: x, y: y, opacity: opacity }
+      return { ...redCountry, ...this.rectConfig, fill: 'red' }
+    },
+    setLimits() {
+      this.limits.x = window.innerWidth - 5100 * this.currentScaleLevel
+      this.limits.y = window.innerHeight * 0.7 - 3300 * this.currentScaleLevel
+    },
+    setCurrentCoordinates({ x, y }) {
+      if (x > 0) {
+        x = 0
+      } else if (x < this.limits.x) {
+        x = this.limits.x
+      }
+      if (y > 0) {
+        y = 0
+      } else if (y < this.limits.y) {
+        y = this.limits.y
+      }
+      this.currentX = x
+      this.currentY = y
+      return { x: x, y: y }
+    },
     windowResize() {
       this.stageSize.width = window.innerWidth
       this.stageSize.height = window.innerHeight

@@ -30,7 +30,8 @@
           :color="connectionStatus ? `green` : `red`"
           text-color="white"
           v-bind:key="connectionStatus"
-        >{{ connectionStatus ? 'Connected' : 'Disconnected' }}</v-chip>
+          >{{ connectionStatus ? 'Connected' : 'Disconnected' }}</v-chip
+        >
       </transition>
       <router-link to="/">
         <v-img src="@/assets/ts_icon_1024.png" max-height="40" max-width="40" />
