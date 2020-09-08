@@ -105,7 +105,7 @@ class Input:
     @property
     def complete(self):
         '''
-        Returns True if no more input is reqOutputred, False if input is not
+        Returns True if no more input is required, False if input is not
         complete.
         '''
         return (not self.reps or len(self.selection) == len(self.discarded_options)
@@ -130,6 +130,9 @@ class Output:
     Input_types are the corresponding InputType enumeration from enums.
     Prompts are similar to the headers at the top of the Steam version.
 
+    ----------
+    Attributes
+    ----------
     There are two types of attributes; those with underscore prefixes and those without.
     Underscored attributes are the "raw form" and need to be processed via the _process()
         methods before display on the CLI, but are suitable for sending as JSON payloads
@@ -155,7 +158,7 @@ class Output:
     def __init__(self):
 
         self.selected_this_turn = ''
-        self.notification = ''
+        self.notification = []
         self.side = ''
         self.input_type = {}
         self.prompt = ''
@@ -165,6 +168,7 @@ class Output:
         self.available_options = ''
         self.commit = ''
         self.player_view = None
+        self.map = None
 
         self._side = None
         self._reps = []
@@ -189,7 +193,7 @@ class Output:
         self._process_options()
         self._process_side()
 
-        shown_items = (self.selected_this_turn, self.notification, self.side, self.prompt,
+        shown_items = (self.selected_this_turn, *self.notification, self.side, self.prompt,
                        self.current_selection, self.reps, self.available_options_header,
                        self.available_options, self.commit)
 
@@ -205,6 +209,8 @@ class Output:
 
     @property
     def json(self):
+        if not hasattr(self, 'game_in_progress'):
+            self.game_in_progress = False
         return {
             'selected_this_turn': self.selected_this_turn,
             'notification': self.notification,
@@ -215,5 +221,6 @@ class Output:
             'reps': self._reps,
             'available_options': self._available_options,
             'commit': self.commit,
-            'player_view': self.player_view.json if self.player_view else ''
+            'player_view': self.player_view.json if self.player_view else '',
+            'game_in_progress': self.game_in_progress
         }

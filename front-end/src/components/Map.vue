@@ -5,13 +5,18 @@
         <v-image ref="image" :config="imageConfig" />
         <v-rect
           v-for="country in countries"
-          :key="country.name"
+          :key="country.name + 'Blue'"
           :config="countriesDataBlue(country)"
         />
         <v-rect
           v-for="country in countries"
-          :key="country.name"
+          :key="country.name + 'Red'"
           :config="countriesDataRed(country)"
+        />
+        <v-text
+          v-for="country in countries"
+          :key="country.name + 'US'"
+          :config="influenceConfig"
         />
       </v-layer>
     </v-stage>
@@ -48,10 +53,6 @@ export default {
     stage.scale({ x: initialScaleLevel, y: initialScaleLevel })
 
     // Zooming functionality
-    let scaleBy = 0.9,
-      minScaleLimit = 0.4,
-      maxScaleLimit = 1.3
-
     stage.on('wheel', event => {
       event.evt.preventDefault()
       let oldScale = stage.scaleX()
@@ -62,25 +63,31 @@ export default {
         y: (pointer.y - stage.y()) / oldScale
       }
 
-      if (this.currentScaleLevel > maxScaleLimit && event.evt.deltaY < 0) {
+      let widthLimit = window.innerWidth / this.imageWidth,
+        heightLimit = window.innerHeight / this.imageHeight
+
+      let scaleBy = 0.9,
+        minScaleLimit = widthLimit > heightLimit ? widthLimit : heightLimit,
+        maxScaleLimit = 1.3
+
+      // Looks ahead to proposed scale level and rejects if past limits
+      let newScaleLevel =
+        event.evt.deltaY > 0 ? oldScale * scaleBy : oldScale / scaleBy
+      if (newScaleLevel > maxScaleLimit && event.evt.deltaY < 0) {
         return
-      } else if (
-        this.currentScaleLevel < minScaleLimit &&
-        event.evt.deltaY > 0
-      ) {
+      } else if (newScaleLevel < minScaleLimit && event.evt.deltaY > 0) {
         return
       } else {
-        let newScaleLevel = (this.currentScaleLevel =
-          event.evt.deltaY > 0 ? oldScale * scaleBy : oldScale / scaleBy)
+        this.currentScaleLevel = newScaleLevel
         stage.scale({ x: this.currentScaleLevel, y: this.currentScaleLevel })
-
         this.setLimits()
+
         let newPos = {
           x: pointer.x - mousePointTo.x * this.currentScaleLevel,
           y: pointer.y - mousePointTo.y * this.currentScaleLevel
         }
-
         newPos = this.setCurrentCoordinates(newPos)
+        // console.log(this.currentScaleLevel)
         stage.position(newPos)
         stage.batchDraw()
       }
@@ -95,12 +102,12 @@ export default {
       pointer.y =
         (this.currentY - stage.getPointerPosition().y) / this.currentScaleLevel
 
-      console.log(`x: ${-pointer.x.toFixed(0)}, y: ${-pointer.y.toFixed(0)},`)
+      // console.log(`x: ${-pointer.x.toFixed(0)}, y: ${-pointer.y.toFixed(0)},`) // Prints location of click on image in original pixel units
     })
   },
   data() {
     return {
-      currentScaleLevel: 1,
+      currentScaleLevel: 0.5,
       clientAction: '',
       state: {},
       stageSize: {
@@ -122,9 +129,10 @@ export default {
           this.setLimits()
           const oldPos = { x: pos.x, y: pos.y }
           const newPos = this.setCurrentCoordinates(oldPos)
-          this.$refs.stage
-            .getNode()
-            .absolutePosition({ x: newPos.x, y: newPos.y })
+          this.$refs.stage.getNode().absolutePosition({
+            x: newPos.x,
+            y: newPos.y
+          })
           // console.log(newPos.x.toFixed(0), newPos.y.toFixed(0))
           return newPos
         }
@@ -143,7 +151,7 @@ export default {
     },
     ...mapState({
       gameInProgress: state => state.locals.gameInProgress,
-      replaceInProgress: state => state.locals.replaceInProgress
+      replayInProgress: state => state.locals.replayInProgress
     })
   },
   methods: {
@@ -155,6 +163,9 @@ export default {
       x += 99
       const redCountry = { name: name, x: x, y: y, opacity: opacity }
       return { ...redCountry, ...this.rectConfig, fill: 'red' }
+    },
+    influenceConfig() {
+      return { fontSize: 30, fontFamily: 'Calibri', text: '' }
     },
     setLimits() {
       this.limits.x = window.innerWidth - 5100 * this.currentScaleLevel

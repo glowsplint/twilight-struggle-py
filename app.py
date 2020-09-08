@@ -33,8 +33,8 @@ class GUI(threading.Thread, UI):
         Waits on a socket event to update the self.user_choice variable.
         Called by the start() method inherited by threading.Thread.
 
-    Variables
-    ---------
+    Attributes
+    ----------
     self.user_choice :
         Contains the string of actions sent by the client.
         Updated when the socket listener receives the socket event 'client_move'.
@@ -51,17 +51,17 @@ class GUI(threading.Thread, UI):
 
     def run(self):
 
-        self.output_state.notification += 'Initalising game.'
+        self.output_state.notification.append('Initalising game.')
         self.client_response = threading.Event()
 
         while True:
 
             self.prepare_json()
-            self.output_state.show()  # different -- this line is not printing anything!!
+            self.output_state.show()
 
             self.client_response.wait()
             self.client_response.clear()
-            user_choice = self.user_choice.split(' ', 1)  # different
+            user_choice = self.user_choice.split(' ', 1)
             end_loop = self.parse_input(user_choice)
             if end_loop:
                 break
@@ -75,22 +75,22 @@ class GUI(threading.Thread, UI):
 
 
 # Constant definitions
-dist = Path("./front-end/dist/")
-flask_url = "http://localhost:5000"
-vue_url = "http://localhost:8080"
+DIST = Path("./front-end/dist/")
+FLASK_URL = "http://localhost:5000"
+VUE_URL = "http://localhost:8080"
 
 # Starts game engine, back-end and socket connection
 app = VueCompatibleFlask(__name__,
-                         static_folder=str(dist/"static"),
-                         template_folder=str(dist))
+                         static_folder=str(DIST/"static"),
+                         template_folder=str(DIST))
 socketio = SocketIO(app, json=json,
-                    cors_allowed_origins=[vue_url, flask_url])
+                    cors_allowed_origins=(VUE_URL, FLASK_URL))
 gui = GUI(daemon=True)
 
 # Provides -n command line argument
 parser = argparse.ArgumentParser(
     description='Runs the Flask development server for twilight-struggle-py.')
-parser.add_argument('-n', '--no_browser', action='store_true',
+parser.add_argument('-n', '--nobrowser', action='store_true',
                     help='Silences the automatic opening of a browser window.')
 args = parser.parse_args()
 
@@ -134,16 +134,8 @@ def client_restart():
         print('GUI is running - no restart was conducted.')
 
 
-@socketio.on('client_request_game_state')
-def client_request_game_state():
-    print('Received query on game state.')
-    emit('server_request_game_state', {'response': gui.is_alive()})
-    print(
-        f'Sending via server_request_game_state: {gui.is_alive()}')
-
-
-if 'WERKZEUG_RUN_MAIN' not in os.environ and not args.no_browser:
+if 'WERKZEUG_RUN_MAIN' not in os.environ and not args.nobrowser:
     threading.Timer(
-        1.25, lambda: webbrowser.open(flask_url)).start()
+        1.25, lambda: webbrowser.open(FLASK_URL)).start()
 gui.start()
 socketio.run(app, debug=True)

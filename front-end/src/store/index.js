@@ -16,7 +16,7 @@ export default new Vuex.Store({
       replayInProgress: false
     },
     globals: {
-      notification: '',
+      notification: [],
       side: '',
       inputType: '',
       prompt: '',
@@ -27,7 +27,8 @@ export default new Vuex.Store({
     },
     print: {
       selected_this_turn: '',
-      notification: '',
+      notification: [],
+      _notification: '',
       reps: '',
       availableOptions: '',
       _availableOptions: '',
@@ -45,10 +46,8 @@ export default new Vuex.Store({
       state.globals.reps = payload.reps
       state.globals.availableOptions = payload.available_options
       state.globals.commit = payload.commit
+      state.locals.gameInProgress = payload.game_in_progress
       console.log(payload)
-    },
-    SERVER_REQUEST_GAME_STATE(state, payload) {
-      state.locals.gameInProgress = payload.response
     },
     CONSTRUCT_GAME_LOG(state) {
       // Process selected_this_turn
@@ -72,6 +71,12 @@ export default new Vuex.Store({
         state.print._availableOptions += `${key} \t ${value} \n`
       }
 
+      // Process notifications
+      state.print._notification = ``
+      for (let [_, value] of state.globals.notification.entries()) {
+        state.print._notification += `${value} \n`
+      }
+
       // Process inputType
 
       // if (state.globals._inputType != null){
@@ -83,16 +88,13 @@ export default new Vuex.Store({
     socket_serverMove({ commit }, payload) {
       commit('SERVER_MOVE', payload)
       commit('CONSTRUCT_GAME_LOG')
-    },
-    socket_serverRequestGameState({ commit }, payload) {
-      commit('SERVER_REQUEST_GAME_STATE', payload)
     }
   },
   getters: {
     gameLog: state => {
       if (state.print.side) {
         return [
-          state.globals.notification,
+          state.print._notification,
           state.print.selected_this_turn,
           state.globals.currentSelection,
           state.print.side,
@@ -101,7 +103,7 @@ export default new Vuex.Store({
           state.print._availableOptions
         ].join('\n')
       }
-      return state.globals.notification
+      return state.print._notification
     }
   }
 })

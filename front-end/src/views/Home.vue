@@ -9,14 +9,17 @@
     </v-row>
 
     <v-row justify="center">
-      <v-tooltip top v-for="clickable in clickables" :key="clickable.title">
+      <v-tooltip
+        top
+        v-for="clickable in filteredClickables"
+        :key="clickable.title"
+      >
         <template v-slot:activator="{ on }">
           <v-btn
             class="ma-2"
             @click="clickable.onPress"
             :disabled="clickable.disabled"
             v-on="on"
-            v-if="clickable.display"
           >
             <v-icon class="mr-3">{{ clickable.icon }}</v-icon>
             {{ clickable.title }}
@@ -25,7 +28,7 @@
         <span>{{ clickable.tooltip }}</span>
       </v-tooltip>
     </v-row>
-    <v-row justify="center"> </v-row>
+    <v-row justify="center"></v-row>
   </v-container>
 </template>
 
@@ -34,12 +37,6 @@ import { mapState } from 'vuex'
 
 export default {
   name: 'Home',
-  mounted() {
-    if (this.gameInProgress) {
-      this.clickables.find(item => item.title == 'New Game').display = false
-      this.clickables.find(item => item.title == 'Continue Game').display = true
-    }
-  },
   data() {
     return {
       justify: 'space-around',
@@ -49,43 +46,44 @@ export default {
           icon: 'mdi-controller-classic-outline',
           onPress: this.newGame,
           disabled: false,
-          tooltip: 'Start a new game.',
-          display: true
+          tooltip: 'Start a new game.'
         },
         {
           title: 'Continue Game',
           icon: 'mdi-controller-classic-outline',
           onPress: this.continueGame,
           disabled: false,
-          tooltip: 'Continue the current game.',
-          display: false
+          tooltip: 'Continue the current game.'
         },
         {
           title: 'Load Game',
           icon: 'mdi-folder-upload-outline',
           onPress: this.loadGame,
           disabled: true,
-          tooltip: 'Load a .tsg file for playback.',
-          display: true
+          tooltip: 'Load a .tsg file for playback.'
         },
         {
           title: 'Save Game',
           icon: 'mdi-content-save-move-outline',
           onPress: this.saveGame,
           disabled: true,
-          tooltip: 'Save the current game to a .tsg file.',
-          display: true
+          tooltip: 'Save the current game to a .tsg file.'
         }
       ]
     }
   },
   computed: {
-    moreComputed() {
-      return null
+    display() {
+      return [!this.gameInProgress, this.gameInProgress, true, true]
+    },
+    filteredClickables() {
+      if (this.gameInProgress) {
+        return this.clickables.slice(1)
+      } else return this.clickables.slice(0, 1).concat(this.clickables.slice(2))
     },
     ...mapState({
       gameInProgress: state => state.locals.gameInProgress,
-      replaceInProgress: state => state.locals.replaceInProgress
+      replayInProgress: state => state.locals.replayInProgress
     })
   },
   methods: {

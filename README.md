@@ -2,15 +2,17 @@
 
 ## Project outline
 
-We're creating a port of the Twilight Struggle board game. The goal of this project is to implement a reinforcement learning algorithm that would be a stronger computer player than the natively implemented one.
+This project is a port of the Twilight Struggle board game. The goal of this project is to implement a reinforcement learning algorithm that would be a stronger computer player than the natively implemented one.
 
 ## Getting started
 
-Clone the repo into your environment. You may choose to play via the GUI or the CLI.
+Clone the repo into your environment. You can play via the GUI or the CLI.
 
 ### GUI
 
-Run `python app.py [-n]` in your command line. The `-n` command line argument stops a browser window from automatically opening.
+Run `python app.py [-n]` in your command line. The `-n` command line argument stops a browser window from automatically opening. This version uses the already built Vue frontend. If you are working on the front-end development, you should need to run hot-reloading instead (instructions [below](https://github.com/glowsplint/twilight-struggle-py/tree/gui#how-to-start-the-development-server)).
+
+Under the Game tab, `` Ctrl+` `` toggles the CLI console. `` ` `` toggles the navigation bar.
 
 ### CLI
 
@@ -50,6 +52,16 @@ The main Python dependencies are [`flask`](https://github.com/pallets/flask) and
 
 The main external Vue dependencies are [`vue-socketIO-extended`](https://github.com/probil/vue-socket.io-extended/) and [`vuetify`](https://github.com/vuetifyjs/vuetify).
 
-### Development
+### How to start the development server
 
-This repo is a work-in-progress so expect a constant flow of updates.
+Run `vue ui` into `vue-cli-service serve` as the hot-reloading frontend development server, while concurrently running `python app.py -n` as the backend server running the game engine.
+
+### To-do
+
+1. Display current influence for every country
+2. Display turn record + AR
+3. Display space race
+4. Display DEFCON status
+5. Display Milops
+6. Display VPs
+7. Display current hand

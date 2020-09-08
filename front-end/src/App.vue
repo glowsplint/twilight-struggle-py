@@ -24,19 +24,16 @@ export default {
     },
     ...mapState({
       gameInProgress: state => state.locals.gameInProgress,
-      replaceInProgress: state => state.locals.replaceInProgress
+      replayInProgress: state => state.locals.replayInProgress
     })
   },
   sockets: {
     connect() {
-      this.$socket.client.emit('client_request_game_state')
+      this.$socket.client.emit('client_move', { move: 's' })
       console.log('Socket connected: now querying game state..')
     },
     disconnect() {
       console.log('Socket disconnected.')
-    },
-    server_request_game_state() {
-      console.log(`Server response: gameInProgress = ${this.gameInProgress}`)
     }
   }
 }

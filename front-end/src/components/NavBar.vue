@@ -55,12 +55,11 @@ export default {
   methods: {
     toggleDrawer() {
       this.drawer = !this.drawer
-      updateGameListItem()
+      this.updateGameListItem()
     },
     updateGameListItem() {
-      if (this.gameInProgress) {
-        this.sidebar.find(item => item.title == 'Game').disabled = false
-      }
+      this.sidebar.find(item => item.title == 'Game').disabled = !this
+        .gameInProgress
     }
   },
   computed: {
