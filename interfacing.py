@@ -151,9 +151,9 @@ class Output:
         Sets self.<attribute_name> from the value of self._<attribute_name>
     '''
 
-    ussr_prompt = '----- USSR Player: -----'
-    us_prompt = '----- US Player: -----'
-    rng_prompt = '----- RNG: -----'
+    ussr_prompt = '\n\n----- USSR Player: -----'
+    us_prompt = '\n\n----- US Player: -----'
+    rng_prompt = '\n\n----- RNG: -----'
 
     def __init__(self):
 

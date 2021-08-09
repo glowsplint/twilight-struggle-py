@@ -201,7 +201,7 @@ class Five_Year_Plan(Card):
 
     def callback(self, game, card_name: str):
         game.input_state.reps -= 1
-        game.output_state.notification += f'{card_name} was selected by Five_Year_Plan.\n'
+        game.output_state.notification += [f'{card_name} was selected by Five_Year_Plan.']
         if game.cards[card_name].info.owner == Side.US:
             # must append backwards!
             game.stage_list.append(
@@ -1127,7 +1127,7 @@ class The_Cambridge_Five(Card):
             if len(us_scoring_cards):
                 game.players[Side.USSR].opp_hand.update(us_scoring_cards)
             else:
-                game.output_state.notification += 'US player has no scoring cards.\n'
+                game.output_state.notification += ['US player has no scoring cards.']
                 game.players[Side.USSR].opp_hand_no_scoring_cards = True
 
             self.event_occurred = True
@@ -1266,7 +1266,7 @@ class Southeast_Asia_Scoring(Card):
             vps[Side.US] * Side.US.vp_mult
 
         swing += game.map['Thailand'].control.vp_mult
-        game.output_state.notification += f'Southeast Asia scores for {swing} VP\n'
+        game.output_state.notification += [f'Southeast Asia scores for {swing} VP']
         game.change_vp(swing)
 
 
@@ -1303,7 +1303,7 @@ class Cuban_Missile_Crisis(Card, Effect):
 
     def effect_coup_after(self, game, effect_side, coup_side, country_name, result):
         if coup_side != effect_side:
-            game.output_state.notification += 'Cuban Missile Crisis: game ends.\n'
+            game.output_state.notification += ['Cuban Missile Crisis: game ends.']
             game.set_defcon(1)
 
     def cmc_remove_callback(self, game, side: Side, opt: str):
@@ -1479,8 +1479,8 @@ class Summit(Card):
             self.choices(game, Side.USSR)
         elif outcome == 'US success':
             self.choices(game, Side.US)
-        game.output_state.notification += (
-            f'{outcome} with (USSR, US) modified rolls of ({num[Side.USSR]}, {num[Side.US]}). ussr_advantage is {ussr_advantage}.\n')
+        game.output_state.notification += [(
+            f'{outcome} with (USSR, US) modified rolls of ({num[Side.USSR]}, {num[Side.US]}). ussr_advantage is {ussr_advantage}.')]
         return True
 
     def use_event(self, game, side: Side):
@@ -1644,7 +1644,7 @@ class Kitchen_Debates(Card):
     def use_event(self, game, side: Side):
         self.event_occurred = True
         if self.can_event(game, Side.US):
-            game.output_state.notification += 'USSR poked in the chest by US player!\n'
+            game.output_state.notification += ['USSR poked in the chest by US player!']
             game.change_vp(-2)
 
 
@@ -2130,7 +2130,7 @@ class Grain_Sales_to_Soviets(Card):
 
     def random_card_callback(self, game, card_name: str):
         game.input_state.reps -= 1
-        game.output_state.notification += f'{card_name} was selected by Grain Sales to Soviets.\n'
+        game.output_state.notification += [f'{card_name} was selected by Grain Sales to Soviets.']
         game.hand[Side.USSR].remove(card_name)
         game.hand[Side.US].append(card_name)
         game.stage_list.append(
