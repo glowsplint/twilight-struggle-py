@@ -2,7 +2,7 @@
   <v-container fluid app>
     <v-row justify="center">
       <v-col>
-        <v-row style="height:400px">
+        <v-row style="height: 400px">
           <v-img src="@/assets/TitleSplash.png" height="400px" contain eager />
         </v-row>
       </v-col>
@@ -46,30 +46,30 @@ export default {
           icon: 'mdi-controller-classic-outline',
           onPress: this.newGame,
           disabled: false,
-          tooltip: 'Start a new game.'
+          tooltip: 'Start a new game.',
         },
         {
           title: 'Continue Game',
           icon: 'mdi-controller-classic-outline',
           onPress: this.continueGame,
           disabled: false,
-          tooltip: 'Continue the current game.'
+          tooltip: 'Continue the current game.',
         },
         {
           title: 'Load Game',
           icon: 'mdi-folder-upload-outline',
           onPress: this.loadGame,
           disabled: true,
-          tooltip: 'Load a .tsg file for playback.'
+          tooltip: 'Load a .tsg file for playback.',
         },
         {
           title: 'Save Game',
           icon: 'mdi-content-save-move-outline',
           onPress: this.saveGame,
           disabled: true,
-          tooltip: 'Save the current game to a .tsg file.'
-        }
-      ]
+          tooltip: 'Save the current game to a .tsg file.',
+        },
+      ],
     }
   },
   computed: {
@@ -82,9 +82,9 @@ export default {
       } else return this.clickables.slice(0, 1).concat(this.clickables.slice(2))
     },
     ...mapState({
-      gameInProgress: state => state.locals.gameInProgress,
-      replayInProgress: state => state.locals.replayInProgress
-    })
+      gameInProgress: (state) => state.locals.gameInProgress,
+      replayInProgress: (state) => state.locals.replayInProgress,
+    }),
   },
   methods: {
     newGame() {
@@ -101,8 +101,8 @@ export default {
     saveGame() {
       this.$socket.client.emit('client_save_game')
       console.log('Game saving..')
-    }
-  }
+    },
+  },
 }
 </script>
 

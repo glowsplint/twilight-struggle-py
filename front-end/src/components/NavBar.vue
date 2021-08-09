@@ -44,8 +44,8 @@
 import { mapState } from 'vuex'
 export default {
   mounted() {
-    this.$nextTick(function() {
-      window.addEventListener('keydown', event => {
+    this.$nextTick(function () {
+      window.addEventListener('keydown', (event) => {
         if (!event.ctrlKey && event.key === '`') {
           this.toggleDrawer()
         }
@@ -58,18 +58,18 @@ export default {
       this.updateGameListItem()
     },
     updateGameListItem() {
-      this.sidebar.find(item => item.title == 'Game').disabled = !this
-        .gameInProgress
-    }
+      this.sidebar.find((item) => item.title == 'Game').disabled =
+        !this.gameInProgress
+    },
   },
   computed: {
     connectionStatus() {
       return this.$socket.connected
     },
     ...mapState({
-      gameInProgress: state => state.locals.gameInProgress,
-      replaceInProgress: state => state.locals.replaceInProgress
-    })
+      gameInProgress: (state) => state.locals.gameInProgress,
+      replaceInProgress: (state) => state.locals.replaceInProgress,
+    }),
   },
   data() {
     return {
@@ -81,23 +81,23 @@ export default {
           title: 'Analysis',
           link: '/analysis',
           icon: 'mdi-chart-scatter-plot',
-          disabled: true
+          disabled: true,
         },
         {
           title: 'Replay Viewer',
           link: 'replay',
           icon: 'mdi-play-speed',
-          disabled: true
+          disabled: true,
         },
         {
           title: 'Card Gallery',
           link: 'cards',
           icon: 'mdi-cards-outline',
-          disabled: true
-        }
-      ]
+          disabled: true,
+        },
+      ],
     }
-  }
+  },
 }
 </script>
 

@@ -9,11 +9,11 @@ export default new Vuex.Store({
       ussrPrompt: '----- USSR Player: -----',
       usPrompt: '----- US Player: -----',
       rngPrompt: '----- RNG: -----',
-      availableOptionsHeader: 'Available options:'
+      availableOptionsHeader: 'Available options:',
     },
     locals: {
       gameInProgress: false,
-      replayInProgress: false
+      replayInProgress: false,
     },
     globals: {
       notification: [],
@@ -23,7 +23,7 @@ export default new Vuex.Store({
       currentSelection: '',
       reps: '',
       availableOptions: '',
-      commit: ''
+      commit: '',
     },
     print: {
       selected_this_turn: '',
@@ -32,8 +32,8 @@ export default new Vuex.Store({
       reps: '',
       availableOptions: '',
       _availableOptions: '',
-      side: ''
-    }
+      side: '',
+    },
   },
   mutations: {
     SERVER_MOVE(state, payload) {
@@ -82,16 +82,16 @@ export default new Vuex.Store({
       // if (state.globals._inputType != null){
       //     state.globals.inputType = {int(state.globals._inputType): str(state.globals._inputType)}
       //   }
-    }
+    },
   },
   actions: {
     socket_serverMove({ commit }, payload) {
       commit('SERVER_MOVE', payload)
       commit('CONSTRUCT_GAME_LOG')
-    }
+    },
   },
   getters: {
-    gameLog: state => {
+    gameLog: (state) => {
       if (state.print.side) {
         return [
           state.print._notification,
@@ -100,10 +100,10 @@ export default new Vuex.Store({
           state.print.side,
           state.print.reps,
           state.constants.availableOptionsHeader,
-          state.print._availableOptions
+          state.print._availableOptions,
         ].join('\n')
       }
       return state.print._notification
-    }
-  }
+    },
+  },
 })

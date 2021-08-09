@@ -16,8 +16,8 @@ export default {
   name: 'Game',
   components: { Console, Map },
   mounted() {
-    this.$nextTick(function() {
-      window.addEventListener('keydown', event => {
+    this.$nextTick(function () {
+      window.addEventListener('keydown', (event) => {
         if (event.ctrlKey && event.key === '`') {
           this.toggleConsole()
         }
@@ -27,19 +27,19 @@ export default {
   data() {
     return {
       state: {},
-      isConsoleShown: false
+      isConsoleShown: false,
     }
   },
   computed: {
     moreComputed() {
       return null
-    }
+    },
   },
   methods: {
     toggleConsole() {
       this.isConsoleShown = !this.isConsoleShown
-    }
-  }
+    },
+  },
 }
 </script>
 

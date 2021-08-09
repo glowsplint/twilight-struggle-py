@@ -51,19 +51,19 @@ export default {
       return null
     },
     ...mapState({
-      gameInProgress: state => state.locals.gameInProgress,
-      replaceInProgress: state => state.locals.replaceInProgress
+      gameInProgress: (state) => state.locals.gameInProgress,
+      replaceInProgress: (state) => state.locals.replaceInProgress,
     }),
     ...mapGetters({
-      gameLog: 'gameLog'
-    })
+      gameLog: 'gameLog',
+    }),
   },
   data() {
     return {
       clientAction: '',
       state: {},
       isConsoleShown: true,
-      consoleGameLog: 'Console Game Log'
+      consoleGameLog: 'Console Game Log',
     }
   },
   methods: {
@@ -84,8 +84,8 @@ export default {
     restart() {
       console.log('Requesting for game restart.')
       this.$socket.client.emit('client_restart')
-    }
-  }
+    },
+  },
 }
 </script>
 

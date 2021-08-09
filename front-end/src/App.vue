@@ -1,10 +1,10 @@
 <template>
   <v-app>
-    <v-content>
+    <v-main>
       <transition name="slide-fade" mode="out-in">
         <router-view />
       </transition>
-    </v-content>
+    </v-main>
     <NavBar />
     <Footer />
   </v-app>
@@ -23,9 +23,9 @@ export default {
       return null
     },
     ...mapState({
-      gameInProgress: state => state.locals.gameInProgress,
-      replayInProgress: state => state.locals.replayInProgress
-    })
+      gameInProgress: (state) => state.locals.gameInProgress,
+      replayInProgress: (state) => state.locals.replayInProgress,
+    }),
   },
   sockets: {
     connect() {
@@ -34,8 +34,8 @@ export default {
     },
     disconnect() {
       console.log('Socket disconnected.')
-    }
-  }
+    },
+  },
 }
 </script>
 

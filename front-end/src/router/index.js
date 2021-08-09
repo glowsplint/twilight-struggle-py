@@ -10,29 +10,29 @@ const routes = [
     name: 'Home',
     component: Home,
     meta: {
-      title: 'Twilight Struggle'
-    }
+      title: 'Twilight Struggle',
+    },
   },
   {
     path: '/analysis',
     name: 'Analysis',
     component: () => import('../views/Analysis.vue'),
     meta: {
-      title: 'Game Analysis'
-    }
+      title: 'Game Analysis',
+    },
   },
   {
     path: '/game',
     name: 'Game',
     component: () => import('../views/Game.vue'),
     meta: {
-      title: 'Twilight Struggle'
-    }
-  }
+      title: 'Twilight Struggle',
+    },
+  },
 ]
 
 const router = new VueRouter({
-  routes
+  routes,
 })
 
 // Changing title for every router link

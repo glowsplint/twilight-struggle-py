@@ -54,6 +54,7 @@ The main external Vue dependencies are [`vue-socketIO-extended`](https://github.
 
 ### How to start the development server
 
+If running for the first time, run `npm install` to download the dependencies indicated in `package.json`.
 Run `vue ui` into `vue-cli-service serve` as the hot-reloading frontend development server, while concurrently running `python app.py -n` as the backend server running the game engine.
 
 ### To-do

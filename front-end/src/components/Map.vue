@@ -16,7 +16,7 @@
         <v-text
           v-for="country in countries"
           :key="country.name + 'US'"
-          :config="influenceConfig"
+          :config="influenceConfig()"
         />
       </v-layer>
     </v-stage>
@@ -53,14 +53,14 @@ export default {
     stage.scale({ x: initialScaleLevel, y: initialScaleLevel })
 
     // Zooming functionality
-    stage.on('wheel', event => {
+    stage.on('wheel', (event) => {
       event.evt.preventDefault()
       let oldScale = stage.scaleX()
       let pointer = stage.getPointerPosition()
 
       let mousePointTo = {
         x: (pointer.x - stage.x()) / oldScale,
-        y: (pointer.y - stage.y()) / oldScale
+        y: (pointer.y - stage.y()) / oldScale,
       }
 
       let widthLimit = window.innerWidth / this.imageWidth,
@@ -84,7 +84,7 @@ export default {
 
         let newPos = {
           x: pointer.x - mousePointTo.x * this.currentScaleLevel,
-          y: pointer.y - mousePointTo.y * this.currentScaleLevel
+          y: pointer.y - mousePointTo.y * this.currentScaleLevel,
         }
         newPos = this.setCurrentCoordinates(newPos)
         // console.log(this.currentScaleLevel)
@@ -94,7 +94,7 @@ export default {
     })
 
     // this shows where on the IMAGE we are clicking (adjusted for zoom/pan)
-    stage.on('click', event => {
+    stage.on('click', (event) => {
       // const pointer = stage.getPointerPosition()
       const pointer = { x: 0, y: 0 }
       pointer.x =
@@ -112,37 +112,37 @@ export default {
       state: {},
       stageSize: {
         width: window.innerWidth,
-        height: window.innerHeight
+        height: window.innerHeight,
       },
       currentX: 0,
       currentY: 0,
       limits: {
         x: window.innerWidth - this.imageHeight * this.currentScaleLevel,
-        y: window.innerHeight * 0.7 - this.imageWidth * this.currentScaleLevel
+        y: window.innerHeight * 0.7 - this.imageWidth * this.currentScaleLevel,
       },
       imageWidth: 0,
       imageHeight: 0,
       imageConfig: {
         image: null,
         draggable: true,
-        dragBoundFunc: pos => {
+        dragBoundFunc: (pos) => {
           this.setLimits()
           const oldPos = { x: pos.x, y: pos.y }
           const newPos = this.setCurrentCoordinates(oldPos)
           this.$refs.stage.getNode().absolutePosition({
             x: newPos.x,
-            y: newPos.y
+            y: newPos.y,
           })
           // console.log(newPos.x.toFixed(0), newPos.y.toFixed(0))
           return newPos
-        }
+        },
       },
       rectConfig: {
         sides: 4,
         width: 99,
-        height: 99
+        height: 99,
       },
-      countries: countryData
+      countries: countryData,
     }
   },
   computed: {
@@ -150,9 +150,9 @@ export default {
       return null
     },
     ...mapState({
-      gameInProgress: state => state.locals.gameInProgress,
-      replayInProgress: state => state.locals.replayInProgress
-    })
+      gameInProgress: (state) => state.locals.gameInProgress,
+      replayInProgress: (state) => state.locals.replayInProgress,
+    }),
   },
   methods: {
     countriesDataBlue(country) {
@@ -200,13 +200,13 @@ export default {
         }
         this.clientAction = ''
       }
-    }
+    },
   },
   sockets: {
-    'server-move': data => {
+    'server-move': (data) => {
       console.log(`Received from server: data = ${data.server_move}`)
-    }
-  }
+    },
+  },
 }
 </script>
 
