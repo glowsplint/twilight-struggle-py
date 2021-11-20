@@ -1,15 +1,14 @@
 import random
-
-from os import path
 from copy import deepcopy
 from datetime import datetime
+from os import path
 from textwrap import wrap
 
-from game_mechanics import Game
-from enums import Side, InputType, CardAction
-from world_map import MapRegion, CountryInfo
 from cards import Card
+from enums import CardAction, InputType, Side
+from game_mechanics import Game
 from interfacing import Input, Output
+from world_map import CountryInfo, MapRegion
 
 
 class UI:

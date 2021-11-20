@@ -1,9 +1,7 @@
 import enum
-from typing import Iterable, Callable
 
 
 class TrackEffects:
-
     def __init__(self, defcon: int = 0, vp: int = 0, milops: int = 0):
         self.defcon = defcon
         self.vp = vp
@@ -18,19 +16,18 @@ class TrackEffects:
     def __repr__(self):
         items = []
         if self.defcon:
-            items.append(f'DEFCON {self.defcon:+}')
+            items.append(f"DEFCON {self.defcon:+}")
 
         if self.vp:
-            items.append(f'VP {self.vp:+}')
+            items.append(f"VP {self.vp:+}")
 
         if self.milops:
-            items.append(f'Mil. Ops. {self.milops:+}')
+            items.append(f"Mil. Ops. {self.milops:+}")
 
-        return '; '.join(items)
+        return "; ".join(items)
 
 
 class CoupEffects(TrackEffects):
-
     def __init__(self, no_milops: bool = False, no_defcon_bg: bool = False, **kwargs):
         super().__init__(**kwargs)
         self.no_milops = no_milops
@@ -49,24 +46,23 @@ class CoupEffects(TrackEffects):
         if prefix:
             items.append(prefix)
         if self.no_milops:
-            items.append('No mil. ops. gained')
+            items.append("No mil. ops. gained")
 
         if self.no_defcon_bg:
-            items.append('No DEFCON reduction for battlegrounds')
+            items.append("No DEFCON reduction for battlegrounds")
 
-        return '; '.join(items)
+        return "; ".join(items)
 
 
 class RealignState:
-
     def __init__(self, side=None, reps=0, countries=None, defcon=None):
-        '''
+        """
 
         :param side: The side choosing the countries to realign.
         :param reps: Number of realignments
         :param countries: Countries attempted
         :param defcon: Simulated DEFCON status. None for actual DEFCON.
-        '''
+        """
         self.side = side
         self.reps = reps
         self.countries = [] if countries is None else countries
@@ -80,13 +76,12 @@ class RealignState:
     def __repr__(self):
         items = []
         if self.reps:
-            items.append(f'Remaining realignments {self.reps:+}')
+            items.append(f"Remaining realignments {self.reps:+}")
 
-        return '; '.join(items)
+        return "; ".join(items)
 
 
 class OpsInfState:
-
     def __init__(self, ops, countries=None):
         self.ops = ops
         self.countries = [] if countries is None else countries
@@ -99,9 +94,9 @@ class OpsInfState:
     def __repr__(self):
         items = []
         if self.ops:
-            items.append(f'Remaining realignments {self.ops:+}')
+            items.append(f"Remaining realignments {self.ops:+}")
 
-        return '; '.join(items)
+        return "; ".join(items)
 
 
 class Side(enum.IntEnum):
@@ -116,23 +111,23 @@ class Side(enum.IntEnum):
 
     @staticmethod
     def fromStr(s):
-        if s.lower() == 'us':
+        if s.lower() == "us":
             return Side.US
-        elif s.lower() == 'ussr':
+        elif s.lower() == "ussr":
             return Side.USSR
-        elif s.lower() == 'neutral':
+        elif s.lower() == "neutral":
             return Side.NEUTRAL
         else:
-            raise NameError('Invalid string for Side.fromStr')
+            raise NameError("Invalid string for Side.fromStr")
 
     @property
     def toStr(self):
         if self == Side.US:
-            return 'US'
+            return "US"
         elif self == Side.USSR:
-            return 'USSR'
+            return "USSR"
         else:
-            return 'NEUTRAL'
+            return "NEUTRAL"
 
     @property
     def opp(self):
@@ -169,30 +164,37 @@ class MapRegion(enum.IntEnum):
     @staticmethod
     def fromStr(inStr):
         s = inStr.lower()
-        if s == 'europe' or s == 'eu':
+        if s == "europe" or s == "eu":
             return MapRegion.EUROPE
-        elif s == 'asia' or s == 'as':
+        elif s == "asia" or s == "as":
             return MapRegion.ASIA
-        elif s == 'middle east' or s == 'me':
+        elif s == "middle east" or s == "me":
             return MapRegion.MIDDLE_EAST
-        elif s == 'africa' or s == 'af':
+        elif s == "africa" or s == "af":
             return MapRegion.AFRICA
-        elif s == 'central america' or s == 'ca':
+        elif s == "central america" or s == "ca":
             return MapRegion.CENTRAL_AMERICA
-        elif s == 'south america' or s == 'sa':
+        elif s == "south america" or s == "sa":
             return MapRegion.SOUTH_AMERICA
-        elif s == 'western europe' or s == 'we':
+        elif s == "western europe" or s == "we":
             return MapRegion.WESTERN_EUROPE
-        elif s == 'eastern europe' or s == 'ee':
+        elif s == "eastern europe" or s == "ee":
             return MapRegion.EASTERN_EUROPE
-        elif s == 'southeast asia' or s == 'se':
+        elif s == "southeast asia" or s == "se":
             return MapRegion.SOUTHEAST_ASIA
         else:
             return None
 
     @classmethod
     def main_regions(self):
-        return [MapRegion.EUROPE, MapRegion.ASIA, MapRegion.MIDDLE_EAST, MapRegion.AFRICA, MapRegion.CENTRAL_AMERICA, MapRegion.SOUTH_AMERICA]
+        return [
+            MapRegion.EUROPE,
+            MapRegion.ASIA,
+            MapRegion.MIDDLE_EAST,
+            MapRegion.AFRICA,
+            MapRegion.CENTRAL_AMERICA,
+            MapRegion.SOUTH_AMERICA,
+        ]
 
 
 class InputType(enum.IntEnum):

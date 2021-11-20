@@ -1,5 +1,6 @@
-from typing import Sequence, Iterable, Callable, Tuple
-from enums import Side, InputType
+from typing import Callable, Iterable
+
+from enums import InputType, Side
 
 
 class Input:

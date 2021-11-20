@@ -1,14 +1,12 @@
-import math
-
 from functools import partial
-from itertools import chain
-from typing import Sequence, Iterable, Callable, Tuple
+from typing import Callable, Iterable, Sequence, Tuple
 
-from world_map import GameMap, CountryInfo, Country
-from enums import Side, MapRegion, InputType, CardAction, CoupEffects, RealignState
-from cards import GameCards, Card
+from cards import GameCards
+from enums import (CardAction, CoupEffects, InputType, MapRegion, RealignState,
+                   Side)
 from interfacing import Input, Output
 from player_view import PlayerView
+from world_map import Country, CountryInfo, GameMap
 
 
 class Game:
@@ -854,7 +852,11 @@ class Game:
             prompt = "2d6 roll (Sponsor roll, Participant roll), no ties"
 
         self.input_state = Input(
-            Side.NEUTRAL, InputType.ROLL_DICE, fn, options, prompt=prompt,
+            Side.NEUTRAL,
+            InputType.ROLL_DICE,
+            fn,
+            options,
+            prompt=prompt,
         )
 
     def realign_after_stage(self):
@@ -1602,4 +1604,3 @@ class Game:
 
         if self.map["Taiwan"].info.battleground:
             self.map["Taiwan"].info.battleground = False
-

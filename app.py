@@ -1,25 +1,27 @@
+import argparse
 import os
 import threading
 import webbrowser
-import argparse
-
 from pathlib import Path
-from flask import Flask, render_template, json, request
-from flask_socketio import SocketIO, emit, join_room, leave_room
-from interfacing import Output
+
+from flask import Flask, json, render_template
+from flask_socketio import SocketIO, emit
+
 from twilight_ui import UI
 
 
 class VueCompatibleFlask(Flask):
     jinja_options = Flask.jinja_options.copy()
-    jinja_options.update(dict(
-        block_start_string='$$',
-        block_end_string='$$',
-        variable_start_string='$',
-        variable_end_string='$',
-        comment_start_string='$#',
-        comment_end_string='#$',
-    ))
+    jinja_options.update(
+        dict(
+            block_start_string="$$",
+            block_end_string="$$",
+            variable_start_string="$",
+            variable_end_string="$",
+            comment_start_string="$#",
+            comment_end_string="#$",
+        )
+    )
 
 
 class GUI(threading.Thread, UI):
@@ -51,7 +53,7 @@ class GUI(threading.Thread, UI):
 
     def run(self):
 
-        self.output_state.notification.append('Initalising game.')
+        self.output_state.notification.append("Initalising game.")
         self.client_response = threading.Event()
 
         while True:
@@ -61,16 +63,16 @@ class GUI(threading.Thread, UI):
 
             self.client_response.wait()
             self.client_response.clear()
-            user_choice = self.user_choice.split(' ', 1)
+            user_choice = self.user_choice.split(" ", 1)
             end_loop = self.parse_input(user_choice)
             if end_loop:
                 break
 
-        print('Thread temporarily suspended.')
+        print("Thread temporarily suspended.")
 
     def prepare_json(self):
         self.server_move = self.output_state.json.copy()
-        if hasattr(app, 'server_response'):
+        if hasattr(app, "server_response"):
             app.server_response.set()
 
 
@@ -80,62 +82,65 @@ FLASK_URL = "http://localhost:5000"
 VUE_URL = "http://localhost:8080"
 
 # Starts game engine, back-end and socket connection
-app = VueCompatibleFlask(__name__,
-                         static_folder=str(DIST/"static"),
-                         template_folder=str(DIST))
-socketio = SocketIO(app, json=json,
-                    cors_allowed_origins=(VUE_URL, FLASK_URL))
+app = VueCompatibleFlask(
+    __name__, static_folder=str(DIST / "static"), template_folder=str(DIST)
+)
+socketio = SocketIO(app, json=json, cors_allowed_origins=(VUE_URL, FLASK_URL))
 gui = GUI(daemon=True)
 
 # Provides -n command line argument
 parser = argparse.ArgumentParser(
-    description='Runs the Flask development server for twilight-struggle-py.')
-parser.add_argument('-n', '--nobrowser', action='store_true',
-                    help='Silences the automatic opening of a browser window.')
+    description="Runs the Flask development server for twilight-struggle-py."
+)
+parser.add_argument(
+    "-n",
+    "--nobrowser",
+    action="store_true",
+    help="Silences the automatic opening of a browser window.",
+)
 args = parser.parse_args()
 
 
-@app.route('/')
+@app.route("/")
 def index():
     return render_template("index.html")
 
 
-@socketio.on('connect')
+@socketio.on("connect")
 def connect():
-    print('Client connected.')
+    print("Client connected.")
 
 
-@socketio.on('disconnect')
+@socketio.on("disconnect")
 def disconnect():
-    print('Client disconnected.')
+    print("Client disconnected.")
 
 
-@socketio.on('client_move')
+@socketio.on("client_move")
 def client_move(json):
     # Receive a move and wait on GUI to provide an output
-    print('Received JSON: ' + json['move'])
-    gui.user_choice = str(json['move'])
+    print("Received JSON: " + json["move"])
+    gui.user_choice = str(json["move"])
     gui.client_response.set()
     app.server_response = threading.Event()
     app.server_response.wait()
 
     # When gui.server_move is ready
-    emit('server_move', gui.server_move)
+    emit("server_move", gui.server_move)
     # print(f'Sending to client: {gui.server_move}')
 
 
-@socketio.on('client_restart')
+@socketio.on("client_restart")
 def client_restart():
-    print('Received request to restart.')
+    print("Received request to restart.")
     if not gui.is_alive():
         gui.run()
-        print('GUI restarted from previous run.')
+        print("GUI restarted from previous run.")
     else:
-        print('GUI is running - no restart was conducted.')
+        print("GUI is running - no restart was conducted.")
 
 
-if 'WERKZEUG_RUN_MAIN' not in os.environ and not args.nobrowser:
-    threading.Timer(
-        1.25, lambda: webbrowser.open(FLASK_URL)).start()
+if "WERKZEUG_RUN_MAIN" not in os.environ and not args.nobrowser:
+    threading.Timer(1.25, lambda: webbrowser.open(FLASK_URL)).start()
 gui.start()
 socketio.run(app, debug=True)
