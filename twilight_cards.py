@@ -237,8 +237,9 @@ class The_China_Card(Card):
         Moves and flips the China Card after it has been used.
         Side refers to the player that uses the China card, or whoever the card should move from.
         '''
-        receipient_hand = game_instance.hand[side.opp]
-        receipient_hand.append('The_China_Card')
+        if 'The_China_Card' in game_instance.hand[side]:
+            game_instance.hand[side].remove('The_China_Card')
+        game_instance.hand[side.opp].append('The_China_Card')
         self.is_playable = made_playable
         self.reset()
 
@@ -1084,7 +1085,7 @@ class The_Cambridge_Five(Card):
             game_instance.input_state = Input(
                 Side.USSR, InputType.SELECT_COUNTRY,
                 partial(game_instance.event_influence_callback,
-                        Country.increment_influence, Side.US),
+                        Country.increment_influence, Side.USSR),
                 (item for sublist in countries for item in sublist),
                 prompt=f'Place 1 influence in a country named on the revealed scoring cards using The Cambridge Five.',
             )
@@ -1227,7 +1228,7 @@ class Arms_Race(Card):
     def use_event(self, game_instance, side: Side):
         self.event_occurred = True
         if game_instance.milops_track[side] > game_instance.milops_track[side.opp]:
-            if game_instance.milops_track >= game_instance.defcon_track:
+            if game_instance.milops_track[side] >= game_instance.defcon_track:
                 game_instance.change_vp(3 * side.vp_mult)
             else:
                 game_instance.change_vp(1 * side.vp_mult)
@@ -1407,7 +1408,7 @@ class Summit(Card):
         outcome = 'USSR success' if num[Side.USSR] + \
             ussr_advantage > num[Side.US] else 'US success'
 
-        if outcome == 'USSR Success':
+        if outcome == 'USSR success':
             self.choices(game_instance, Side.USSR)
         else:
             self.choices(game_instance, Side.US)
@@ -1465,7 +1466,7 @@ class How_I_Learned_to_Stop_Worrying(Card):
         }
 
         game_instance.input_state = Input(
-            Side.USSR, InputType.SELECT_MULTIPLE,
+            side, InputType.SELECT_MULTIPLE,
             partial(game_instance.select_multiple_callback,
                     option_function_mapping),
             option_function_mapping.keys(),
@@ -1499,7 +1500,7 @@ class Junta(Card):
         }
 
         game_instance.input_state = Input(
-            side.opp, InputType.SELECT_MULTIPLE,
+            side, InputType.SELECT_MULTIPLE,
             partial(game_instance.select_multiple_callback,
                     option_function_mapping),
             option_function_mapping.keys(),
@@ -1512,7 +1513,7 @@ class Junta(Card):
             CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA])
 
         game_instance.input_state = Input(
-            Side.USSR, InputType.SELECT_COUNTRY,
+            side, InputType.SELECT_COUNTRY,
             partial(game_instance.event_influence_callback,
                     partial(Country.increment_influence, amt=2), side),
             ca_sa,
@@ -1749,7 +1750,7 @@ class Willy_Brandt(Card):
     def use_event(self, game_instance, side: Side):
         if self.can_event(game_instance, Side.USSR):
             self.event_occurred = True
-            game_instance.change_defcon(1)
+            game_instance.change_vp(1)
             game_instance.map['West_Germany'].change_influence(1, 0)
             game_instance.basket[Side.USSR].append('Willy_Brandt')
 
@@ -2412,7 +2413,7 @@ class Iranian_Hostage_Crisis(Card):
         self.event_occurred = True
         game_instance.map.set_influence('Iran', Side.US, 0)
         game_instance.map.change_influence('Iran', Side.USSR, 2)
-        game_instance.basket[Side.US].append('Iranian_Hostage_Crisis')
+        game_instance.basket[Side.USSR].append('Iranian_Hostage_Crisis')
 
 
 class The_Iron_Lady(Card):
@@ -2661,7 +2662,7 @@ class Chernobyl(Card):
 
     def use_event(self, game_instance, side: Side):
         def add_chernobyl(effect_name: str):
-            game_instance.basket[Side.US].append('effect_name')
+            game_instance.basket[Side.US].append(effect_name)
             game_instance.end_turn_stage_list.append(
                 lambda: game_instance.basket[Side.US].remove(effect_name))
 

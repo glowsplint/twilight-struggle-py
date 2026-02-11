@@ -165,7 +165,7 @@ class GameMap:
                 ussr_advantage -= 1
 
         # SALT Negotiations
-        if 'SALT_Negotiations' in game_instance.basket[side] or 'SALT_Negotiations' in game_instance.basket[side]:
+        if 'SALT_Negotiations' in game_instance.basket[side] or 'SALT_Negotiations' in game_instance.basket[side.opp]:
             ussr_advantage -= 1
 
         difference = die_roll + effective_ops + \
