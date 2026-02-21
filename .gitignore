@@ -5,3 +5,11 @@ __pycache__/
 log/game*.tsg
 frontend/node_modules/
 frontend/dist/
+.env
+.env.local
+*.pyc
+.mypy_cache/
+.pytest_cache/
+.coverage
+.ruff_cache/
+htmlcov/

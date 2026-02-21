@@ -169,8 +169,8 @@ class GUI(threading.Thread, UI):
 
 # Constant definitions
 DIST = Path("./frontend/dist/")
-FLASK_URL = "http://localhost:5000"
-VUE_URL = "http://localhost:8080"
+FLASK_URL = os.environ.get("FLASK_URL", "http://localhost:5000")
+VUE_URL = os.environ.get("VUE_URL", "http://localhost:8080")
 
 # Starts game engine, back-end and socket connection
 app = VueCompatibleFlask(
@@ -252,4 +252,5 @@ def client_restart() -> None:
 if "WERKZEUG_RUN_MAIN" not in os.environ and not args.nobrowser:
     threading.Timer(1.25, lambda: webbrowser.open(FLASK_URL)).start()
 gui.start()
-socketio.run(app, debug=True)
+debug = os.environ.get("FLASK_DEBUG", "0") == "1"
+socketio.run(app, debug=debug)

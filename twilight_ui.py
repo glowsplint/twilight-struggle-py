@@ -666,7 +666,7 @@ dbg rollback                        Restores the state before debugging started.
 
         try:
             f = open(f"log{path.sep}{comd}")
-        except:
+        except (FileNotFoundError, IOError):
             self.output_state.notification.append("Cannot open file.")
             return
 

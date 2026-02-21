@@ -3,11 +3,14 @@ from __future__ import annotations
 from collections.abc import Callable, Generator
 from functools import partial
 
+from card_manager import CardManager
 from cards import GameCards
 from enums import (CardAction, CoupEffects, InputType, MapRegion, RealignState,
                    Side)
+from game_state import GameState
 from interfacing import Input, Output
 from player_view import PlayerView
+from stage_manager import StageManager
 from world_map import Country, CountryInfo, GameMap
 
 
@@ -30,16 +33,8 @@ class Game:
 
     def __init__(self) -> None:
 
-        self.vp_track: int = 0
-        self.turn_track: int = 0
-        self.ar_track: int = 0
-        self.ar_side: Side | None = None
-        self.ars_by_turn: list[list[int | None]] = [[], []]
-        self.ar_side_done: list[bool] = [False, False]
-        self.defcon_track: int = 0
-        self.milops_track: list[int] = [0, 0]
-        self.space_track: list[int] = [0, 0]  # 0 is start, 1 is earth satellite etc
-        self.spaced_turns: list[int] = [0, 0]
+        self._state: GameState = GameState()
+        self._stages: StageManager = StageManager()
 
         self.map: GameMap | None = None
         self.cards: GameCards | None = None
@@ -48,17 +43,197 @@ class Game:
         self.input_state: Input | None = None
         self.output_state: Output = Output()
 
-        self.hand: list[list[str]] = [[], [], []]  # neutral hand necessary
-        self.removed_pile: list[str] = []
-        self.discard_pile: list[str] = []
-        self.draw_pile: list[str] = []
-        self.limbo: list[str] = []  # strictly for shuttle_diplomacy
-        self.basket: list[list[str]] = [[], [], []]
-        self.headline_bin: list[str] = ["", ""]
-        self.end_turn_stage_list: list[Callable[[], None]] = []
+    # -----------------------------------------------------------------------
+    # Property forwarding for GameState attributes
+    # -----------------------------------------------------------------------
 
-        self.realign_state: RealignState | None = None
-        self.opsinf_state: dict[str, int] | None = None
+    @property
+    def vp_track(self) -> int:
+        return self._state.vp_track
+
+    @vp_track.setter
+    def vp_track(self, value: int) -> None:
+        self._state.vp_track = value
+
+    @property
+    def turn_track(self) -> int:
+        return self._state.turn_track
+
+    @turn_track.setter
+    def turn_track(self, value: int) -> None:
+        self._state.turn_track = value
+
+    @property
+    def ar_track(self) -> int:
+        return self._state.ar_track
+
+    @ar_track.setter
+    def ar_track(self, value: int) -> None:
+        self._state.ar_track = value
+
+    @property
+    def ar_side(self) -> Side | None:
+        return self._state.ar_side
+
+    @ar_side.setter
+    def ar_side(self, value: Side | None) -> None:
+        self._state.ar_side = value
+
+    @property
+    def defcon_track(self) -> int:
+        return self._state.defcon_track
+
+    @defcon_track.setter
+    def defcon_track(self, value: int) -> None:
+        self._state.defcon_track = value
+
+    @property
+    def handicap(self) -> int:
+        return self._state.handicap
+
+    @handicap.setter
+    def handicap(self, value: int) -> None:
+        self._state.handicap = value
+
+    @property
+    def started(self) -> bool:
+        return self._state.started
+
+    @started.setter
+    def started(self, value: bool) -> None:
+        self._state.started = value
+
+    @property
+    def milops_track(self) -> list[int]:
+        return self._state.milops_track
+
+    @milops_track.setter
+    def milops_track(self, value: list[int]) -> None:
+        self._state.milops_track = value
+
+    @property
+    def space_track(self) -> list[int]:
+        return self._state.space_track
+
+    @space_track.setter
+    def space_track(self, value: list[int]) -> None:
+        self._state.space_track = value
+
+    @property
+    def spaced_turns(self) -> list[int]:
+        return self._state.spaced_turns
+
+    @spaced_turns.setter
+    def spaced_turns(self, value: list[int]) -> None:
+        self._state.spaced_turns = value
+
+    @property
+    def ars_by_turn(self) -> list[list[int | None]]:
+        return self._state.ars_by_turn
+
+    @ars_by_turn.setter
+    def ars_by_turn(self, value: list[list[int | None]]) -> None:
+        self._state.ars_by_turn = value
+
+    @property
+    def ar_side_done(self) -> list[bool]:
+        return self._state.ar_side_done
+
+    @ar_side_done.setter
+    def ar_side_done(self, value: list[bool]) -> None:
+        self._state.ar_side_done = value
+
+    @property
+    def hand(self) -> list[list[str]]:
+        return self._state.hand
+
+    @hand.setter
+    def hand(self, value: list[list[str]]) -> None:
+        self._state.hand = value
+
+    @property
+    def removed_pile(self) -> list[str]:
+        return self._state.removed_pile
+
+    @removed_pile.setter
+    def removed_pile(self, value: list[str]) -> None:
+        self._state.removed_pile = value
+
+    @property
+    def discard_pile(self) -> list[str]:
+        return self._state.discard_pile
+
+    @discard_pile.setter
+    def discard_pile(self, value: list[str]) -> None:
+        self._state.discard_pile = value
+
+    @property
+    def draw_pile(self) -> list[str]:
+        return self._state.draw_pile
+
+    @draw_pile.setter
+    def draw_pile(self, value: list[str]) -> None:
+        self._state.draw_pile = value
+
+    @property
+    def limbo(self) -> list[str]:
+        return self._state.limbo
+
+    @limbo.setter
+    def limbo(self, value: list[str]) -> None:
+        self._state.limbo = value
+
+    @property
+    def basket(self) -> list[list[str]]:
+        return self._state.basket
+
+    @basket.setter
+    def basket(self, value: list[list[str]]) -> None:
+        self._state.basket = value
+
+    @property
+    def headline_bin(self) -> list[str]:
+        return self._state.headline_bin
+
+    @headline_bin.setter
+    def headline_bin(self, value: list[str]) -> None:
+        self._state.headline_bin = value
+
+    @property
+    def end_turn_stage_list(self) -> list[Callable[[], None]]:
+        return self._state.end_turn_stage_list
+
+    @end_turn_stage_list.setter
+    def end_turn_stage_list(self, value: list[Callable[[], None]]) -> None:
+        self._state.end_turn_stage_list = value
+
+    @property
+    def realign_state(self) -> RealignState | None:
+        return self._state.realign_state
+
+    @realign_state.setter
+    def realign_state(self, value: RealignState | None) -> None:
+        self._state.realign_state = value
+
+    @property
+    def opsinf_state(self) -> dict[str, int] | None:
+        return self._state.opsinf_state
+
+    @opsinf_state.setter
+    def opsinf_state(self, value: dict[str, int] | None) -> None:
+        self._state.opsinf_state = value
+
+    @property
+    def stage_list(self) -> list[Callable[[], None]]:
+        return self._stages.stage_list
+
+    @stage_list.setter
+    def stage_list(self, value: list[Callable[[], None]]) -> None:
+        self._stages.stage_list = value
+
+    # -----------------------------------------------------------------------
+    # Game lifecycle
+    # -----------------------------------------------------------------------
 
     """
     Starts a new game.
@@ -66,7 +241,7 @@ class Game:
 
     def start(self, handicap: int = -2) -> None:
 
-        self.started: bool = True
+        self.started = True
         self.vp_track = 0  # positive for ussr
         self.turn_track = 1
         self.ar_track = 0
@@ -75,20 +250,21 @@ class Game:
             list(Game.Default.ARS_BY_TURN),
             list(Game.Default.ARS_BY_TURN),
         ]
-        self.ar_side_done: list[bool] = [False, False]
+        self.ar_side_done = [False, False]
         self.defcon_track = 5
         self.milops_track = [0, 0]  # ussr first
         self.space_track = [0, 0]  # 0 is start, 1 is earth satellite etc
         self.spaced_turns = [0, 0]
-        self.handicap: int = handicap  # positive in favour of ussr
+        self.handicap = handicap  # positive in favour of ussr
 
-        self.map: GameMap = GameMap()
-        self.cards: GameCards = GameCards()
-        self.players: list[PlayerView] = [PlayerView(Side.USSR), PlayerView(Side.US)]
+        self.map = GameMap()
+        self.cards = GameCards()
+        self._card_mgr = CardManager(self._state, self.cards)
+        self.players = [PlayerView(Side.USSR), PlayerView(Side.US)]
         self.players[Side.USSR].link(self)
         self.players[Side.US].link(self)
 
-        self.stage_list: list[Callable[[], None]] = [
+        self.stage_list = [
             self.expand_deck,
             self.deal,
             self.put_start_USSR,
@@ -101,8 +277,7 @@ class Game:
         self.map.build_standard()
 
     def stage_complete(self) -> None:
-        self.input_state = None
-        self.stage_list.pop()()
+        self._stages.complete(lambda: setattr(self, 'input_state', None))
 
     def terminate(self, side: Side = Side.NEUTRAL) -> None:
         """
@@ -114,7 +289,7 @@ class Game:
             Side of the winner - used only when holding scoring cards, by default Side.NEUTRAL
             If side is Side.NEUTRAL, determine winner as the player with more VPs.
         """
-        self.stage_list.clear()
+        self._stages.clear()
         if side != Side.NEUTRAL:
             winner = side
         else:
@@ -342,7 +517,7 @@ class Game:
 
         if (
             us_hl == "Defectors"
-            or self.cards[us_hl].ops >= self.cards[ussr_hl].info.ops
+            or self.cards[us_hl].ops >= self.cards[ussr_hl].ops
         ):
             self.stage_list.append(partial(self.resolve_headline, Side.USSR))
             self.stage_list.append(partial(self.resolve_headline, Side.US))
@@ -379,6 +554,8 @@ class Game:
         This gets the number of ARs remaining in the current turn for a side.
         Is inclusive of the current AR.
         """
+        if self.turn_track >= len(self.ars_by_turn[side]):
+            return 0
         return max(
             0,
             self.ars_by_turn[side][self.turn_track]
@@ -725,7 +902,10 @@ class Game:
                 ):
                     self.change_vp(2)
 
-    # Utility functions used in stages
+    # -----------------------------------------------------------------------
+    # CardManager delegates
+    # -----------------------------------------------------------------------
+
     def get_global_effective_ops(self, side: Side, raw_ops: int) -> int:
         """
         Gets the effective operations value of the card, bound to [1,4]. Accounts for
@@ -741,13 +921,9 @@ class Game:
         raw_ops : int
             Unmodified operations value of the card.
         """
-        for effect_side, effect_name in self.iterate_effects():
-            mod = self.cards[effect_name].effect_global_ops(self, effect_side, side)
-            if mod is not None:
-                raw_ops += mod
-                self.output_state.prompt += f"{effect_name}: {mod:+} ops."
-
-        return min(max(raw_ops, 1), 4)
+        return self._card_mgr.get_global_effective_ops(
+            self, side, raw_ops, self.output_state
+        )
 
     def trigger_event(self, side: Side, card_name: str) -> None:
         """
@@ -1371,105 +1547,35 @@ class Game:
                     "AR skipped due to lack of suitable cards."
                 ]
 
+    # -----------------------------------------------------------------------
+    # CardManager delegates: shuffle, expand_deck, deal
+    # -----------------------------------------------------------------------
+
     def shuffle_callback(self, card_name: str) -> bool:
         self.input_state.reps -= 1
-        self.draw_pile.append(card_name)
+        self._card_mgr.shuffle_callback(card_name)
         return True
 
     def shuffle_draw_pile_stage(self) -> None:
-        shuffler_pile = self.draw_pile
-        self.draw_pile = []
-
-        self.input_state = Input(
-            Side.NEUTRAL,
-            InputType.SELECT_CARD,
+        self._card_mgr.shuffle_draw_pile_stage(
+            lambda inp: setattr(self, 'input_state', inp),
             self.shuffle_callback,
-            shuffler_pile,
-            "Shuffle the deck.  Select the next card.",
-            reps=len(shuffler_pile),
-            reps_unit="cards",
-            max_per_option=1,
         )
 
     def expand_deck(self) -> None:
-
-        if self.turn_track == 1:
-            # TEST CODE BELOW -- remove when done
-            # '''For testing early-war cards'''
-            # self.hand[Side.USSR].extend([self.cards.early_war.pop(i)
-            #                              for i in range(20)])
-            # self.hand[Side.US].extend([self.cards.early_war.pop(0)
-            #                            for i in range(19)])
-            # self.players[Side.USSR].opp_hand.update(['The_China_Card'])
-            # '''For testing mid-war cards'''
-            # self.hand[Side.US].extend([self.cards.mid_war.pop(i)
-            #                            for i in range(24)])
-            # self.hand[Side.USSR].extend([self.cards.mid_war.pop(0)
-            #                              for i in range(24)])
-            # '''For testing late-war cards'''
-            # self.hand[Side.US].extend([self.cards.late_war.pop(i)
-            #                            for i in range(12)])
-            # self.hand[Side.USSR].extend([self.cards.late_war.pop(0)
-            #                              for i in range(11)])
-            # TEST CODE ABOVE -- remove when done
-            # # WORKING CODE BELOW -- uncomment if not using test code
-            self.draw_pile.extend(reversed(self.cards.early_war))
-            self.cards.in_play.update(self.cards.early_war)
-            self.hand[Side.USSR].append(
-                self.draw_pile.pop(self.draw_pile.index("The_China_Card"))
-            )
-            if "The_China_Card" in self.hand[Side.USSR]:
-                self.players[Side.US].opp_hand.update(["The_China_Card"])
-            else:
-                self.players[Side.USSR].opp_hand.update(["The_China_Card"])
-            # # WORKING CODE ABOVE -- uncomment if not using test code
-            # self.cards.early_war = []
-            # self.shuffle_draw_pile_stage()
-        elif self.turn_track == 4:
-            self.draw_pile.extend(reversed(self.cards.mid_war))
-            self.cards.in_play.update(self.cards.mid_war)
-            self.cards.mid_war = []
-            self.shuffle_draw_pile_stage()
-        elif self.turn_track == 8:
-            self.draw_pile.extend(reversed(self.cards.late_war))
-            self.cards.in_play.update(self.cards.late_war)
-            self.cards.late_war = []
-            self.shuffle_draw_pile_stage()
+        self._card_mgr.expand_deck(
+            self.players,
+            self.shuffle_draw_pile_stage,
+        )
 
     def deal(self, first_side: Side = Side.USSR) -> None:
-
-        if first_side == Side.NEUTRAL:
-            handsize_target = [3, 2]  # hardcoded for Ask Not..
-        elif 1 <= self.turn_track <= 3:
-            handsize_target = [8, 8]
-        else:
-            handsize_target = [9, 9]
-
-        # Ignore China Card if it is in either hand
-        if "The_China_Card" in self.hand[Side.USSR]:
-            handsize_target[Side.USSR] += 1
-        elif "The_China_Card" in self.hand[Side.US]:
-            handsize_target[Side.US] += 1
-
-        next_side = first_side
-        while any(len(h) < t for h, t in zip(self.hand, handsize_target)):
-            if len(self.hand[next_side]) >= handsize_target[next_side]:
-                next_side = next_side.opp
-                continue
-
-            if not self.draw_pile:
-                # if draw pile exhausted, shuffle the discard pile and put it as the new draw pile
-                self.draw_pile += self.discard_pile
-                self.discard_pile = []
-                self.stage_list.append(partial(self.deal, first_side=next_side))
-                self.shuffle_draw_pile_stage()
-                return
-
-            self.hand[next_side].append(self.draw_pile.pop())
-            next_side = next_side.opp
-
-        for s in [Side.USSR, Side.US]:
-            self.players[s].opp_hand_no_scoring_cards = False
+        self._card_mgr.deal(
+            self.players,
+            self.stage_list,
+            self.shuffle_draw_pile_stage,
+            self.deal,
+            first_side=first_side,
+        )
 
     # need to make sure next_turn is only called after all extra rounds
     def end_of_turn(self) -> None:

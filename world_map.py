@@ -58,7 +58,7 @@ class CountryInfo:
             self.regions = set()
         else:
             self.regions = set()
-            ValueError(f"Unrecognized region string: {region}")
+            raise ValueError(f"Unrecognized region string: {region}")
 
         for r in self.regions:
             CountryInfo.REGION_ALL[r].add(name)
