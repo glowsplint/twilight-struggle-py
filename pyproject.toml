@@ -22,4 +22,15 @@ target-version = ["py311"]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
-addopts = "-v"
+addopts = "-v -m 'not slow'"
+markers = [
+    "slow: long-running integration tests (run with: pytest -m slow)",
+]
+
+[tool.coverage.run]
+source = ["."]
+omit = ["tests/*", "ai/*", "frontend/*", "train.py", "evaluate.py"]
+
+[tool.coverage.report]
+fail_under = 20
+show_missing = true

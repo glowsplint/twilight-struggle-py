@@ -4,6 +4,7 @@ import random
 from copy import deepcopy
 from datetime import datetime
 from os import path
+from pathlib import Path
 from textwrap import wrap
 
 from cards import Card
@@ -664,8 +665,14 @@ dbg rollback                        Restores the state before debugging started.
             )
             return
 
+        # Sanitize filename to prevent path traversal
+        safe_name = Path(comd).name
+        if not safe_name or safe_name != comd:
+            self.output_state.notification.append("Invalid filename.")
+            return
+
         try:
-            f = open(f"log{path.sep}{comd}")
+            f = open(f"log{path.sep}{safe_name}")
         except (FileNotFoundError, IOError):
             self.output_state.notification.append("Cannot open file.")
             return

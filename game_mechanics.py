@@ -1661,19 +1661,23 @@ class Game:
         # 8. Headline Phase
 
         # 9. Action Rounds (advance round marker) -- action rounds are not considered between turns
-        check_for_scoring_cards(self)
-        clear_baskets(self)
-        space_discard(self)
-        check_milops(self)
-        flip_china_card(self)
-        advance_turn_marker(self)  # turn marker advanced before final scoring
-        final_scoring(self)
-        if not self.stage_list:
-            return  # game terminated by final scoring
-        self.change_defcon(1)
-        self.expand_deck()
-        self.deal()  # turn marker advanced before dealing
-        self.process_headline()
+        # Push stages in reverse order (LIFO: last appended = first executed).
+        # Some of these functions set input_state (space_discard, expand_deck,
+        # deal) and must be processed by the stage engine rather than called
+        # directly, so that the engine can pause for player input.
+        # If check_for_scoring_cards or final_scoring calls terminate(), the
+        # stage_list is cleared, so subsequent stages are naturally skipped.
+        self.stage_list.append(self.process_headline)
+        self.stage_list.append(self.deal)
+        self.stage_list.append(self.expand_deck)
+        self.stage_list.append(partial(self.change_defcon, 1))
+        self.stage_list.append(partial(final_scoring, self))
+        self.stage_list.append(partial(advance_turn_marker, self))
+        self.stage_list.append(partial(flip_china_card, self))
+        self.stage_list.append(partial(check_milops, self))
+        self.stage_list.append(partial(space_discard, self))
+        self.stage_list.append(partial(clear_baskets, self))
+        self.stage_list.append(partial(check_for_scoring_cards, self))
 
     def score(self, region: MapRegion, check_only: bool = False) -> None:
 

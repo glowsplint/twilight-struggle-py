@@ -3,11 +3,11 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 name = "pypi"
 
+# NOTE: Pipfile.lock needs to be regenerated after these changes
 [packages]
 numpy = "*"
 Flask = "*"
 Flask-SocketIO = "*"
-flake8 = "*"
 torch = "*"
 tensorboard = "*"
 
@@ -15,6 +15,7 @@ tensorboard = "*"
 black = "*"
 mypy = "*"
 pytest = "*"
+pytest-cov = "*"
 ruff = "*"
 
 [requires]

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import queue
 import random
 import threading
 import time
@@ -43,18 +44,19 @@ class GUI(threading.Thread, UI):
 
     Attributes
     ----------
-    self.user_choice :
-        Contains the string of actions sent by the client.
-        Updated when the socket listener receives the socket event 'client_move'.
-
-    self.server_move :
+    move_queue :
+        Queue for client->game messages (moves from Flask handlers).
+    response_queue :
+        Queue for game->client responses (server state sent back to Flask handlers).
+    server_move :
         Contains the dictionary which serves as the JSON payload sent to the client.
     """
 
     def __init__(self, **kwargs: object) -> None:
         threading.Thread.__init__(self, **kwargs)
         UI.__init__(self)
-        self.user_choice: str | list[str] = []
+        self.move_queue: queue.Queue[str] = queue.Queue()
+        self.response_queue: queue.Queue[dict[str, object]] = queue.Queue()
         self.server_move: dict[str, object] = {}
         self.ai_mode: bool = False
         self.ai_side: Side | None = None
@@ -62,9 +64,24 @@ class GUI(threading.Thread, UI):
         self.ai_difficulty: str = "medium"
 
     def run(self) -> None:
+        """Outer loop that supports restart: runs the game loop, then waits for restart signal."""
+        while True:
+            self._run_game_loop()
+            print("Thread waiting for restart signal.")
+            # Block until a restart signal comes through
+            msg = self.move_queue.get()
+            if msg == "__restart__":
+                print("GUI restarted.")
+                # Reset game state for a fresh session
+                UI.__init__(self)
+                continue
+            else:
+                # Unexpected message after quit; ignore and keep waiting
+                continue
 
+    def _run_game_loop(self) -> None:
         self.output_state.notification.append("Initalising game.")
-        self.client_response = threading.Event()
+        self._waiting_for_response = False
 
         while True:
 
@@ -76,14 +93,14 @@ class GUI(threading.Thread, UI):
                 self._handle_ai_turn()
                 continue
 
-            self.client_response.wait()
-            self.client_response.clear()
-            user_choice = self.user_choice.split(" ", 1)
+            user_choice_str = self.move_queue.get()
+            self._waiting_for_response = True
+            user_choice = user_choice_str.split(" ", 1)
             end_loop = self.parse_input(user_choice)
             if end_loop:
                 break
 
-        print("Thread temporarily suspended.")
+        print("Game loop ended.")
 
     def prepare_json(self) -> None:
         self.server_move = self.output_state.json.copy()
@@ -92,8 +109,10 @@ class GUI(threading.Thread, UI):
         if self.ai_mode and self.ai_player and hasattr(self.ai_player, 'last_explanation'):
             self.server_move['ai_explanation'] = self.ai_player.last_explanation
 
-        if hasattr(app, "server_response"):
-            app.server_response.set()
+        # Only send response when a Flask handler is waiting
+        if self._waiting_for_response:
+            self._waiting_for_response = False
+            self.response_queue.put(self.server_move)
 
     def _is_ai_turn(self) -> bool:
         """Check if the current input is for the AI player."""
@@ -208,45 +227,56 @@ def disconnect() -> None:
 
 
 @socketio.on("client_move")
-def client_move(json: dict[str, str]) -> None:
-    # Receive a move and wait on GUI to provide an output
-    print("Received JSON: " + json["move"])
-    gui.user_choice = str(json["move"])
-    gui.client_response.set()
-    app.server_response = threading.Event()
-    app.server_response.wait()
+def client_move(data: object) -> None:
+    if not isinstance(data, dict):
+        return
+    move = data.get("move")
+    if not isinstance(move, str):
+        return
 
-    # When gui.server_move is ready
-    emit("server_move", gui.server_move)
-    # print(f'Sending to client: {gui.server_move}')
+    # Send move to GUI thread, wait for response
+    print("Received JSON: " + move)
+    gui.move_queue.put(move)
+    try:
+        response = gui.response_queue.get(timeout=30)
+    except queue.Empty:
+        emit("server_move", {"error": "Server timed out waiting for game state."})
+        return
+
+    emit("server_move", response)
 
 
 @socketio.on("client_new_ai_game")
-def client_new_ai_game(config: dict[str, str]) -> None:
+def client_new_ai_game(config: object) -> None:
     """Start a new game against AI."""
-    print(f"Starting AI game: {config}")
+    if not isinstance(config, dict):
+        return
     human_side = config.get("side", "us")
     difficulty = config.get("difficulty", "medium")
+    if not isinstance(human_side, str) or not isinstance(difficulty, str):
+        return
 
+    print(f"Starting AI game: {config}")
     gui.setup_ai_game(human_side, difficulty)
 
-    # Start the game
-    gui.user_choice = "new"
-    gui.client_response.set()
-    app.server_response = threading.Event()
-    app.server_response.wait()
+    # Signal the GUI thread to start a new game
+    gui.move_queue.put("new")
+    try:
+        response = gui.response_queue.get(timeout=30)
+    except queue.Empty:
+        emit("server_move", {"error": "Server timed out waiting for game state."})
+        return
 
-    emit("server_move", gui.server_move)
+    emit("server_move", response)
 
 
 @socketio.on("client_restart")
 def client_restart() -> None:
     print("Received request to restart.")
-    if not gui.is_alive():
-        gui.run()
-        print("GUI restarted from previous run.")
-    else:
-        print("GUI is running - no restart was conducted.")
+    # Signal the GUI thread to restart via the move queue
+    gui.move_queue.put("quit")
+    gui.move_queue.put("__restart__")
+    print("GUI restart signalled.")
 
 
 if "WERKZEUG_RUN_MAIN" not in os.environ and not args.nobrowser:
