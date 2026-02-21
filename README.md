@@ -1,25 +1,74 @@
-# twilight-struggle-py &middot; [![Python 3.6](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/release/python-360/)
+# twilight-struggle-py &middot; [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 
 ## Project outline
 
-This project is a port of the Twilight Struggle board game. The goal of this project is to implement a reinforcement learning algorithm that would be a stronger computer player than the natively implemented one.
+This project is a port of the Twilight Struggle board game. The goal of this project is to implement a reinforcement learning algorithm (PIMC + MCTS) that would be a stronger computer player than the natively implemented one.
 
 ## Getting started
 
-Clone the repo into your environment. You can play via the GUI or the CLI.
+### Prerequisites
 
-### GUI
+- [Python 3.9+](https://www.python.org/downloads/) with [Pipenv](https://pipenv.pypa.io/)
+- [Bun](https://bun.sh/) (for frontend development)
 
-Run `python app.py [-n]` in your command line. The `-n` command line argument stops a browser window from automatically opening. This version uses the already built Vue frontend. If you are working on the front-end development, you should need to run hot-reloading instead (instructions [below](https://github.com/glowsplint/twilight-struggle-py/tree/gui#how-to-start-the-development-server)).
+### Running locally
 
-Under the Game tab, `` Ctrl+` `` toggles the CLI console. `` ` `` toggles the navigation bar.
+You need two terminals — one for the Python backend and one for the frontend dev server.
+
+**1. Backend (Flask + Socket.IO)**
+
+```bash
+pipenv install
+pipenv run python app.py -n
+```
+
+This starts the backend on `http://localhost:5000`. The `-n` flag prevents a browser window from auto-opening.
+
+**2. Frontend (Vite dev server)**
+
+```bash
+cd frontend
+bun install
+bun run dev
+```
+
+This starts the Vite dev server on `http://localhost:8080`, which proxies `/socket.io` requests to the Flask backend.
+
+Open **http://localhost:8080** in your browser.
+
+### Production build (single server)
+
+If you don't need hot-reloading, you can build the frontend and serve it directly from Flask:
+
+```bash
+cd frontend
+bun install
+bun run build
+cd ..
+pipenv run python app.py
+```
+
+Flask serves the built files from `frontend/dist/`. Open `http://localhost:5000`.
 
 ### CLI
 
-Run `python twilight_ui.py` in your command line.
+You can also play without the GUI:
+
+```bash
+pipenv run python twilight_ui.py
+```
 
 <img src='assets/showcase.gif' width='600' alt='Command line interface'>
-The following base commands are provided:
+
+## Keyboard shortcuts
+
+| Shortcut            | Description              |
+| ------------------- | ------------------------ |
+| `` Ctrl+` ``        | Toggle CLI console       |
+| `` ` ``             | Toggle navigation bar    |
+| `Ctrl+P`            | Toggle side panel        |
+
+## CLI commands
 
 | Command                           | Description                                                                                                                      |
 | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
@@ -46,23 +95,17 @@ The following base commands are provided:
 | `c rem`                           | Display a list of removed cards.                                                                                                 |
 | `c dec`                           | Returns the number of cards in the draw deck.                                                                                    |
 
-### Dependencies
+## Tech stack
 
-The main Python dependencies are [`flask`](https://github.com/pallets/flask) and [`flask-socketIO`](https://github.com/miguelgrinberg/Flask-SocketIO). Python dependencies are included at `./requirements.txt`.
+- **Backend:** Python 3.9+, Flask, Flask-SocketIO
+- **Frontend:** Vue 3, TypeScript, Tailwind CSS 4, shadcn-vue, Pinia, Vite 7, Bun
+- **AI:** PIMC + MCTS with PyTorch neural network (training pipeline included)
 
-The main external Vue dependencies are [`vue-socketIO-extended`](https://github.com/probil/vue-socket.io-extended/) and [`vuetify`](https://github.com/vuetifyjs/vuetify).
+## Frontend development
 
-### How to start the development server
+The frontend uses TypeScript throughout. To type-check without building:
 
-If running for the first time, run `npm install` to download the dependencies indicated in `package.json`.
-Run `vue ui` into `vue-cli-service serve` as the hot-reloading frontend development server, while concurrently running `python app.py -n` as the backend server running the game engine.
-
-### To-do
-
-1. Display current influence for every country
-2. Display turn record + AR
-3. Display space race
-4. Display DEFCON status
-5. Display Milops
-6. Display VPs
-7. Display current hand
+```bash
+cd frontend
+bun run type-check
+```
