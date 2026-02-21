@@ -3,3 +3,5 @@
 __pycache__/
 .idea
 log/game*.tsg
+frontend/node_modules/
+frontend/dist/

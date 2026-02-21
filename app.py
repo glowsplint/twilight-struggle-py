@@ -165,7 +165,7 @@ class GUI(threading.Thread, UI):
 
 
 # Constant definitions
-DIST = Path("./front-end/dist/")
+DIST = Path("./frontend/dist/")
 FLASK_URL = "http://localhost:5000"
 VUE_URL = "http://localhost:8080"
 
