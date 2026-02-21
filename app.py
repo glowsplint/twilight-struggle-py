@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import os
 import random
@@ -10,6 +12,7 @@ from flask import Flask, json, render_template
 from flask_socketio import SocketIO, emit
 
 from enums import Side
+from player import Player
 from twilight_ui import UI
 
 
@@ -48,17 +51,17 @@ class GUI(threading.Thread, UI):
         Contains the dictionary which serves as the JSON payload sent to the client.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: object) -> None:
         threading.Thread.__init__(self, **kwargs)
         UI.__init__(self)
-        self.user_choice = []
-        self.server_move = {}
-        self.ai_mode = False
-        self.ai_side = None
-        self.ai_player = None
-        self.ai_difficulty = "medium"
+        self.user_choice: str | list[str] = []
+        self.server_move: dict[str, object] = {}
+        self.ai_mode: bool = False
+        self.ai_side: Side | None = None
+        self.ai_player: Player | None = None
+        self.ai_difficulty: str = "medium"
 
-    def run(self):
+    def run(self) -> None:
 
         self.output_state.notification.append("Initalising game.")
         self.client_response = threading.Event()
@@ -82,7 +85,7 @@ class GUI(threading.Thread, UI):
 
         print("Thread temporarily suspended.")
 
-    def prepare_json(self):
+    def prepare_json(self) -> None:
         self.server_move = self.output_state.json.copy()
 
         # Include AI explanation if available
@@ -92,7 +95,7 @@ class GUI(threading.Thread, UI):
         if hasattr(app, "server_response"):
             app.server_response.set()
 
-    def _is_ai_turn(self):
+    def _is_ai_turn(self) -> bool:
         """Check if the current input is for the AI player."""
         if not self.game.input_state:
             return False
@@ -100,7 +103,7 @@ class GUI(threading.Thread, UI):
         # AI handles its own side and NEUTRAL (dice rolls)
         return side == self.ai_side or side == Side.NEUTRAL
 
-    def _handle_ai_turn(self):
+    def _handle_ai_turn(self) -> None:
         """Let the AI make its move."""
         input_state = self.game.input_state
         if not input_state:
@@ -120,7 +123,7 @@ class GUI(threading.Thread, UI):
             self.move(move)
             self.game_state_changed()
 
-    def setup_ai_game(self, human_side: str, difficulty: str = "medium"):
+    def setup_ai_game(self, human_side: str, difficulty: str = "medium") -> None:
         """Configure an AI game."""
         self.ai_mode = True
         self.ai_difficulty = difficulty
@@ -190,22 +193,22 @@ args = parser.parse_args()
 
 
 @app.route("/")
-def index():
+def index() -> str:
     return render_template("index.html")
 
 
 @socketio.on("connect")
-def connect():
+def connect() -> None:
     print("Client connected.")
 
 
 @socketio.on("disconnect")
-def disconnect():
+def disconnect() -> None:
     print("Client disconnected.")
 
 
 @socketio.on("client_move")
-def client_move(json):
+def client_move(json: dict[str, str]) -> None:
     # Receive a move and wait on GUI to provide an output
     print("Received JSON: " + json["move"])
     gui.user_choice = str(json["move"])
@@ -219,7 +222,7 @@ def client_move(json):
 
 
 @socketio.on("client_new_ai_game")
-def client_new_ai_game(config):
+def client_new_ai_game(config: dict[str, str]) -> None:
     """Start a new game against AI."""
     print(f"Starting AI game: {config}")
     human_side = config.get("side", "us")
@@ -237,7 +240,7 @@ def client_new_ai_game(config):
 
 
 @socketio.on("client_restart")
-def client_restart():
+def client_restart() -> None:
     print("Received request to restart.")
     if not gui.is_alive():
         gui.run()

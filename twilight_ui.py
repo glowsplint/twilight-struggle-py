@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import random
 from copy import deepcopy
 from datetime import datetime
@@ -47,19 +49,19 @@ quit            Exit the game.
     left_margin_small = 15
     event_text_width = 100
 
-    def __init__(self):
-        self.game_lookahead = None
-        self.game_rollback = None
-        self.game = Game()
-        self.debug_save = None
-        self.options = dict()
-        self.auto_rng = True
-        self.auto_commit = True
-        self.game_in_progress = False
+    def __init__(self) -> None:
+        self.game_lookahead: Game | None = None
+        self.game_rollback: Game | None = None
+        self.game: Game = Game()
+        self.debug_save: tuple[Game, Game | None] | None = None
+        self.options: dict[int | str, str] = dict()
+        self.auto_rng: bool = True
+        self.auto_commit: bool = True
+        self.game_in_progress: bool = False
 
-        self.temp_log = []
-        self.logging = False
-        self.log_filepath = None
+        self.temp_log: list[str] = []
+        self.logging: bool = False
+        self.log_filepath: str | None = None
 
     @property
     def output_state(self) -> Output:
@@ -70,13 +72,13 @@ quit            Exit the game.
         return self.game.input_state
 
     @property
-    def awaiting_commit(self):
+    def awaiting_commit(self) -> Game | None:
         return self.game_lookahead
 
-    def log_generate_filepath(self):
+    def log_generate_filepath(self) -> None:
         self.log_filepath = f'log{path.sep}game-{datetime.utcnow().strftime("%Y-%m-%d-%H-%M-%S-UTC")}.tsg'
 
-    def log_write_out(self):
+    def log_write_out(self) -> None:
         if not self.temp_log:
             return
         out = "\n".join(self.temp_log) + "\n"
@@ -84,21 +86,21 @@ quit            Exit the game.
             f.write(out)
         self.temp_log.clear()
 
-    def new_game(self):
+    def new_game(self) -> None:
         if self.logging:
             self.log_generate_filepath()
         self.output_state.game_in_progress = self.game_in_progress = True
         self.game.start()
         self.advance_game()
 
-    def advance_game(self):
+    def advance_game(self) -> None:
         if self.auto_commit and self.logging:
             self.log_write_out()
         self.game.stage_complete()
         while not self.game.input_state:
             self.game.stage_complete()
 
-    def commit(self):
+    def commit(self) -> None:
         if self.logging:
             self.log_write_out()
         self.game_lookahead = None
@@ -106,7 +108,7 @@ quit            Exit the game.
         self.game_rollback = deepcopy(self.game)
         self.game_state_changed()
 
-    def revert(self):
+    def revert(self) -> None:
         if self.logging:
             self.temp_log.clear()
         self.game = self.game_rollback
@@ -114,12 +116,12 @@ quit            Exit the game.
         self.game_rollback = deepcopy(self.game)
         self.game_state_changed()
 
-    def move(self, move):
+    def move(self, move: str) -> None:
         self.game.input_state.recv(move)
         if self.logging:
             self.temp_log.append(move)
 
-    def generate_options(self):
+    def generate_options(self) -> None:
         if self.game.input_state.state == InputType.SELECT_CARD_ACTION:
             self.options = {
                 CardAction[opt].value: opt for opt in self.input_state.available_options
@@ -145,7 +147,7 @@ quit            Exit the game.
         if self.game.input_state.option_stop_early:
             self.options[0] = self.game.input_state.option_stop_early
 
-    def game_state_changed(self, prompt=True):
+    def game_state_changed(self, prompt: bool = True) -> None:
 
         while True:
 
@@ -197,7 +199,7 @@ quit            Exit the game.
         if prompt:
             self.prompt()
 
-    def prompt(self):
+    def prompt(self) -> None:
 
         self.output_state._input_type = {
             int(self.game.input_state.state): str(self.game.input_state.state)
@@ -227,7 +229,7 @@ quit            Exit the game.
             self.output_state.available_options_header = "Available options:"
             self.output_state._available_options = self.options.copy()
 
-    def run(self):
+    def run(self) -> None:
 
         self.output_state.notification.append("Initialising game.")
         while True:
@@ -237,7 +239,7 @@ quit            Exit the game.
             if end_loop:
                 break
 
-    def parse_input(self, user_choice):
+    def parse_input(self, user_choice: list[str]) -> bool | None:
 
         if len(user_choice) == 1:
             user_choice.append("")
@@ -313,7 +315,7 @@ m <name|enum>       Makes the move with the name or with the enum. The name can 
 m <m1 m2 m3 ...>    Makes multiple moves in order m1, m2, m3, ...
 """
 
-    def parse_move(self, comd):
+    def parse_move(self, comd: str) -> None:
 
         if not self.game_in_progress:
             self.output_state.notification.append("Game not in progress.")
@@ -387,7 +389,7 @@ c rem           Display a list of removed cards.
 c dec           Returns the number of cards in the draw deck.
 """
 
-    def parse_card(self, comd):
+    def parse_card(self, comd: str) -> None:
 
         if not self.game_in_progress:
             self.output_state.notification.append("Game not in progress.")
@@ -514,7 +516,7 @@ s <eu|as|me|af|na|sa>   Displays the scoring state and country data for the give
 s turn                  Displays information on the current turn and action round
 """
 
-    def parse_state(self, comd):
+    def parse_state(self, comd: str) -> None:
 
         if not self.game_in_progress:
             self.output_state.notification.append("Game not in progress.")
@@ -572,7 +574,7 @@ dbg card <card_name> <side>         Triggers the card event as the given side.
 dbg rollback                        Restores the state before debugging started.
 """
 
-    def parse_debug(self, comd):
+    def parse_debug(self, comd: str) -> None:
 
         if not self.game_in_progress:
             self.output_state.notification.append("Game not in progress.")
@@ -640,7 +642,7 @@ dbg rollback                        Restores the state before debugging started.
         else:
             self.output_state.notification.append("Invalid command. Enter ? for help.")
 
-    def parse_log(self, comd):
+    def parse_log(self, comd: str) -> None:
 
         if self.game_in_progress:
             self.output_state.notification.append(
@@ -654,7 +656,7 @@ dbg rollback                        Restores the state before debugging started.
         else:
             self.output_state.notification.append("Invalid command. Enter ? for help.")
 
-    def parse_load(self, comd):
+    def parse_load(self, comd: str) -> None:
 
         if self.game_in_progress:
             self.output_state.notification.append(

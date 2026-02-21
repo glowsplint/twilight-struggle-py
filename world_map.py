@@ -1,31 +1,35 @@
+from __future__ import annotations
+
+from collections.abc import Generator
+
 from enums import MapRegion, Side
 
 
 class CountryInfo:
 
-    ALL = dict()
-    REGION_ALL = [set() for r in MapRegion]
+    ALL: dict[str, CountryInfo] = dict()
+    REGION_ALL: list[set[str]] = [set() for r in MapRegion]
 
     def __init__(
         self,
-        name="",
-        country_index="",
-        adjacent_countries=None,
-        region="",
-        stability=0,
-        battleground=False,
-        superpower=False,
-        chinese_civil_war=False,
-        **kwargs,
-    ):
+        name: str = "",
+        country_index: int | str = "",
+        adjacent_countries: list[str] | None = None,
+        region: str = "",
+        stability: int = 0,
+        battleground: bool = False,
+        superpower: bool = False,
+        chinese_civil_war: bool = False,
+        **kwargs: object,
+    ) -> None:
 
-        self.name = name
-        self.country_index = country_index
-        self.stability = stability
-        self.battleground = battleground
-        self.adjacent_countries = adjacent_countries
-        self.superpower = superpower
-        self.chinese_civil_war = chinese_civil_war
+        self.name: str = name
+        self.country_index: int | str = country_index
+        self.stability: int = stability
+        self.battleground: bool = battleground
+        self.adjacent_countries: list[str] | None = adjacent_countries
+        self.superpower: bool = superpower
+        self.chinese_civil_war: bool = chinese_civil_war
 
         CountryInfo.ALL[name] = self
         if region == "Europe":
@@ -59,21 +63,21 @@ class CountryInfo:
         for r in self.regions:
             CountryInfo.REGION_ALL[r].add(name)
 
-    def __deepcopy__(self, memo):
+    def __deepcopy__(self, memo: dict[int, object]) -> CountryInfo:
         return self
 
 
 class GameMap:
-    def __init__(self):
-        self.ALL = dict()
+    def __init__(self) -> None:
+        self.ALL: dict[str, Country] = dict()
         # Create mapping of (k,v) = (country_index, name)
         for name in CountryInfo.ALL.keys():
             self.ALL[name] = Country(name)
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: str) -> Country:
         return self.ALL[item]
 
-    def has_influence(self, side: Side):
+    def has_influence(self, side: Side) -> Generator[str, None, None]:
         """Returns list of names that have influence from side, less superpowers.."""
         return (
             n
@@ -82,7 +86,7 @@ class GameMap:
         )
 
     @property
-    def has_us_influence(self):
+    def has_us_influence(self) -> list[str]:
         """Returns list of names that have US influence, less superpowers.."""
         return [
             country.info.name
@@ -91,7 +95,7 @@ class GameMap:
         ]
 
     @property
-    def has_ussr_influence(self):
+    def has_ussr_influence(self) -> list[str]:
         """Returns list of names that have USSR influence, less superpowers.."""
         return [
             country.info.name
@@ -99,7 +103,7 @@ class GameMap:
             if country.influence[Side.USSR] > 0 and country.info.superpower == False
         ]
 
-    def can_coup_all(self, side, defcon=5):
+    def can_coup_all(self, side: Side, defcon: int = 5) -> Generator[str, None, None]:
         restricted_regions = set()
 
         if defcon < 5:
@@ -117,7 +121,7 @@ class GameMap:
             and not restricted_regions.intersection(country.info.regions)
         )
 
-    def can_realign_all(self, side, defcon=5):
+    def can_realign_all(self, side: Side, defcon: int = 5) -> Generator[str, None, None]:
 
         restricted_regions = set()
 
@@ -136,29 +140,29 @@ class GameMap:
             and not restricted_regions.intersection(country.info.regions)
         )
 
-    def has_influence_around(self, side, country_name):
+    def has_influence_around(self, side: Side, country_name: str) -> bool:
         c = self[country_name]
         return not c.info.superpower and (
             c.has_influence(side)
             or any(self[adj].has_influence(side) for adj in c.info.adjacent_countries)
         )
 
-    def has_influence_around_all(self, side):
+    def has_influence_around_all(self, side: Side) -> Generator[str, None, None]:
         return (n for n in CountryInfo.ALL if self.has_influence_around(side, n))
 
-    def change_influence(self, name: str, side: Side, influence: int):
+    def change_influence(self, name: str, side: Side, influence: int) -> None:
         if side == Side.USSR:
             self[name].change_influence(influence, 0)
         elif side == Side.US:
             self[name].change_influence(0, influence)
 
-    def set_influence(self, name: str, side: Side, influence: int):
+    def set_influence(self, name: str, side: Side, influence: int) -> None:
         if side == Side.USSR:
             self[name].set_influence(influence, self[name].influence[Side.US])
         elif side == Side.US:
             self[name].set_influence(self[name].influence[Side.USSR], influence)
 
-    def build_standard(self):
+    def build_standard(self) -> None:
         """
         Sets the appropriate amount of influence in each country.
         """
@@ -181,7 +185,7 @@ class GameMap:
         self["Japan"].set_influence(0, 1)
         self["South_Africa"].set_influence(0, 1)
 
-    def build_late_war(self):
+    def build_late_war(self) -> None:
         """
         Sets the appropriate amount of influence in each country for the Late War scenario.
         """
@@ -272,17 +276,17 @@ class GameMap:
 
 
 class Country:
-    def __init__(self, name: str):
-        self.info = CountryInfo.ALL[name]
-        self.influence = [0, 0]  # ussr, then us influence
+    def __init__(self, name: str) -> None:
+        self.info: CountryInfo = CountryInfo.ALL[name]
+        self.influence: list[int] = [0, 0]  # ussr, then us influence
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.info.stability == 0:
             return f"Country({self.info.name}, Superpower = True, Adjacent = {self.info.adjacent_countries})"
         else:
             return f"Country({self.info.name}, \nUS_influence\t= {self.influence[Side.US]}, {self.us_influence_only}\nUSSR_influence\t= {self.influence[Side.USSR]}, {self.ussr_influence_only}\nControl \t= {self.control}"
 
-    def get_state_str(self):
+    def get_state_str(self) -> str:
         if self.info.superpower:
             return f"{self.info.name} [Superpower]"
         else:
@@ -302,7 +306,7 @@ class Country:
             return f"{name_str}US {self.influence[Side.US]}:{self.influence[Side.USSR]} USSR {ctrl_str}"
 
     @property
-    def control(self):
+    def control(self) -> Side:
         if self.influence[Side.US] - self.influence[Side.USSR] >= self.info.stability:
             return Side.US
         elif self.influence[Side.USSR] - self.influence[Side.US] >= self.info.stability:
@@ -311,33 +315,33 @@ class Country:
             return Side.NEUTRAL
 
     @property
-    def us_influence_only(self):
+    def us_influence_only(self) -> bool:
         return self.influence[Side.US] > 0 and self.influence[Side.USSR] == 0
 
     @property
-    def ussr_influence_only(self):
+    def ussr_influence_only(self) -> bool:
         return self.influence[Side.USSR] > 0 and self.influence[Side.US] == 0
 
-    def has_influence(self, side):
+    def has_influence(self, side: Side) -> int:
         return self.influence[side]
 
     @property
-    def has_us_influence(self):
+    def has_us_influence(self) -> bool:
         return self.influence[Side.US] > 0
 
     @property
-    def has_ussr_influence(self):
+    def has_ussr_influence(self) -> bool:
         return self.influence[Side.USSR] > 0
 
-    def set_influence(self, ussr_influence, us_influence):
+    def set_influence(self, ussr_influence: int, us_influence: int) -> None:
         self.influence[Side.US] = us_influence
         self.influence[Side.USSR] = ussr_influence
 
-    def reset_influence(self):
+    def reset_influence(self) -> None:
         self.influence[Side.US] = 0
         self.influence[Side.USSR] = 0
 
-    def change_influence(self, ussr_influence: int, us_influence: int):
+    def change_influence(self, ussr_influence: int, us_influence: int) -> None:
         self.influence[Side.US] += us_influence
         self.influence[Side.USSR] += ussr_influence
         if self.influence[Side.US] < 0:
@@ -345,23 +349,23 @@ class Country:
         if self.influence[Side.USSR] < 0:
             self.influence[Side.USSR] = 0
 
-    def remove_influence(self, side):
+    def remove_influence(self, side: Side) -> bool:
         if self.influence[side] == 0:
             return False
         self.influence[side] = 0
         return True
 
-    def increment_influence(self, side, amt=1):
+    def increment_influence(self, side: Side, amt: int = 1) -> bool:
         self.influence[side] += amt
         return True
 
-    def decrement_influence(self, side, amt=1):
+    def decrement_influence(self, side: Side, amt: int = 1) -> bool:
         if self.influence[side] == 0:
             return False
         self.influence[side] = max(self.influence[side] - amt, 0)
         return True
 
-    def match_influence(self, side):
+    def match_influence(self, side: Side) -> bool:
         self.influence[side] = self.influence[side.opp]
         return True
 

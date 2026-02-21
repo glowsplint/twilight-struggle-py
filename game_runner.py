@@ -5,6 +5,8 @@ Handles the stage_complete loop, auto-rolls dice, detects game end.
 Supports fast simulation mode for self-play training.
 """
 
+from __future__ import annotations
+
 import random
 from copy import deepcopy
 
@@ -16,13 +18,13 @@ from player import Player
 class GameResult:
     """Result of a completed game."""
 
-    def __init__(self, winner: Side, vp: int, turn: int, move_history: list):
-        self.winner = winner
-        self.vp = vp
-        self.turn = turn
-        self.move_history = move_history
+    def __init__(self, winner: Side, vp: int, turn: int, move_history: list[tuple[Side, str]]) -> None:
+        self.winner: Side = winner
+        self.vp: int = vp
+        self.turn: int = turn
+        self.move_history: list[tuple[Side, str]] = move_history
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"GameResult(winner={self.winner.toStr}, vp={self.vp}, turn={self.turn}, moves={len(self.move_history)})"
 
 
@@ -47,11 +49,11 @@ class GameRunner:
     MAX_MOVES = 5000  # Safety limit to prevent infinite loops
 
     def __init__(self, ussr_player: Player, us_player: Player,
-                 handicap: int = -2, silent: bool = True, max_turns: int = 10):
-        self.players = {Side.USSR: ussr_player, Side.US: us_player}
-        self.handicap = handicap
-        self.silent = silent
-        self.max_turns = max_turns
+                 handicap: int = -2, silent: bool = True, max_turns: int = 10) -> None:
+        self.players: dict[Side, Player] = {Side.USSR: ussr_player, Side.US: us_player}
+        self.handicap: int = handicap
+        self.silent: bool = silent
+        self.max_turns: int = max_turns
 
     def run_game(self) -> GameResult:
         """
@@ -64,7 +66,7 @@ class GameRunner:
         """
         game = Game()
         game.start(handicap=self.handicap)
-        move_history = []
+        move_history: list[tuple[Side, str]] = []
         total_steps = 0
 
         # Advance past initial setup stages until first input needed
@@ -122,7 +124,7 @@ class GameRunner:
             move_history=move_history,
         )
 
-    def _advance(self, game: Game):
+    def _advance(self, game: Game) -> None:
         """Advance game stages until input is required or game ends."""
         if not game.stage_list:
             return
@@ -130,7 +132,7 @@ class GameRunner:
         while game.stage_list and not game.input_state:
             game.stage_complete()
 
-    def _handle_rng(self, game: Game, move_history: list):
+    def _handle_rng(self, game: Game, move_history: list[tuple[Side, str]]) -> None:
         """Auto-roll dice for NEUTRAL-side inputs."""
         input_state = game.input_state
         while not input_state.complete:

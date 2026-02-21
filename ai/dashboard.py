@@ -4,6 +4,8 @@ Training Dashboard: TensorBoard-based metrics logging.
 Logs training loss curves, ELO progression, win rates, and game lengths.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 
 try:
@@ -26,8 +28,8 @@ class TrainingDashboard:
     View with: tensorboard --logdir runs/
     """
 
-    def __init__(self, log_dir: str = "runs/twilight_ai"):
-        self.log_dir = Path(log_dir)
+    def __init__(self, log_dir: str = "runs/twilight_ai") -> None:
+        self.log_dir: Path = Path(log_dir)
         self.log_dir.mkdir(parents=True, exist_ok=True)
 
         if HAS_TENSORBOARD:
@@ -38,7 +40,7 @@ class TrainingDashboard:
 
     def log_training(self, iteration: int, policy_loss: float,
                      value_loss: float, total_loss: float,
-                     buffer_size: int = 0):
+                     buffer_size: int = 0) -> None:
         """Log training metrics."""
         if self.writer:
             self.writer.add_scalar("Loss/policy", policy_loss, iteration)
@@ -48,7 +50,7 @@ class TrainingDashboard:
 
     def log_evaluation(self, iteration: int, win_rate: float,
                        ai_wins: int = 0, total_games: int = 0,
-                       elo: float = 0):
+                       elo: float = 0) -> None:
         """Log evaluation metrics."""
         if self.writer:
             self.writer.add_scalar("Eval/win_rate", win_rate, iteration)
@@ -59,7 +61,7 @@ class TrainingDashboard:
 
     def log_self_play(self, iteration: int, ussr_wins: int,
                       us_wins: int, draws: int, avg_turns: float,
-                      samples_generated: int):
+                      samples_generated: int) -> None:
         """Log self-play statistics."""
         total = ussr_wins + us_wins + draws
         if self.writer and total > 0:
@@ -69,7 +71,7 @@ class TrainingDashboard:
             self.writer.add_scalar("SelfPlay/avg_turns", avg_turns, iteration)
             self.writer.add_scalar("SelfPlay/samples", samples_generated, iteration)
 
-    def close(self):
+    def close(self) -> None:
         """Close the TensorBoard writer."""
         if self.writer:
             self.writer.close()

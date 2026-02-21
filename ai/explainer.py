@@ -4,12 +4,20 @@ AI Decision Explainer: Generates human-readable explanations of AI moves.
 Provides template-based strategic reasoning from action type and game context.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from enums import CardAction, InputType, Side
 from cards import Card
 from world_map import CountryInfo
 
+if TYPE_CHECKING:
+    from game_mechanics import Game
+    from interfacing import Input
 
-def explain_move(explanation: dict, input_state, game) -> dict:
+
+def explain_move(explanation: dict[str, object], input_state: Input, game: Game) -> dict[str, object]:
     """
     Generate a human-readable explanation of an AI decision.
 
@@ -82,7 +90,7 @@ def _format_action_name(action: str, input_type: InputType) -> str:
 
 
 def _generate_reasoning(action: str, input_type: InputType,
-                        game, side: Side) -> str:
+                        game: Game, side: Side) -> str:
     """Generate template-based strategic reasoning."""
     if input_type == InputType.SELECT_CARD:
         return _reason_card_selection(action, game, side)
@@ -93,7 +101,7 @@ def _generate_reasoning(action: str, input_type: InputType,
     return "Evaluating position..."
 
 
-def _reason_card_selection(card_name: str, game, side: Side) -> str:
+def _reason_card_selection(card_name: str, game: Game, side: Side) -> str:
     """Reasoning for card selection."""
     if card_name not in Card.ALL:
         return f"Playing {card_name}."
@@ -112,7 +120,7 @@ def _reason_card_selection(card_name: str, game, side: Side) -> str:
         return f"Playing neutral card ({card.ops} ops)."
 
 
-def _reason_action_selection(action: str, game, side: Side) -> str:
+def _reason_action_selection(action: str, game: Game, side: Side) -> str:
     """Reasoning for action type selection."""
     reasons = {
         "PLAY_EVENT": "Event effect is valuable in current position.",
@@ -137,7 +145,7 @@ def _reason_action_selection(action: str, game, side: Side) -> str:
     return base
 
 
-def _reason_country_selection(country_name: str, game, side: Side) -> str:
+def _reason_country_selection(country_name: str, game: Game, side: Side) -> str:
     """Reasoning for country selection."""
     if country_name not in CountryInfo.ALL:
         return f"Targeting {country_name}."

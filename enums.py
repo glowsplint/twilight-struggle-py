@@ -1,19 +1,21 @@
+from __future__ import annotations
+
 import enum
 
 
 class TrackEffects:
-    def __init__(self, defcon: int = 0, vp: int = 0, milops: int = 0):
+    def __init__(self, defcon: int = 0, vp: int = 0, milops: int = 0) -> None:
         self.defcon = defcon
         self.vp = vp
         self.milops = milops
 
-    def __iadd__(self, other):
+    def __iadd__(self, other: TrackEffects) -> TrackEffects:
         self.defcon += other.defcon
         self.vp += other.vp
         self.milops += other.milops
         return self
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         items = []
         if self.defcon:
             items.append(f"DEFCON {self.defcon:+}")
@@ -28,18 +30,18 @@ class TrackEffects:
 
 
 class CoupEffects(TrackEffects):
-    def __init__(self, no_milops: bool = False, no_defcon_bg: bool = False, **kwargs):
+    def __init__(self, no_milops: bool = False, no_defcon_bg: bool = False, **kwargs: int) -> None:
         super().__init__(**kwargs)
         self.no_milops = no_milops
         self.no_defcon_bg = no_defcon_bg
 
-    def __iadd__(self, other):
+    def __iadd__(self, other: CoupEffects) -> CoupEffects:  # type: ignore[override]
         super().__iadd__(other)
         self.no_milops = self.no_milops or other.no_milops
         self.no_defcon_bg = self.no_defcon_bg or other.no_defcon_bg
         return self
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         items = []
         prefix = super().__repr__()
 
@@ -55,7 +57,7 @@ class CoupEffects(TrackEffects):
 
 
 class RealignState:
-    def __init__(self, side=None, reps=0, countries=None, defcon=None):
+    def __init__(self, side: Side | None = None, reps: int = 0, countries: list[str] | None = None, defcon: int | None = None) -> None:
         """
 
         :param side: The side choosing the countries to realign.
@@ -65,15 +67,15 @@ class RealignState:
         """
         self.side = side
         self.reps = reps
-        self.countries = [] if countries is None else countries
+        self.countries: list[str] = [] if countries is None else countries
         self.defcon = defcon
 
-    def __iadd__(self, other):
+    def __iadd__(self, other: RealignState) -> RealignState:
         self.reps += other.reps
         self.countries += other.countries
         return self
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         items = []
         if self.reps:
             items.append(f"Remaining realignments {self.reps:+}")
@@ -82,16 +84,16 @@ class RealignState:
 
 
 class OpsInfState:
-    def __init__(self, ops, countries=None):
+    def __init__(self, ops: int, countries: list[str] | None = None) -> None:
         self.ops = ops
-        self.countries = [] if countries is None else countries
+        self.countries: list[str] = [] if countries is None else countries
 
-    def __iadd__(self, other):
+    def __iadd__(self, other: OpsInfState) -> OpsInfState:
         self.ops += other.ops
         self.countries += other.countries
         return self
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         items = []
         if self.ops:
             items.append(f"Remaining realignments {self.ops:+}")
@@ -106,11 +108,11 @@ class Side(enum.IntEnum):
     NEUTRAL = 2
 
     @classmethod
-    def PLAYERS(cls):
+    def PLAYERS(cls) -> tuple[Side, ...]:
         return (cls.USSR, cls.US)
 
     @staticmethod
-    def fromStr(s):
+    def fromStr(s: str) -> Side:
         if s.lower() == "us":
             return Side.US
         elif s.lower() == "ussr":
@@ -121,7 +123,7 @@ class Side(enum.IntEnum):
             raise NameError("Invalid string for Side.fromStr")
 
     @property
-    def toStr(self):
+    def toStr(self) -> str:
         if self == Side.US:
             return "US"
         elif self == Side.USSR:
@@ -130,7 +132,7 @@ class Side(enum.IntEnum):
             return "NEUTRAL"
 
     @property
-    def opp(self):
+    def opp(self) -> Side:
         if self == Side.USSR:
             return Side.US
         elif self == Side.US:
@@ -139,7 +141,7 @@ class Side(enum.IntEnum):
             return Side.NEUTRAL
 
     @property
-    def vp_mult(self):
+    def vp_mult(self) -> int:
         if self == Side.USSR:
             return 1
         elif self == Side.US:
@@ -162,7 +164,7 @@ class MapRegion(enum.IntEnum):
     SOUTHEAST_ASIA = 8
 
     @staticmethod
-    def fromStr(inStr):
+    def fromStr(inStr: str) -> MapRegion | None:
         s = inStr.lower()
         if s == "europe" or s == "eu":
             return MapRegion.EUROPE
@@ -186,7 +188,7 @@ class MapRegion(enum.IntEnum):
             return None
 
     @classmethod
-    def main_regions(self):
+    def main_regions(cls) -> list[MapRegion]:
         return [
             MapRegion.EUROPE,
             MapRegion.ASIA,

@@ -5,7 +5,10 @@ Collects (state, mcts_policy, outcome) training data during play.
 Stores top-5 actions with visit counts and win rates for explainability.
 """
 
+from __future__ import annotations
+
 import random
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -15,6 +18,11 @@ from ai.pimc import PIMCSearch
 from ai.state_encoder import encode_state
 from enums import Side
 from player import Player
+
+if TYPE_CHECKING:
+    from ai.network import TwilightNet
+    from game_mechanics import Game
+    from interfacing import Input
 
 
 class AIPlayer(Player):
@@ -37,23 +45,23 @@ class AIPlayer(Player):
         Whether to collect training data.
     """
 
-    def __init__(self, side: Side, network=None, num_worlds: int = 20,
+    def __init__(self, side: Side, network: TwilightNet | None = None, num_worlds: int = 20,
                  num_simulations: int = 200, temperature: float = 1.0,
-                 collect_data: bool = False):
+                 collect_data: bool = False) -> None:
         super().__init__(side)
-        self.network = network
+        self.network: TwilightNet | None = network
         self.search = PIMCSearch(
             network=network,
             num_worlds=num_worlds,
             num_simulations=num_simulations,
             temperature=temperature,
         )
-        self.collect_data = collect_data
-        self.training_data = []  # List of (state, policy, None) - outcome filled later
-        self.last_explanation = None
-        self.temperature = temperature
+        self.collect_data: bool = collect_data
+        self.training_data: list[list[object]] = []  # List of (state, policy, None) - outcome filled later
+        self.last_explanation: dict[str, object] | None = None
+        self.temperature: float = temperature
 
-    def get_move(self, input_state, game) -> str:
+    def get_move(self, input_state: Input, game: Game) -> str:
         """Select a move using PIMC + MCTS."""
         # For dice rolls, just pick randomly
         if input_state.side == Side.NEUTRAL:
@@ -85,7 +93,7 @@ class AIPlayer(Player):
 
         return move
 
-    def set_game_outcome(self, winner: Side):
+    def set_game_outcome(self, winner: Side) -> None:
         """
         Fill in game outcomes for all collected training data.
 
@@ -104,13 +112,13 @@ class AIPlayer(Player):
         for entry in self.training_data:
             entry[2] = outcome
 
-    def get_training_data(self) -> list:
+    def get_training_data(self) -> list[list[object]]:
         """Return collected training data and clear buffer."""
         data = self.training_data
         self.training_data = []
         return data
 
-    def set_temperature(self, temperature: float):
+    def set_temperature(self, temperature: float) -> None:
         """Update temperature for action selection."""
         self.temperature = temperature
         self.search.temperature = temperature

@@ -11,11 +11,18 @@ Hierarchical action encoding matching the existing Input system:
 The action space is flat for neural network output, with illegal action masking.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 from cards import Card
 from enums import CardAction, InputType, Side
 from world_map import CountryInfo
+
+if TYPE_CHECKING:
+    from interfacing import Input
 
 
 # Build deterministic ordered lists
@@ -90,7 +97,7 @@ def encode_action(option: str, input_type: InputType) -> int:
     return STOP_EARLY_OFFSET
 
 
-def decode_action(action_idx: int, input_state) -> str:
+def decode_action(action_idx: int, input_state: Input) -> str:
     """
     Convert an action index back to a game option string.
 
@@ -128,7 +135,7 @@ def decode_action(action_idx: int, input_state) -> str:
     raise ValueError(f"Invalid action index: {action_idx}")
 
 
-def get_action_mask(input_state) -> np.ndarray:
+def get_action_mask(input_state: Input) -> np.ndarray:
     """
     Create a binary mask of legal actions for the current input state.
 

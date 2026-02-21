@@ -1,32 +1,39 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from enums import Side
 from world_map import GameMap
 
+if TYPE_CHECKING:
+    from game_mechanics import Game
+
 
 class PlayerView:
-    def __init__(self, side: Side):
+    def __init__(self, side: Side) -> None:
 
-        self.side = side
+        self.side: Side = side
 
         """
         Public information that is shared by both players.
         """
-        self.vp_track = 0
-        self.turn_track = 0
-        self.ar_track = 0
-        self.ar_side = None
-        self.ars_by_turn = ([], [])
-        self.ar_side_done = [False, False]
-        self.defcon_track = 0
-        self.milops_track = [0, 0]
-        self.space_track = [0, 0]
-        self.spaced_turns = [0, 0]
-        self.handicap = None
+        self.vp_track: int = 0
+        self.turn_track: int = 0
+        self.ar_track: int = 0
+        self.ar_side: Side | None = None
+        self.ars_by_turn: tuple[list[int], list[int]] = ([], [])
+        self.ar_side_done: list[bool] = [False, False]
+        self.defcon_track: int = 0
+        self.milops_track: list[int] = [0, 0]
+        self.space_track: list[int] = [0, 0]
+        self.spaced_turns: list[int] = [0, 0]
+        self.handicap: int | None = None
 
-        self.player_view = None
-        self.map = None
-        self.removed_pile = []
-        self.discard_pile = []
-        self.basket = [[], []]
+        self.player_view: PlayerView | None = None
+        self.map: Map | None = None
+        self.removed_pile: list[str] = []
+        self.discard_pile: list[str] = []
+        self.basket: list[list[str]] = [[], []]
 
         """
         Information that is mostly private and available only to a specific player.
@@ -34,14 +41,14 @@ class PlayerView:
 
         For instance, the draw pile can contain revealed information from Our_Man_In_Tehran.
         """
-        self.draw_pile = set()
-        self.hand = set()
-        self.opp_hand = set()
-        self.opp_hand_no_scoring_cards = False
-        self.opp_headline = []
+        self.draw_pile: set[str] = set()
+        self.hand: set[str] | list[str] = set()
+        self.opp_hand: set[str] = set()
+        self.opp_hand_no_scoring_cards: bool = False
+        self.opp_headline: list[str] = []
 
     # might have to run this every game loop
-    def link(self, game):
+    def link(self, game: Game) -> None:
         """Passes game attributes to the PlayerView instance."""
         self.vp_track = game.vp_track
         self.turn_track = game.turn_track
@@ -63,7 +70,7 @@ class PlayerView:
         self.hand = game.hand[self.side]
 
     @property
-    def json(self):
+    def json(self) -> dict[str, object]:
         return {
             "vp_track": self.vp_track,
             "turn_track": self.turn_track,
@@ -87,11 +94,11 @@ class PlayerView:
 
 
 class Map:
-    def __init__(self, game_map: GameMap):
-        self.info = game_map
+    def __init__(self, game_map: GameMap) -> None:
+        self.info: GameMap = game_map
 
     @property
-    def json(self):
+    def json(self) -> dict[str, dict[str, object]]:
         return {
             country_name: {
                 "control": self.info[country_name].control,

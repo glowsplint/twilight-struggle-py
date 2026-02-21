@@ -6,6 +6,8 @@ Components:
 - Trainer: Manages training loop with loss computation and optimization
 """
 
+from __future__ import annotations
+
 import random
 from collections import deque
 from pathlib import Path
@@ -33,20 +35,20 @@ class ReplayBuffer:
         Maximum number of samples to store.
     """
 
-    def __init__(self, max_size: int = 500_000):
-        self.buffer = deque(maxlen=max_size)
+    def __init__(self, max_size: int = 500_000) -> None:
+        self.buffer: deque[tuple[np.ndarray, np.ndarray, float]] = deque(maxlen=max_size)
 
-    def add(self, state: np.ndarray, policy: np.ndarray, outcome: float):
+    def add(self, state: np.ndarray, policy: np.ndarray, outcome: float) -> None:
         """Add a single training sample."""
         self.buffer.append((state, policy, outcome))
 
-    def add_batch(self, data: list):
+    def add_batch(self, data: list[tuple[np.ndarray, np.ndarray, float | None]]) -> None:
         """Add a batch of (state, policy, outcome) tuples."""
         for state, policy, outcome in data:
             if outcome is not None:
                 self.add(state, policy, outcome)
 
-    def sample(self, batch_size: int) -> tuple:
+    def sample(self, batch_size: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Sample a random batch from the buffer.
 
@@ -64,10 +66,10 @@ class ReplayBuffer:
 
         return states, policies, outcomes
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.buffer)
 
-    def save(self, filepath: str):
+    def save(self, filepath: str) -> None:
         """Save buffer to file."""
         data = list(self.buffer)
         states = np.array([s for s, _, _ in data])
@@ -75,7 +77,7 @@ class ReplayBuffer:
         outcomes = np.array([o for _, _, o in data])
         np.savez_compressed(filepath, states=states, policies=policies, outcomes=outcomes)
 
-    def load(self, filepath: str):
+    def load(self, filepath: str) -> None:
         """Load buffer from file."""
         data = np.load(filepath)
         for s, p, o in zip(data["states"], data["policies"], data["outcomes"]):
@@ -99,9 +101,9 @@ class Trainer:
     """
 
     def __init__(self, network: TwilightNet, lr: float = 0.001,
-                 weight_decay: float = 1e-4, device: str = "cpu"):
-        self.network = network.to(device)
-        self.device = device
+                 weight_decay: float = 1e-4, device: str = "cpu") -> None:
+        self.network: TwilightNet = network.to(device)
+        self.device: str = device
         self.optimizer = optim.Adam(
             network.parameters(), lr=lr, weight_decay=weight_decay
         )
@@ -111,7 +113,7 @@ class Trainer:
         self.train_step = 0
 
     def train_on_buffer(self, replay_buffer: ReplayBuffer,
-                        batch_size: int = 256, num_steps: int = 1000) -> dict:
+                        batch_size: int = 256, num_steps: int = 1000) -> dict[str, float | int]:
         """
         Train the network on samples from the replay buffer.
 
@@ -176,7 +178,7 @@ class Trainer:
             "buffer_size": len(replay_buffer),
         }
 
-    def save_checkpoint(self, filepath: str):
+    def save_checkpoint(self, filepath: str) -> None:
         """Save training state."""
         torch.save({
             "model_state_dict": self.network.state_dict(),
@@ -185,7 +187,7 @@ class Trainer:
             "train_step": self.train_step,
         }, filepath)
 
-    def load_checkpoint(self, filepath: str):
+    def load_checkpoint(self, filepath: str) -> None:
         """Load training state."""
         checkpoint = torch.load(filepath, map_location=self.device)
         self.network.load_state_dict(checkpoint["model_state_dict"])

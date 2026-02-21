@@ -5,15 +5,22 @@ Samples possible opponent hands consistent with known information,
 runs MCTS on each determinized world, and aggregates results.
 """
 
+from __future__ import annotations
+
 import random
 from collections import defaultdict
 from copy import deepcopy
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 from ai.mcts import MCTSSearch
 from cards import Card
 from enums import Side
+
+if TYPE_CHECKING:
+    from game_mechanics import Game
+    from interfacing import Input
 
 
 class Determinizer:
@@ -27,12 +34,12 @@ class Determinizer:
     - All remaining unknown cards to distribute
     """
 
-    def __init__(self, game, perspective_side: Side):
-        self.game = game
-        self.side = perspective_side
-        self.opp = perspective_side.opp
+    def __init__(self, game: Game, perspective_side: Side) -> None:
+        self.game: Game = game
+        self.side: Side = perspective_side
+        self.opp: Side = perspective_side.opp
 
-    def sample_opponent_hand(self) -> list:
+    def sample_opponent_hand(self) -> list[str]:
         """
         Sample a possible opponent hand consistent with known information.
 
@@ -69,7 +76,7 @@ class Determinizer:
         sampled = list(known_opp_cards) + unknown_cards[:needed]
         return sampled
 
-    def determinize(self) -> "Game":
+    def determinize(self) -> Game:
         """
         Create a determinized copy of the game with a sampled opponent hand.
 
@@ -104,16 +111,16 @@ class PIMCSearch:
         Temperature for final action selection.
     """
 
-    def __init__(self, network=None, num_worlds: int = 20,
+    def __init__(self, network: object = None, num_worlds: int = 20,
                  num_simulations: int = 200, c_puct: float = 1.4,
-                 temperature: float = 1.0):
+                 temperature: float = 1.0) -> None:
         self.network = network
-        self.num_worlds = num_worlds
-        self.num_simulations = num_simulations
-        self.c_puct = c_puct
-        self.temperature = temperature
+        self.num_worlds: int = num_worlds
+        self.num_simulations: int = num_simulations
+        self.c_puct: float = c_puct
+        self.temperature: float = temperature
 
-    def select_move(self, input_state, game) -> tuple:
+    def select_move(self, input_state: Input, game: Game) -> tuple[str, dict[str, object]]:
         """
         Select a move using PIMC + MCTS.
 
@@ -185,8 +192,9 @@ class PIMCSearch:
 
         return move, explanation
 
-    def _build_explanation(self, visits, values, world_counts,
-                           chosen_idx, chosen_move, input_state) -> dict:
+    def _build_explanation(self, visits: dict[int, float], values: dict[int, float],
+                           world_counts: dict[int, int],
+                           chosen_idx: int, chosen_move: str, input_state: Input) -> dict[str, object]:
         """Build explanation dict for the AI decision."""
         from ai.action_encoder import decode_action
 

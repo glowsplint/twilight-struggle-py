@@ -1,11 +1,16 @@
-from typing import Callable, Iterable, Optional, Tuple
+from __future__ import annotations
 
-from enums import CoupEffects, MapRegion
-from world_map import MapRegion
+from collections.abc import Callable, Iterable
+from typing import TYPE_CHECKING
+
+from enums import CoupEffects, MapRegion, Side
+
+if TYPE_CHECKING:
+    from game_mechanics import Game
 
 
 class Effect:
-    def effect_global_ops(self, game, effect_side, ops_side) -> Optional[int]:
+    def effect_global_ops(self, game: Game, effect_side: Side, ops_side: Side) -> int | None:
         """
         Returns the operations modifier for a player due to the effect.
         :param effect_side: the side which activated the effect (who's basket the effect is in)
@@ -14,23 +19,23 @@ class Effect:
         """
         pass
 
-    def effect_ar_function(self, game) -> Optional[Callable[[], None]]:
+    def effect_ar_function(self, game: Game) -> Callable[[], None] | None:
         pass
 
-    def effect_end_turn(self, game, effect_side) -> None:
+    def effect_end_turn(self, game: Game, effect_side: Side) -> None:
         pass
 
     def effect_opsinf_region_ops(
-        self, game, effect_side, ops_side
-    ) -> Optional[Tuple[MapRegion, int]]:
+        self, game: Game, effect_side: Side, ops_side: Side
+    ) -> tuple[MapRegion, int] | None:
         pass
 
     def effect_opsinf_country_select(
-        self, game, effect_side, ops_side, country_name
-    ) -> Optional[Tuple[MapRegion, int]]:
+        self, game: Game, effect_side: Side, ops_side: Side, country_name: str
+    ) -> tuple[MapRegion, int] | None:
         pass
 
-    def effect_opsinf_after(self, game, effect_side, ops_side) -> None:
+    def effect_opsinf_after(self, game: Game, effect_side: Side, ops_side: Side) -> None:
         """
         This function is called after influence has been placed as operations (and been used up).
         :param effect_side: the side which activated the effect (who's basket the effect is in)
@@ -38,7 +43,7 @@ class Effect:
         """
         pass
 
-    def effect_realign_country_restrict(self, game, side) -> Optional[Iterable[str]]:
+    def effect_realign_country_restrict(self, game: Game, side: Side) -> Iterable[str] | None:
         """
         Returns the countries in which a realignment is not allowed if
         the effect is active.
@@ -49,8 +54,8 @@ class Effect:
         pass
 
     def effect_realign_roll(
-        self, game, effect_side, roll_side, country_name
-    ) -> Optional[int]:
+        self, game: Game, effect_side: Side, roll_side: Side, country_name: str
+    ) -> int | None:
         """
         Returns the realignment roll modifier for roll_side, given that
         the effect is active for effect_side, and the country being realigned.
@@ -61,7 +66,7 @@ class Effect:
         """
         pass
 
-    def effect_realign_ops(self, game, effect_side, country_name) -> Optional[int]:
+    def effect_realign_ops(self, game: Game, effect_side: Side, country_name: str) -> int | None:
         """
         Returns the realignment ops modifier for effect_side, Called after every
         realignment.
@@ -71,14 +76,14 @@ class Effect:
         """
         pass
 
-    def effect_realign_after(self, game, effect_side) -> None:
+    def effect_realign_after(self, game: Game, effect_side: Side) -> None:
         """
         This function is called after a series of realignments has been completed.
         :param effect_side: the side which activated the effect (who's basket the effect is in)
         """
         pass
 
-    def effect_coup_country_restrict(self, game, side) -> Optional[Iterable[str]]:
+    def effect_coup_country_restrict(self, game: Game, side: Side) -> Iterable[str] | None:
         """
         Returns the countries in which a coup is not allowed if
         the effect is active.
@@ -88,8 +93,8 @@ class Effect:
         pass
 
     def effect_coup_ops(
-        self, game, effect_side, coup_side, country_name
-    ) -> Optional[int]:
+        self, game: Game, effect_side: Side, coup_side: Side, country_name: str
+    ) -> int | None:
         """
         Returns the ops change for a coup if the effect is active.
         :param effect_side: the side which activated the effect (who's basket the effect is in)
@@ -100,8 +105,8 @@ class Effect:
         pass
 
     def effect_coup_roll(
-        self, game, effect_side, coup_side, country_name
-    ) -> Optional[int]:
+        self, game: Game, effect_side: Side, coup_side: Side, country_name: str
+    ) -> int | None:
         """
         Returns the die roll modifier for a coup if the effect is active.
         :param effect_side: the side which activated the effect (who's basket the effect is in)
@@ -112,8 +117,8 @@ class Effect:
         pass
 
     def effect_coup_after(
-        self, game, effect_side, coup_side, country_name, result
-    ) -> Optional[CoupEffects]:
+        self, game: Game, effect_side: Side, coup_side: Side, country_name: str, result: int
+    ) -> CoupEffects | None:
         """
         This function is called after a coup is completed.
         :param effect_side: the side which activated the effect (who's basket the effect is in)

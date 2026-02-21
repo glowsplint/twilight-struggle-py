@@ -8,6 +8,8 @@ Architecture: Shared trunk with residual blocks, split into policy and value hea
   - Value head: Linear(512, 256) -> Linear(256, 1) + tanh
 """
 
+from __future__ import annotations
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -20,7 +22,7 @@ from ai.state_encoder import TOTAL_FEATURES
 class ResidualBlock(nn.Module):
     """Residual block with two linear layers, batch norm, and skip connection."""
 
-    def __init__(self, hidden_size: int):
+    def __init__(self, hidden_size: int) -> None:
         super().__init__()
         self.fc1 = nn.Linear(hidden_size, hidden_size)
         self.bn1 = nn.BatchNorm1d(hidden_size)
@@ -52,12 +54,12 @@ class TwilightNet(nn.Module):
     """
 
     def __init__(self, input_size: int = TOTAL_FEATURES, hidden_size: int = 512,
-                 num_residual_blocks: int = 8, num_actions: int = TOTAL_ACTIONS):
+                 num_residual_blocks: int = 8, num_actions: int = TOTAL_ACTIONS) -> None:
         super().__init__()
 
-        self.input_size = input_size
-        self.hidden_size = hidden_size
-        self.num_actions = num_actions
+        self.input_size: int = input_size
+        self.hidden_size: int = hidden_size
+        self.num_actions: int = num_actions
 
         # Input projection
         self.input_fc = nn.Linear(input_size, hidden_size)
@@ -78,7 +80,7 @@ class TwilightNet(nn.Module):
         self.value_bn = nn.BatchNorm1d(256)
         self.value_fc2 = nn.Linear(256, 1)
 
-    def forward(self, x: torch.Tensor, legal_mask: torch.Tensor = None):
+    def forward(self, x: torch.Tensor, legal_mask: torch.Tensor | None = None) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Forward pass.
 
@@ -114,7 +116,7 @@ class TwilightNet(nn.Module):
 
         return policy_logits, value
 
-    def predict(self, state: np.ndarray, legal_mask: np.ndarray) -> tuple:
+    def predict(self, state: np.ndarray, legal_mask: np.ndarray) -> tuple[np.ndarray, float]:
         """
         Single-state prediction for MCTS (no gradient).
 
@@ -146,7 +148,7 @@ class TwilightNet(nn.Module):
 
         return policy_np, value_float
 
-    def save_checkpoint(self, filepath: str):
+    def save_checkpoint(self, filepath: str) -> None:
         """Save model weights to file."""
         torch.save({
             "model_state_dict": self.state_dict(),
@@ -156,7 +158,7 @@ class TwilightNet(nn.Module):
         }, filepath)
 
     @classmethod
-    def load_checkpoint(cls, filepath: str, device: str = "cpu") -> "TwilightNet":
+    def load_checkpoint(cls, filepath: str, device: str = "cpu") -> TwilightNet:
         """Load model from checkpoint file."""
         checkpoint = torch.load(filepath, map_location=device)
         model = cls(

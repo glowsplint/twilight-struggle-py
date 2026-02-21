@@ -6,6 +6,8 @@ Components:
 - TrainingPipeline: Orchestrates self-play -> train -> evaluate loop
 """
 
+from __future__ import annotations
+
 import time
 from pathlib import Path
 
@@ -33,14 +35,14 @@ class SelfPlayWorker:
         Action selection temperature.
     """
 
-    def __init__(self, network=None, num_worlds: int = 10,
-                 num_simulations: int = 100, temperature: float = 1.0):
-        self.network = network
-        self.num_worlds = num_worlds
-        self.num_simulations = num_simulations
-        self.temperature = temperature
+    def __init__(self, network: TwilightNet | None = None, num_worlds: int = 10,
+                 num_simulations: int = 100, temperature: float = 1.0) -> None:
+        self.network: TwilightNet | None = network
+        self.num_worlds: int = num_worlds
+        self.num_simulations: int = num_simulations
+        self.temperature: float = temperature
 
-    def play_game(self) -> tuple:
+    def play_game(self) -> tuple[GameResult | None, list[list[object]]]:
         """
         Play a single self-play game.
 
@@ -82,7 +84,7 @@ class SelfPlayWorker:
 
         return result, training_data
 
-    def play_games(self, num_games: int) -> tuple:
+    def play_games(self, num_games: int) -> tuple[list[GameResult], list[list[object]]]:
         """
         Play multiple self-play games.
 
@@ -105,9 +107,9 @@ class SelfPlayWorker:
         return results, all_data
 
 
-def evaluate_network(network, opponent_type: str = "random",
+def evaluate_network(network: TwilightNet | None, opponent_type: str = "random",
                      num_games: int = 100, num_worlds: int = 10,
-                     num_simulations: int = 100) -> dict:
+                     num_simulations: int = 100) -> dict[str, int | float]:
     """
     Evaluate a network against a baseline opponent.
 
@@ -214,9 +216,9 @@ class TrainingPipeline:
     """
 
     def __init__(self, hidden_size: int = 512, num_residual_blocks: int = 8,
-                 device: str = "cpu", checkpoint_dir: str = "checkpoints"):
-        self.device = device
-        self.checkpoint_dir = Path(checkpoint_dir)
+                 device: str = "cpu", checkpoint_dir: str = "checkpoints") -> None:
+        self.device: str = device
+        self.checkpoint_dir: Path = Path(checkpoint_dir)
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
         self.network = TwilightNet(
@@ -232,7 +234,7 @@ class TrainingPipeline:
     def run(self, num_iterations: int = 100, games_per_iter: int = 100,
             train_steps: int = 1000, eval_games: int = 50,
             num_worlds: int = 10, num_simulations: int = 100,
-            win_rate_threshold: float = 0.55):
+            win_rate_threshold: float = 0.55) -> None:
         """
         Run the full training pipeline.
 

@@ -5,8 +5,11 @@ Uses PUCT (Predictor + Upper Confidence bounds applied to Trees) selection
 with neural network priors for expansion and value estimation.
 """
 
+from __future__ import annotations
+
 import math
 import random
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -20,6 +23,9 @@ from ai.action_encoder import (
 from ai.state_encoder import TOTAL_FEATURES, encode_state
 from enums import Side
 
+if TYPE_CHECKING:
+    from game_mechanics import Game
+
 
 class MCTSNode:
     """A node in the MCTS search tree."""
@@ -29,15 +35,15 @@ class MCTSNode:
         "value_sum", "prior", "is_expanded", "input_type",
     ]
 
-    def __init__(self, parent=None, action_idx: int = -1, prior: float = 0.0):
-        self.parent = parent
-        self.action_idx = action_idx
-        self.children = {}  # action_idx -> MCTSNode
-        self.visit_count = 0
-        self.value_sum = 0.0
-        self.prior = prior
-        self.is_expanded = False
-        self.input_type = None
+    def __init__(self, parent: MCTSNode | None = None, action_idx: int = -1, prior: float = 0.0) -> None:
+        self.parent: MCTSNode | None = parent
+        self.action_idx: int = action_idx
+        self.children: dict[int, MCTSNode] = {}  # action_idx -> MCTSNode
+        self.visit_count: int = 0
+        self.value_sum: float = 0.0
+        self.prior: float = prior
+        self.is_expanded: bool = False
+        self.input_type: object = None
 
     @property
     def value(self) -> float:
@@ -46,7 +52,7 @@ class MCTSNode:
             return 0.0
         return self.value_sum / self.visit_count
 
-    def select_child(self, c_puct: float = 1.4) -> "MCTSNode":
+    def select_child(self, c_puct: float = 1.4) -> MCTSNode:
         """Select child with highest PUCT score."""
         total_visits = sum(c.visit_count for c in self.children.values())
         sqrt_total = math.sqrt(total_visits + 1)
@@ -64,7 +70,7 @@ class MCTSNode:
 
         return best_child
 
-    def expand(self, action_priors: np.ndarray, legal_mask: np.ndarray):
+    def expand(self, action_priors: np.ndarray, legal_mask: np.ndarray) -> None:
         """
         Expand this node with children for all legal actions.
 
@@ -83,7 +89,7 @@ class MCTSNode:
                 prior=float(action_priors[action_idx]),
             )
 
-    def backpropagate(self, value: float):
+    def backpropagate(self, value: float) -> None:
         """Propagate value estimate back up the tree."""
         node = self
         while node is not None:
@@ -110,14 +116,14 @@ class MCTSSearch:
         Temperature for action selection from visit counts.
     """
 
-    def __init__(self, network=None, num_simulations: int = 200,
-                 c_puct: float = 1.4, temperature: float = 1.0):
+    def __init__(self, network: object = None, num_simulations: int = 200,
+                 c_puct: float = 1.4, temperature: float = 1.0) -> None:
         self.network = network
-        self.num_simulations = num_simulations
-        self.c_puct = c_puct
-        self.temperature = temperature
+        self.num_simulations: int = num_simulations
+        self.c_puct: float = c_puct
+        self.temperature: float = temperature
 
-    def search(self, game, perspective_side: Side) -> dict:
+    def search(self, game: Game, perspective_side: Side) -> dict[int, int]:
         """
         Run MCTS from the current game state.
 
@@ -198,7 +204,7 @@ class MCTSSearch:
 
         return {idx: child.visit_count for idx, child in root.children.items()}
 
-    def select_action(self, visit_counts: dict, temperature: float = None) -> int:
+    def select_action(self, visit_counts: dict[int, float], temperature: float | None = None) -> int:
         """
         Select action from visit counts using temperature.
 
@@ -235,7 +241,7 @@ class MCTSSearch:
         probs = counts / total
         return actions[np.random.choice(len(actions), p=probs)]
 
-    def get_policy(self, visit_counts: dict) -> np.ndarray:
+    def get_policy(self, visit_counts: dict[int, int]) -> np.ndarray:
         """
         Convert visit counts to a policy vector.
 
@@ -251,8 +257,8 @@ class MCTSSearch:
                 policy[idx] = count / total
         return policy
 
-    def _evaluate(self, game, perspective_side: Side,
-                  legal_mask: np.ndarray) -> tuple:
+    def _evaluate(self, game: Game, perspective_side: Side,
+                  legal_mask: np.ndarray) -> tuple[np.ndarray, float]:
         """
         Evaluate game state using the neural network or uniform priors.
 
@@ -274,7 +280,7 @@ class MCTSSearch:
             policy[legal_mask] = 1.0 / num_legal
         return policy, 0.0
 
-    def _terminal_value(self, game, perspective_side: Side) -> float:
+    def _terminal_value(self, game: Game, perspective_side: Side) -> float:
         """Estimate value of a terminal or near-terminal state."""
         vp = game.vp_track * perspective_side.vp_mult
         # Normalize to [-1, 1]

@@ -14,11 +14,18 @@ Feature layout (~756 features):
   Total:            ~756
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 from cards import Card
 from enums import MapRegion, Side
 from world_map import CountryInfo
+
+if TYPE_CHECKING:
+    from game_mechanics import Game
 
 
 # Build deterministic ordered lists at import time
@@ -62,7 +69,7 @@ EFFECT_CARDS = [
 EFFECT_TO_IDX = {name: i for i, name in enumerate(EFFECT_CARDS)}
 
 
-def encode_state(game, perspective_side: Side) -> np.ndarray:
+def encode_state(game: Game, perspective_side: Side) -> np.ndarray:
     """
     Encode the full game state into a fixed-size numpy array from perspective_side's POV.
 
@@ -161,7 +168,7 @@ def encode_state(game, perspective_side: Side) -> np.ndarray:
     return features
 
 
-def _china_card_holder(game) -> Side:
+def _china_card_holder(game: Game) -> Side:
     """Determine which side holds the China Card."""
     if "The_China_Card" in game.hand[Side.USSR]:
         return Side.USSR

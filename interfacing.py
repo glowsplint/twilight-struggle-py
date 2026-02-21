@@ -1,4 +1,6 @@
-from typing import Callable, Iterable
+from __future__ import annotations
+
+from collections.abc import Callable, Generator, Iterable
 
 from enums import InputType, Side
 
@@ -8,7 +10,7 @@ class Input:
     def __init__(self, side: Side, state: InputType, callback: Callable[[str], bool],
                  options: Iterable[str], prompt: str = '',
                  reps: int = 1, reps_unit: str = '', max_per_option: int = -1,
-                 option_stop_early=''):
+                 option_stop_early: str = '') -> None:
         '''
         Creates an input state, which is the interface by which the game engine
         communicates with the user.
@@ -45,18 +47,18 @@ class Input:
             option.
             Defaults to empty string, which means this options is not available.
         '''
-        self.side = side
-        self.state = state
-        self.callback = callback
-        self.prompt = prompt
-        self.reps = reps
-        self.reps_unit = reps_unit
-        self.max_per_option = reps if max_per_option == -1 else max_per_option
-        self.option_stop_early = option_stop_early
-        self.selection = {k: 0 for k in options}
-        self.discarded_options = set()
+        self.side: Side = side
+        self.state: InputType = state
+        self.callback: Callable[[str], bool] = callback
+        self.prompt: str = prompt
+        self.reps: int = reps
+        self.reps_unit: str = reps_unit
+        self.max_per_option: int = reps if max_per_option == -1 else max_per_option
+        self.option_stop_early: str = option_stop_early
+        self.selection: dict[str, int] = {k: 0 for k in options}
+        self.discarded_options: set[str] = set()
 
-    def recv(self, input_str):
+    def recv(self, input_str: str) -> bool:
         '''
         This method is called by the user to select an option.
         Returns True if the selection was accepted, False otherwise.
@@ -80,7 +82,7 @@ class Input:
         else:
             return False
 
-    def remove_option(self, option):
+    def remove_option(self, option: str) -> None:
         '''
         The game calls this function to remove an existing option from the
         player before reps has been exhausted. Generally used by callback
@@ -94,7 +96,7 @@ class Input:
         self.discarded_options.add(option)
 
     @property
-    def available_options(self):
+    def available_options(self) -> Generator[str, None, None]:
         '''
         Returns available input options to the user.
         '''
@@ -104,7 +106,7 @@ class Input:
             and item[1] < self.max_per_option)
 
     @property
-    def complete(self):
+    def complete(self) -> bool:
         '''
         Returns True if no more input is required, False if input is not
         complete.
@@ -112,7 +114,7 @@ class Input:
         return (not self.reps or len(self.selection) == len(self.discarded_options)
                 or not len(list(self.available_options)))
 
-    def change_max_per_option(self, n: int):
+    def change_max_per_option(self, n: int) -> None:
         self.max_per_option += n
 
 
@@ -156,32 +158,32 @@ class Output:
     us_prompt = '\n\n----- US Player: -----'
     rng_prompt = '\n\n----- RNG: -----'
 
-    def __init__(self):
+    def __init__(self) -> None:
 
-        self.selected_this_turn = ''
-        self.notification = []
-        self.side = ''
-        self.input_type = {}
-        self.prompt = ''
-        self.current_selection = ''
-        self.reps = ''
-        self.available_options_header = ''
-        self.available_options = ''
-        self.commit = ''
-        self.player_view = None
-        self.map = None
+        self.selected_this_turn: str = ''
+        self.notification: list[str] = []
+        self.side: str = ''
+        self.input_type: dict[str, object] = {}
+        self.prompt: str = ''
+        self.current_selection: str = ''
+        self.reps: str = ''
+        self.available_options_header: str = ''
+        self.available_options: str = ''
+        self.commit: str = ''
+        self.player_view: object | None = None
+        self.map: object | None = None
 
-        self._side = None
-        self._reps = []
-        self._available_options = {}
-        self._input_type = None
+        self._side: Side | None = None
+        self._reps: list[object] = []
+        self._available_options: dict[str, str] = {}
+        self._input_type: InputType | None = None
 
-    def _process_options(self):
+    def _process_options(self) -> None:
         available_options = "".join(
             f'{k:5} {v}' + '\n' for k, v in sorted(self._available_options.items()))[:-1]
         self.available_options += available_options
 
-    def _process_side(self):
+    def _process_side(self) -> None:
         if self._side == Side.USSR:
             self.side += Output.ussr_prompt
         elif self._side == Side.US:
@@ -189,7 +191,7 @@ class Output:
         elif self._side == Side.NEUTRAL:
             self.side += Output.rng_prompt
 
-    def show(self, include_new_line=True):
+    def show(self, include_new_line: bool = True) -> None:
 
         self._process_options()
         self._process_side()
@@ -209,7 +211,7 @@ class Output:
     '''Can shift commit to prompt, and then do a check if input_type is commit show prompt last'''
 
     @property
-    def json(self):
+    def json(self) -> dict[str, object]:
         if not hasattr(self, 'game_in_progress'):
             self.game_in_progress = False
         return {
