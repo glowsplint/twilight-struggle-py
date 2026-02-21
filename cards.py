@@ -314,7 +314,7 @@ class The_China_Card(Card, Effect):
         game.hand[side.opp].append("The_China_Card")
         game.hand[side].remove("The_China_Card")
         game.players[side].opp_hand.update(["The_China_Card"])
-        game.players[side.opp].opp_hand.remove(["The_China_Card"])
+        game.players[side.opp].opp_hand.discard("The_China_Card")
         self.is_playable = made_playable
 
     def dispose(self, game, side):

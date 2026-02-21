@@ -34,6 +34,12 @@ export default new Vuex.Store({
       _availableOptions: '',
       side: '',
     },
+    // AI-related state
+    playerView: null,
+    aiExplanation: null,
+    aiThinking: false,
+    gameMode: 'human', // 'human' or 'ai'
+    aiSide: null,
   },
   mutations: {
     SERVER_MOVE(state, payload) {
@@ -41,12 +47,23 @@ export default new Vuex.Store({
       state.globals.notification = payload.notification
       state.globals.side = payload.side
       state.globals.inputType = payload.input_type
-      state.globals.prompt = prompt.notification
+      state.globals.prompt = payload.prompt || ''
       state.globals.currentSelection = payload.current_selection
       state.globals.reps = payload.reps
       state.globals.availableOptions = payload.available_options
       state.globals.commit = payload.commit
       state.locals.gameInProgress = payload.game_in_progress
+
+      // Update player view if present
+      if (payload.player_view && typeof payload.player_view === 'object') {
+        state.playerView = payload.player_view
+      }
+
+      // Update AI explanation if present
+      if (payload.ai_explanation) {
+        state.aiExplanation = payload.ai_explanation
+      }
+
       console.log(payload)
     },
     CONSTRUCT_GAME_LOG(state) {
@@ -63,31 +80,50 @@ export default new Vuex.Store({
       }
 
       // Process reps
-      state.print.reps = `Remaining ${state.globals.reps[0]}: ${state.globals.reps[1]}`
+      if (state.globals.reps && state.globals.reps.length >= 2) {
+        state.print.reps = `Remaining ${state.globals.reps[0]}: ${state.globals.reps[1]}`
+      } else {
+        state.print.reps = ''
+      }
 
       // Process options
       state.print._availableOptions = ``
-      for (let [key, value] of Object.entries(state.globals.availableOptions)) {
-        state.print._availableOptions += `${key} \t ${value} \n`
+      if (state.globals.availableOptions && typeof state.globals.availableOptions === 'object') {
+        for (let [key, value] of Object.entries(state.globals.availableOptions)) {
+          state.print._availableOptions += `${key} \t ${value} \n`
+        }
       }
 
       // Process notifications
       state.print._notification = ``
-      for (let [_, value] of state.globals.notification.entries()) {
-        state.print._notification += `${value} \n`
+      if (state.globals.notification && state.globals.notification.entries) {
+        for (let [_, value] of state.globals.notification.entries()) {
+          state.print._notification += `${value} \n`
+        }
       }
-
-      // Process inputType
-
-      // if (state.globals._inputType != null){
-      //     state.globals.inputType = {int(state.globals._inputType): str(state.globals._inputType)}
-      //   }
+    },
+    SET_AI_THINKING(state, isThinking) {
+      state.aiThinking = isThinking
+    },
+    SET_GAME_MODE(state, { mode, aiSide }) {
+      state.gameMode = mode
+      state.aiSide = aiSide
+    },
+    SET_AI_EXPLANATION(state, explanation) {
+      state.aiExplanation = explanation
     },
   },
   actions: {
     socket_serverMove({ commit }, payload) {
       commit('SERVER_MOVE', payload)
       commit('CONSTRUCT_GAME_LOG')
+      commit('SET_AI_THINKING', false)
+    },
+    socket_aiThinking({ commit }) {
+      commit('SET_AI_THINKING', true)
+    },
+    socket_aiExplanation({ commit }, payload) {
+      commit('SET_AI_EXPLANATION', payload)
     },
   },
   getters: {

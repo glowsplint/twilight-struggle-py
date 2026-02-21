@@ -329,6 +329,15 @@ class Game:
         ussr_hl = self.headline_bin[Side.USSR]
         us_hl = self.headline_bin[Side.US]
 
+        if not ussr_hl and not us_hl:
+            return
+        if not ussr_hl:
+            self.stage_list.append(partial(self.resolve_headline, Side.US))
+            return
+        if not us_hl:
+            self.stage_list.append(partial(self.resolve_headline, Side.USSR))
+            return
+
         if (
             us_hl == "Defectors"
             or self.cards[us_hl].ops >= self.cards[ussr_hl].info.ops
@@ -480,18 +489,19 @@ class Game:
         def enough_ops(self, side: Side, card_name: str):
             if self.space_track[side] == 8:
                 return False
+            ops = self.cards[card_name].info.ops
             if (
                 self.space_track[side] == 7
-                and self.get_global_effective_ops(side, card_name.info.ops) == 4
+                and self.get_global_effective_ops(side, ops) == 4
             ):
                 return True
             elif (
                 self.space_track[side] >= 4
-                and self.get_global_effective_ops(side, card_name.info.ops) >= 3
+                and self.get_global_effective_ops(side, ops) >= 3
             ):
                 return True
             elif (
-                self.get_global_effective_ops(side, self.cards[card_name].info.ops) >= 2
+                self.get_global_effective_ops(side, ops) >= 2
             ):
                 return True
             else:
@@ -1525,13 +1535,12 @@ class Game:
 
         # 5. Final scoring (end T10)
         def final_scoring(self):
-            if self.turn_track == 10 and (self.ar_track in [15, 16, 17]):
-                self._Asia_Scoring()
-                self._Europe_Scoring()
-                self._Middle_East_Scoring()
-                self._Central_America_Scoring()
-                self._South_America_Scoring()
-                self._Africa_Scoring()
+            # turn_track is already 11 after advance_turn_marker increments from 10
+            if self.turn_track > 10:
+                from enums import MapRegion
+                for region in [MapRegion.ASIA, MapRegion.EUROPE, MapRegion.MIDDLE_EAST,
+                               MapRegion.CENTRAL_AMERICA, MapRegion.SOUTH_AMERICA, MapRegion.AFRICA]:
+                    self.score(region)
 
                 for s in [Side.USSR, Side.US]:
                     if "The_China_Card" in self.hand[s]:
@@ -1551,6 +1560,8 @@ class Game:
         flip_china_card(self)
         advance_turn_marker(self)  # turn marker advanced before final scoring
         final_scoring(self)
+        if not self.stage_list:
+            return  # game terminated by final scoring
         self.change_defcon(1)
         self.expand_deck()
         self.deal()  # turn marker advanced before dealing

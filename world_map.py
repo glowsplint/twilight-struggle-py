@@ -16,6 +16,7 @@ class CountryInfo:
         battleground=False,
         superpower=False,
         chinese_civil_war=False,
+        **kwargs,
     ):
 
         self.name = name

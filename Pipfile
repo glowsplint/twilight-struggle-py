@@ -8,6 +8,8 @@ numpy = "*"
 Flask = "*"
 Flask-SocketIO = "*"
 flake8 = "*"
+torch = "*"
+tensorboard = "*"
 
 [dev-packages]
 black = "*"

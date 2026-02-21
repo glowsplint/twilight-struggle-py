@@ -80,8 +80,9 @@ class PlayerView:
             "removed_pile": self.removed_pile,
             "discard_pile": self.discard_pile,
             "basket": self.basket,
-            "hand": self.hand,
+            "hand": list(self.hand) if isinstance(self.hand, set) else self.hand,
             "opp_hand_scoring": self.opp_hand_no_scoring_cards,
+            "opp_hand": list(self.opp_hand) if isinstance(self.opp_hand, set) else self.opp_hand,
         }
 
 
