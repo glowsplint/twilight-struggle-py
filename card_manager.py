@@ -62,8 +62,21 @@ class CardManager:
     ) -> None:
 
         if first_side == Side.NEUTRAL:
-            handsize_target = [3, 2]  # hardcoded for Ask Not..
-        elif 1 <= self._state.turn_track <= 3:
+            # Our Man In Tehran: deal 5 cards to NEUTRAL hand only
+            num_to_deal = 5 - len(self._state.hand[Side.NEUTRAL])
+            for _ in range(num_to_deal):
+                if not self._state.draw_pile:
+                    self._state.draw_pile += self._state.discard_pile
+                    self._state.discard_pile = []
+                    if not self._state.draw_pile:
+                        break  # no cards left anywhere
+                    stage_list.append(partial(deal_fn, Side.NEUTRAL))
+                    shuffle_draw_pile_stage_fn()
+                    return
+                self._state.hand[Side.NEUTRAL].append(self._state.draw_pile.pop())
+            return
+
+        if 1 <= self._state.turn_track <= 3:
             handsize_target = [8, 8]
         else:
             handsize_target = [9, 9]

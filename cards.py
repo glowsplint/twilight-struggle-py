@@ -70,7 +70,7 @@ class Card:
         else:
             game.discard_pile.append(self.name)
             self.event_occurred = False
-        if self.info.name in game.players[side.opp].opp_hand:
+        if side != Side.NEUTRAL and self.info.name in game.players[side.opp].opp_hand:
             game.players[side.opp].opp_hand.difference_update([self.name])
 
     def available_actions(self, game: Game, side: Side) -> None:
@@ -1337,7 +1337,7 @@ class Brush_War(Card):
         options = {n for n in game.map.ALL if game.map[n].info.stability <= 2}
 
         if NATO.name in game.basket[NATO.owner]:
-            options -= game.cards[NATO.name].effect_countries(game)
+            options -= set(game.cards[NATO.name].effect_countries(game))
 
         game.input_state = Input(
             side,
