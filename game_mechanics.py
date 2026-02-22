@@ -327,7 +327,8 @@ class Game:
                     self.change_vp(Game.Default.SPACE_VPS[i - 1][1] * y)
 
             if self.space_track[side] == 8:
-                self.ars_by_turn[side][self.turn_track] = 8
+                if self.turn_track < len(self.ars_by_turn[side]):
+                    self.ars_by_turn[side][self.turn_track] = 8
 
     def change_vp(self, n: int) -> None:
         """
@@ -799,7 +800,7 @@ class Game:
             self.can_realign_at_all(side),
             self.can_coup_at_all(side) and can_coup,
             not is_event_resolved and self.can_space(side, card_name),
-            self.ars_by_turn[side][self.turn_track] == 8,
+            self.turn_track < len(self.ars_by_turn[side]) and self.ars_by_turn[side][self.turn_track] == 8,
         ]
 
         self.input_state = Input(
@@ -1683,9 +1684,7 @@ class Game:
 
         (presence_vps, domination_vps, control_vps) = Game.Default.SCORING[region]
 
-        if "Formosan_Resolution" in self.basket[Side.US]:
-            self.map["Taiwan"].info.battleground = True
-
+        formosan_resolution = "Formosan_Resolution" in self.basket[Side.US]
         shuttle_modifier = 1 if "Shuttle_Diplomacy" in self.basket[Side.US] else 0
 
         bg_count = [0, 0, 0]  # USSR, US, NEUTRAL
@@ -1694,7 +1693,8 @@ class Game:
 
         for n in CountryInfo.REGION_ALL[region]:
             x = self.map[n]
-            if x.info.battleground:
+            is_bg = x.info.battleground or (formosan_resolution and n == "Taiwan")
+            if is_bg:
                 bg_count[x.control] += 1
             country_count[x.control] += 1
             if x.control.opp.name in x.info.adjacent_countries:
@@ -1725,5 +1725,3 @@ class Game:
                 f"US:USSR = {vps[Side.US]}:{vps[Side.USSR]}"
             ]
 
-        if self.map["Taiwan"].info.battleground:
-            self.map["Taiwan"].info.battleground = False

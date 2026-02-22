@@ -1523,7 +1523,8 @@ class Salt_Negotiations(Card, Effect):
     def callback(self, game: Game, side: Side, card_name: str) -> bool:
         game.input_state.reps -= 1
         if card_name != game.input_state.option_stop_early:
-            game.discard_pile.remove(card_name)
+            if card_name in game.discard_pile:
+                game.discard_pile.remove(card_name)
             # TODO: reveal card to opponent
             game.hand[side].append(card_name)
         return True
@@ -1813,7 +1814,7 @@ class Missile_Envy(Card, Effect):
             if self.name in game.hand[side]:
                 game.hand[side].remove(self.name)
             game.hand[side.opp].append(self.name)
-            game.players[side].opp_hand.update([self])
+            game.players[side].opp_hand.update([self.name])
             self.exchange = False
         else:
             if self.name in game.basket[side]:
@@ -2868,7 +2869,8 @@ class North_Sea_Oil(Card, Effect):
     def use_event(self, game: Game, side: Side) -> None:
         self.event_occurred = True
         game.basket[Side.US].append("North_Sea_Oil")
-        game.ars_by_turn[Side.US][game.turn_track] = 8
+        if game.turn_track < len(game.ars_by_turn[Side.US]):
+            game.ars_by_turn[Side.US][game.turn_track] = 8
 
 
 class The_Reformer(Card, Effect):
