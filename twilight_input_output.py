@@ -1,4 +1,4 @@
-from typing import Sequence, Iterable, Callable, Tuple
+from typing import Any, Dict, Sequence, Iterable, Callable, Tuple
 from twilight_enums import Side, InputType
 
 
@@ -7,7 +7,7 @@ class Input:
     def __init__(self, side: Side, state: InputType, callback: Callable[[str], bool],
                  options: Iterable[str], prompt: str = '',
                  reps: int = 1, reps_unit: str = '', max_per_option: int = -1,
-                 option_stop_early=''):
+                 option_stop_early='', context: Dict[str, Any] | None = None):
         '''
         Creates an input state, which is the interface by which the game engine
         communicates with the user.
@@ -25,8 +25,8 @@ class Input:
             The return value may be deprecated in the future.
         options : Iterable[str]
             The options available to the user. Should match with state.
-            Options can be removed before all reps are exhausted, but additional
-            options cannot be added. Remove using the method remove_option.
+            Options can be updated before all reps are exhausted via
+            add_option/remove_option when engine legality changes dynamically.
         prompt : str
             The prompt to display to the user.
         reps : int
@@ -43,6 +43,9 @@ class Input:
             have been exhausted, this the option text for the early stopping
             option.
             Defaults to empty string, which means this options is not available.
+        context : dict, optional
+            Optional metadata consumed by non-UI agents (for example RL
+            featurizers). Engine flow must not rely on this being present.
         '''
         self.side = side
         self.state = state
@@ -52,6 +55,7 @@ class Input:
         self.reps_unit = reps_unit
         self.max_per_option = reps if max_per_option == -1 else max_per_option
         self.option_stop_early = option_stop_early
+        self.context = {} if context is None else dict(context)
         self.selection = {k: 0 for k in options}
         self.discarded_options = set()
 
@@ -65,8 +69,7 @@ class Input:
         input_str : str
             The selected option.
         '''
-        if (input_str not in self.available_options and
-                (not self.option_stop_early or input_str != self.option_stop_early)):
+        if not self.is_option_legal(input_str):
             return False
 
         if input_str == self.option_stop_early:
@@ -78,6 +81,18 @@ class Input:
             return True
         else:
             return False
+
+    def _is_standard_option_available(self, option: str) -> bool:
+        return (
+            option in self.selection
+            and option not in self.discarded_options
+            and self.selection[option] < self.max_per_option
+        )
+
+    def is_option_legal(self, input_str: str) -> bool:
+        if self.option_stop_early and input_str == self.option_stop_early:
+            return self.reps > 0
+        return self._is_standard_option_available(input_str)
 
     def remove_option(self, option):
         '''
@@ -94,6 +109,11 @@ class Input:
             raise KeyError('Option was never present!')
         self.discarded_options.add(option)
 
+    def add_option(self, option):
+        """Add a newly legal option without restoring a discarded option."""
+        if option not in self.selection:
+            self.selection[option] = 0
+
     @property
     def available_options(self):
         '''
@@ -105,37 +125,24 @@ class Input:
             and item[1] < self.max_per_option)
 
     @property
+    def legal_options(self):
+        for option in self.available_options:
+            yield option
+        if self.option_stop_early and self.reps > 0:
+            yield self.option_stop_early
+
+    @property
     def complete(self):
         '''
         Returns True if no more input is required, False if input is not
         complete.
         '''
-        return not self.reps or len(self.selection) == len(self.discarded_options)
+        if self.reps <= 0:
+            return True
+        return not any(
+            self._is_standard_option_available(option)
+            for option in self.selection
+        )
 
     def change_max_per_option(self, n: int):
         self.max_per_option += n
-
-
-class Output:
-
-    class Notification:
-
-        def __init__(self, turn, ar, ar_side=None, prompt=''):
-            self.turn = turn
-            self.ar = ar
-            self.ar_side = ar_side
-            self.prompt = prompt
-
-        @staticmethod
-        def fromInput(turn, ar, ar_side, input):
-
-            if input.side == Side.US or input.side == Side.USSR:
-                msg = f'{input.side} selected '
-
-            return Game.Output.Notification(
-                turn, ar, ar_side,
-            )
-
-    def output_both(self, out):
-        self.output_queue[Side.USSR].append(out)
-        self.output_queue[Side.US].append(out)
