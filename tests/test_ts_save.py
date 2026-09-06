@@ -89,7 +89,7 @@ def test_parser_accepts_legacy_one_line_v1_block():
 
 
 def test_legacy_espionnage_parser_ignores_extension(tmp_path):
-    from rl.replay_parser import parse_espionnage
+    parse_espionnage = pytest.importorskip("rl.replay_parser").parse_espionnage
 
     base = (
         "SETUP: USSR will play as USSR.\n"
@@ -110,7 +110,7 @@ def test_legacy_espionnage_parser_ignores_extension(tmp_path):
 
 
 def test_seed_and_player_actions_reconstruct_exact_engine_position():
-    from rl.env import TwilightSelfPlayEnv
+    TwilightSelfPlayEnv = pytest.importorskip("rl.env").TwilightSelfPlayEnv
 
     seed = 20260827
     original = TwilightSelfPlayEnv(seed=seed, suppress_output=True)

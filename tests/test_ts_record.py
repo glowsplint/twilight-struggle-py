@@ -31,8 +31,9 @@ def _advance(game):
 
 def _play_full_game(seed):
     """RuleBasedAgent 双席位打完整局,返回 (rendered_text, game, recorder)。"""
-    from rl.env import TwilightSelfPlayEnv
-    from rl.agent import RuleBasedAgent
+    # rl/ 未随本版本分发时跳过(本地完整仓库含 RL 环境)
+    TwilightSelfPlayEnv = pytest.importorskip("rl.env").TwilightSelfPlayEnv
+    RuleBasedAgent = pytest.importorskip("rl.agent").RuleBasedAgent
 
     env = TwilightSelfPlayEnv(seed=seed, suppress_output=True)
     game = env.reset()
@@ -65,13 +66,13 @@ class TestRoundTrip:
         path = tmp_path / 'game.tsg'
         path.write_text(text, encoding='utf-8')
 
-        from rl.replay_parser import parse_espionnage
+        parse_espionnage = pytest.importorskip("rl.replay_parser").parse_espionnage
         decisions = parse_espionnage(str(path))
         assert decisions, 'parsed decisions should be non-empty'
         assert any(d.phase == 'Headline' for d in decisions)
         assert any(d.phase == 'AR' for d in decisions)
 
-        from rl.build_bc_dataset import _norm_card_name
+        _norm_card_name = pytest.importorskip("rl.build_bc_dataset")._norm_card_name
         for d in decisions:
             assert d.turn >= 1
             assert d.side in ('USSR', 'US')
@@ -97,7 +98,7 @@ class TestRoundTrip:
             encoding='utf-8',
         )
 
-        from rl.replay_parser import parse_espionnage
+        parse_espionnage = pytest.importorskip("rl.replay_parser").parse_espionnage
         decisions = parse_espionnage(str(path))
 
         assert len(decisions) == 1
@@ -109,7 +110,7 @@ class TestRoundTrip:
         assert decisions[0].action == ''
 
     def test_termination_line_across_seeds(self):
-        from rl.replay_dataset import _parse_winner
+        _parse_winner = pytest.importorskip("rl.replay_dataset")._parse_winner
         for seed in (7, 8, 9, 10, 11, 12):
             text, _game, _rec = _play_full_game(seed=seed)
             winner = _parse_winner(text)
@@ -499,7 +500,7 @@ class TestSampleRegression:
     def test_norm_of_truncated_client_card_name(self):
         # 客户端截断标题 '"Ask Not What Your Country..."' (419 局实测 64+ 次;
         # 别名必须含前引号, 缺引号曾导致 round-trip 偶发失败)
-        from rl.build_bc_dataset import _norm_card_name
+        _norm_card_name = pytest.importorskip("rl.build_bc_dataset")._norm_card_name
         assert _norm_card_name(
             '"Ask Not What Your Country..."*'
         ) == 'Ask_Not_What_Your_Country_Can_Do_For_You'
@@ -510,7 +511,7 @@ class TestSampleRegression:
         (注:data/parsed_replays 产物由旧版解析器生成,现版可多解析出若干
         decisions,故不做逐条相等比对,只锁结构与关键内容。)
         """
-        from rl.replay_parser import parse_espionnage
+        parse_espionnage = pytest.importorskip("rl.replay_parser").parse_espionnage
         sample = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                               'data', 'txt_replay', 'TS_Espionnage_log', '3305175.txt')
         if not os.path.exists(sample):
