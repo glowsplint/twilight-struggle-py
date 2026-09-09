@@ -5,7 +5,8 @@ from copy import deepcopy
 from datetime import datetime
 from textwrap import wrap
 
-from game_mechanics import Game
+from game_mechanics import DEFAULT_HANDICAP, Game
+from ts_record import GameRecorder
 from twilight_enums import Side, InputType, CardAction
 from twilight_map import MapRegion, CountryInfo
 from twilight_cards import Card
@@ -52,6 +53,8 @@ quit            Exit the game.
         self.temp_log = []
         self.logging = False
         self.log_filepath = None
+        self.moves_filepath = None
+        self.recorder = None
 
     @property
     def input_state(self) -> Input:
@@ -62,32 +65,57 @@ quit            Exit the game.
         return self.game_lookahead
 
     def log_generate_filepath(self):
+        # 主文件 = 人类棋谱(TS Espionnage 格式);sidecar = 原始 move 脚本(供 load 回放)
         self.log_filepath = f'log{path.sep}game-{datetime.utcnow().strftime("%Y-%m-%d-%H-%M-%S-UTC")}.tsg'
+        self.moves_filepath = self.log_filepath + '.moves'
 
     def log_write_out(self):
-        if not self.temp_log:
+        if self.temp_log:
+            out = '\n'.join(self.temp_log) + '\n'
+            with open(self.moves_filepath, 'a', encoding='utf-8') as f:
+                f.write(out)
+            self.temp_log.clear()
+        if self.recorder:
+            rendered = self.recorder.render_new()
+            if rendered:
+                with open(self.log_filepath, 'a', encoding='utf-8') as f:
+                    f.write(rendered)
+
+    def log_finish_out(self):
+        """终局:flush 未关闭块与终局行,并停用记录器。"""
+        if not self.recorder:
             return
-        out = '\n'.join(self.temp_log) + '\n'
-        with open(self.log_filepath, 'a') as f:
-            f.write(out)
-        self.temp_log.clear()
+        tail = self.recorder.finish()
+        if tail:
+            with open(self.log_filepath, 'a', encoding='utf-8') as f:
+                f.write(tail)
+        self.recorder.stop()
+        self.recorder = None
 
     def new_game(self):
         if self.logging:
             self.log_generate_filepath()
         self.game_in_progress = True
-        self.game.start()
+        # Explicit handicap: engine default is non-standard -2 (US +2 starting
+        # influence); pinned here so the human game matches the training env.
+        self.game.start(handicap=DEFAULT_HANDICAP)
+        if self.logging:
+            self.recorder = GameRecorder(lambda: self.game)
+            self.recorder.start()
         self.advance_game()
 
     def advance_game(self):
         if self.auto_commit and self.logging:
             self.log_write_out()
+        if self.game.terminated:
+            return
         self.game.stage_complete()
         while not self.game.input_state:
             self.game.stage_complete()
 
     def commit(self):
         if self.logging:
+            self.recorder.mark()
             self.log_write_out()
         self.game_lookahead = None
         self.advance_game()
@@ -97,41 +125,51 @@ quit            Exit the game.
     def revert(self):
         if self.logging:
             self.temp_log.clear()
+            self.recorder.rollback()
         self.game = self.game_rollback
         self.game_lookahead = None
         self.game_rollback = deepcopy(self.game)
         self.game_state_changed()
 
     def move(self, move):
-        self.game.input_state.recv(move)
-        if self.logging:
-            self.temp_log.append(move)
+        accepted = self.game.input_state.recv(move)
+        if self.logging and accepted:
+            self.temp_log.append(str(move))
 
     def generate_options(self):
+        standard_options = list(self.input_state.legal_options)
         if self.game.input_state.state == InputType.SELECT_CARD_ACTION:
-            self.options = {CardAction[opt].value: opt
-                            for opt in self.input_state.available_options}
+            self.options = {
+                CardAction[opt].value if opt in CardAction.__members__ else 0: opt
+                            for opt in standard_options}
         elif self.game.input_state.state == InputType.SELECT_CARD:
-            self.options = {Card.ALL[opt].card_index: opt
-                            for opt in self.input_state.available_options}
+            self.options = {
+                (Card.ALL[opt].card_index if opt in Card.ALL else 0): opt
+                            for opt in standard_options}
         elif self.game.input_state.state == InputType.SELECT_COUNTRY:
-            self.options = {CountryInfo.ALL[opt].country_index: opt
-                            for opt in self.input_state.available_options}
+            self.options = {
+                (CountryInfo.ALL[opt].country_index if opt in CountryInfo.ALL else 0): opt
+                            for opt in standard_options}
         elif self.game.input_state.state == InputType.SELECT_MULTIPLE:
             self.options = {i: opt
                             for i, opt in
-                            enumerate(self.input_state.available_options)}
+                            enumerate(self.input_state.legal_options)}
         elif self.game.input_state.state == InputType.ROLL_DICE:
             self.options = {i: opt
                             for i, opt in
-                            enumerate(self.input_state.available_options)}
-
-        if self.game.input_state.option_stop_early:
-            self.options[0] = self.game.input_state.option_stop_early
+                            enumerate(self.input_state.legal_options)}
 
     def game_state_changed(self, prompt=True):
 
         while True:
+
+            # game over: terminate() cleared input_state/stage_list, stop driving
+            if self.game.terminated:
+                self.game_in_progress = False
+                self.game_lookahead = None
+                if self.game.termination_reason:
+                    print(f'Game over: {self.game.termination_reason}')
+                break
 
             if self.auto_rng:
                 # automatically run rng
@@ -141,7 +179,7 @@ quit            Exit the game.
                         self.advance_game()
                         self.game_rollback = deepcopy(self.game)
                     else:
-                        choices = list(self.game.input_state.available_options)
+                        choices = list(self.game.input_state.legal_options)
                         c = random.choice(choices)
                         # process the input
                         self.move(c)
@@ -179,6 +217,9 @@ quit            Exit the game.
             self.prompt()
 
     def prompt(self):
+
+        if not self.game.input_state:
+            return
 
         if self.input_state.side == Side.USSR:
             print(UI.ussr_prompt)
@@ -233,6 +274,7 @@ quit            Exit the game.
             elif user_choice[0] == 'quit' or user_choice[0] == 'exit' or user_choice[0].lower() == 'q':
                 if self.logging:
                     self.log_write_out()
+                    self.log_finish_out()
                 break
 
             elif user_choice[0].lower() == 'new':
@@ -542,21 +584,49 @@ dbg rollback                        Restores the state before debugging started.
             print('Cannot load game while game is in progress.')
             return
 
+        source = f'log{path.sep}{comd}'
+        source_moves = source + '.moves'
         try:
-            f = open(f'log{path.sep}{comd}')
-        except:
+            moves_file = open(source_moves if path.exists(source_moves) else source)
+        except OSError:
             print('Cannot open file.')
             return
 
+        # 人类棋谱文件(.tsg 主文件)不可重放;只有原始 move 脚本可以
+        # (.moves sidecar 或旧版 .tsg,旧版 .tsg 内容就是逐行 move)。
+        first_line = moves_file.readline().strip()
+        moves_file.seek(0)
+        if first_line.startswith('SETUP:') or first_line.startswith('Turn '):
+            print('Cannot replay: this is a human-format record, not a move script.')
+            moves_file.close()
+            return
+
         self.new_game()
-        for i, line in enumerate(f):
+        if self.logging:
+            # 续局语义:把被加载的记录复制到本局文件,继续追加
+            from shutil import copyfile
+            if path.exists(source_moves):
+                copyfile(source, self.log_filepath)
+                copyfile(source_moves, self.moves_filepath)
+            else:
+                copyfile(source, self.moves_filepath)
+            # 重放期间暂停记录(重放的 move 不再进入新棋谱)
+            self.recorder.pause()
+        for i, line in enumerate(moves_file):
             line = line.strip()
-            if line not in self.input_state.available_options:
+            if not line:
+                continue
+            if line.startswith('('):
+                # 2d6 骰子以元组写入 sidecar,回放时还原为元组
+                line = eval(line)
+            if not self.input_state.is_option_legal(line):
                 print(f'Invalid move on line {i}:{line}')
                 break
             self.move(line)
             if self.game.input_state.complete:
                 self.advance_game()
+        if self.logging:
+            self.recorder.resume()
         print('Game loaded.')
         self.game_state_changed()
-        f.close()
+        moves_file.close()

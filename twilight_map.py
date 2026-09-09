@@ -78,7 +78,8 @@ class GameMap:
         '''Returns list of names that have USSR influence, less superpowers..'''
         return [country.info.name for country in self.ALL.values() if country.influence[Side.USSR] > 0 and country.info.superpower == False]
 
-    def can_coup(self, game_instance, name: str, side: Side, free=False) -> bool:
+    def can_coup(self, game_instance, name: str, side: Side, free=False,
+                 ignore_defcon=False) -> bool:
         '''
         Checks if the country can be couped by a given side.
 
@@ -100,30 +101,29 @@ class GameMap:
         if country.info.superpower:
             return False
 
-        d4 = list(CountryInfo.REGION_ALL[MapRegion.EUROPE])
-        d3 = d4 + list(CountryInfo.REGION_ALL[MapRegion.ASIA])
-        d2 = d3 + list(CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST])
-
-        if free:
-            return not (side == Side.US and country.influence[Side.USSR] == 0 or
-                        side == Side.USSR and country.influence[Side.US] == 0)
-        elif 'NATO' in game_instance.basket[Side.US] and name in game_instance.calculate_nato_countries():
+        if (side == Side.USSR
+                and 'NATO' in game_instance.basket[Side.US]
+                and name in game_instance.calculate_nato_countries()):
             return False
-        elif 'US_Japan_Mutual_Defense_Pact' in game_instance.basket[Side.US] and name == 'Japan':
+        if (side == Side.USSR
+                and 'US_Japan_Mutual_Defense_Pact'
+                in game_instance.basket[Side.US]
+                and name == 'Japan'):
             return False
-        elif 'The_Reformer' in game_instance.basket[Side.USSR] and name in d4:
+        if (side == Side.USSR
+                and 'The_Reformer' in game_instance.basket[Side.USSR]
+                and name in _DEFCON_RESTRICTED[4]):
             return False
-        elif game_instance.defcon_track == 4 and name in d4:
-            return False
-        elif game_instance.defcon_track == 3 and name in d3:
-            return False
-        elif game_instance.defcon_track == 2 and name in d2:
+        if (not ignore_defcon
+                and name in _DEFCON_RESTRICTED.get(
+                    game_instance.defcon_track, ())):
             return False
 
         return not (side == Side.US and country.influence[Side.USSR] == 0 or
                     side == Side.USSR and country.influence[Side.US] == 0)
 
-    def coup(self, game_instance, name: str, side: Side, effective_ops: int, die_roll: int, free=False):
+    def coup(self, game_instance, name: str, side: Side, effective_ops: int,
+             die_roll: int, free=False, ignore_defcon=False):
         '''
         The result of a given side couping in a country, with a die_roll provided.
         Accounts for:
@@ -150,26 +150,28 @@ class GameMap:
         die_roll: int
             The die roll of the coup. Should be bounded within range(1,7).
         '''
-        assert(self.can_coup(game_instance, name, side))
+        assert(self.can_coup(
+            game_instance, name, side, free=free,
+            ignore_defcon=ignore_defcon))
         country = self[name]
 
-        ussr_advantage = 0
+        coup_modifier = 0
 
         # Latin American Death Squads
         ca = list(CountryInfo.REGION_ALL[MapRegion.CENTRAL_AMERICA])
         sa = list(CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA])
         if name in ca or name in sa:
             if 'Latin_American_Death_Squads' in game_instance.basket[side]:
-                ussr_advantage += 1
+                coup_modifier += 1
             elif 'Latin_American_Death_Squads' in game_instance.basket[side.opp]:
-                ussr_advantage -= 1
+                coup_modifier -= 1
 
         # SALT Negotiations
-        if 'SALT_Negotiations' in game_instance.basket[side] or 'SALT_Negotiations' in game_instance.basket[side.opp]:
-            ussr_advantage -= 1
+        if 'Salt_Negotiations' in game_instance.basket[side] or 'Salt_Negotiations' in game_instance.basket[side.opp]:
+            coup_modifier -= 1
 
         difference = die_roll + effective_ops + \
-            ussr_advantage - country.info.stability * 2
+            coup_modifier - country.info.stability * 2
         outcome = 'success' if difference > 0 else 'failure'
 
         if outcome == 'success':
@@ -185,13 +187,26 @@ class GameMap:
 
         # Cuban Missile Crisis overrides Nuclear Subs
         if 'Cuban_Missile_Crisis' in game_instance.basket[side.opp]:
-            game_instance.change_defcon(1-game_instance.defcon_track)
+            game_instance.defcon_track = 1
+            print('Game ended by thermonuclear war')
+            game_instance.terminate(
+                side=side.opp,
+                reason='thermonuclear_war',
+                context={
+                    'defcon': 1,
+                    'cause': 'Cuban_Missile_Crisis',
+                    'loser': side.toStr(),
+                },
+            )
         elif country.info.battleground:
             if side == Side.US:
                 if 'Nuclear_Subs' not in game_instance.basket[Side.US]:
                     game_instance.change_defcon(-1)
             else:
                 game_instance.change_defcon(-1)
+
+        if game_instance.terminated:
+            return
 
         # Yuri and Samantha
         if side == Side.US and 'Yuri_and_Samantha' in game_instance.basket[Side.USSR]:
@@ -201,7 +216,8 @@ class GameMap:
         if not free:
             game_instance.change_milops(side, effective_ops)
 
-    def can_realignment(self, game_instance, name: str, side: Side, free=False) -> bool:
+    def can_realignment(self, game_instance, name: str, side: Side,
+                        free=False, ignore_defcon=False) -> bool:
         '''
         Checks if the country can be realigned by a given side.
 
@@ -222,18 +238,21 @@ class GameMap:
         d3 = d4 + list(CountryInfo.REGION_ALL[MapRegion.ASIA])
         d2 = d3 + list(CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST])
 
-        if free:
-            return not (side == Side.US and country.influence[Side.USSR] == 0 or
-                        side == Side.USSR and country.influence[Side.US] == 0)
-        elif 'NATO' in game_instance.basket[Side.US] and name in game_instance.calculate_nato_countries():
+        if (side == Side.USSR
+                and 'NATO' in game_instance.basket[Side.US]
+                and name in game_instance.calculate_nato_countries()):
             return False
-        elif 'US_Japan_Mutual_Defense_Pact' in game_instance.basket[Side.US] and name == 'Japan':
+        if (side == Side.USSR
+                and 'US_Japan_Mutual_Defense_Pact'
+                in game_instance.basket[Side.US]
+                and name == 'Japan'):
             return False
-        elif game_instance.defcon_track == 4 and name in d4:
-            return False
-        elif game_instance.defcon_track == 3 and name in d3:
-            return False
-        elif game_instance.defcon_track == 2 and name in d2:
+        restricted = {
+            4: d4,
+            3: d3,
+            2: d2,
+        }.get(game_instance.defcon_track, ())
+        if not ignore_defcon and name in restricted:
             return False
 
         if side == Side.USSR and country.ussr_influence_only:
@@ -243,7 +262,9 @@ class GameMap:
         else:
             return not (country.influence[Side.USSR] == 0 and country.influence[Side.US] == 0)
 
-    def realignment(self, game_instance, name: str, side: Side, ussr_roll: int, us_roll: int):
+    def realignment(self, game_instance, name: str, side: Side,
+                    ussr_roll: int, us_roll: int, free=False,
+                    ignore_defcon=False):
         '''
         The result of a given side using realignment in a country, with both dice rolls provided.
 
@@ -258,7 +279,9 @@ class GameMap:
         us_roll, us_roll: ints
             The respective dice rolls of the realignment. Should be bounded within range(1,7).
         '''
-        assert(self.can_realignment(game_instance, name, side))
+        assert(self.can_realignment(
+            game_instance, name, side, free=free,
+            ignore_defcon=ignore_defcon))
         country = self[name]
 
         ussr_advantage = 0  # net positive is in favour of USSR
@@ -266,8 +289,18 @@ class GameMap:
             ussr_advantage += 1
 
         for adjacent_name in country.info.adjacent_countries:
-            ussr_advantage -= ((self[adjacent_name]).control == Side.US)
-            ussr_advantage += ((self[adjacent_name]).control == Side.USSR)
+            adjacent = self[adjacent_name]
+            if adjacent.info.superpower:
+                continue
+            ussr_advantage -= (adjacent.control == Side.US)
+            ussr_advantage += (adjacent.control == Side.USSR)
+
+        # Superpower adjacency grants an additional +/-1 regardless of control checks.
+        if 'USSR' in country.info.adjacent_countries:
+            ussr_advantage += 1
+        if 'US' in country.info.adjacent_countries:
+            ussr_advantage -= 1
+
         if country.influence[Side.USSR] > country.influence[Side.US]:
             ussr_advantage += 1
         elif country.influence[Side.USSR] < country.influence[Side.US]:
@@ -322,62 +355,17 @@ class GameMap:
                 return True
 
         def is_chernobyl():
-            if 'Chernobyl_Europe' in game_instance.basket[Side.US]:
-                return False if name in list(CountryInfo.REGION_ALL[MapRegion.EUROPE]) else True
-            elif 'Chernobyl_Middle_East' in game_instance.basket[Side.US]:
-                return False if name in list(CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST]) else True
-            elif 'Chernobyl_Asia' in game_instance.basket[Side.US]:
-                return False if name in list(CountryInfo.REGION_ALL[MapRegion.ASIA]) else True
-            elif 'Chernobyl_Africa' in game_instance.basket[Side.US]:
-                return False if name in list(CountryInfo.REGION_ALL[MapRegion.AFRICA]) else True
-            elif 'Chernobyl_Central_America' in game_instance.basket[Side.US]:
-                return False if name in list(CountryInfo.REGION_ALL[MapRegion.CENTRAL_AMERICA]) else True
-            elif 'Chernobyl_South_America' in game_instance.basket[Side.US]:
-                return False if name in list(CountryInfo.REGION_ALL[MapRegion.SOUTH_AMERICA]) else True
-            return True
+            if side != Side.USSR:
+                return True
+            banned_region = next(
+                (region for token, region in _CHERNOBYL_REGION.items()
+                 if token in game_instance.basket[Side.US]),
+                None)
+            if banned_region is None:
+                return True
+            return name not in CountryInfo.REGION_ALL[banned_region]
 
         return has_influence_around(country) and sufficient_ops(effective_ops) and is_chernobyl()
-
-    def place_influence(self, name: str, side: Side, effective_ops: int):
-        '''
-        The action of placing influence into a country.
-
-        Parameters
-        ----------
-        name : str
-            String representation of the country we are checking.
-        side : Side
-            Player side which we are checking. Can be Side.US or Side.USSR.
-        effective_ops : int
-            The number of effective operations used in the coup.
-
-        Raises
-        ------
-        ValueError
-            Throws you an error if you are trying to place 1 influence into an enemy-controlled country.
-            Used as a stopgap.
-        '''
-        if side == Side.USSR and self[name].control == Side.US:
-            # here we deduct 2 from effective_ops, to place 1 influence in the country,
-            # and then recursively call the function again
-            if effective_ops >= 2:
-                self[name].change_influence(1, 0)
-            else:
-                raise ValueError('Not enough operations points!')
-            if effective_ops - 2 > 0:
-                self.place_influence(name, side, effective_ops - 2)
-        elif side == Side.US and self[name].control == Side.USSR:
-            if effective_ops >= 2:
-                self[name].change_influence(0, 1)
-            else:
-                raise ValueError('Not enough operations points!')
-            if effective_ops - 2 > 0:
-                self.place_influence(name, side, effective_ops - 2)
-        else:
-            if side == Side.US:
-                self[name].change_influence(0, effective_ops)
-            elif side == Side.USSR:
-                self[name].change_influence(effective_ops, 0)
 
     def change_influence(self, name: str, side: Side, influence: int):
         if side == Side.USSR:
@@ -414,95 +402,6 @@ class GameMap:
         self['South_Korea'].set_influence(0, 1)
         self['Japan'].set_influence(0, 1)
         self['South_Africa'].set_influence(0, 1)
-
-    def build_late_war(self):
-        '''
-        Sets the appropriate amount of influence in each country for the Late War scenario.
-        '''
-        self['Canada'].set_influence(0, 0)
-        self['UK'].set_influence(0, 5)
-        self['Norway'].set_influence(0, 4)
-        self['Sweden'].set_influence(0, 0)
-        self['Finland'].set_influence(2, 1)
-        self['Denmark'].set_influence(0, 3)
-        self['Benelux'].set_influence(0, 3)
-        self['France'].set_influence(1, 3)
-        self['Spain_Portugal'].set_influence(0, 1)
-        self['Italy'].set_influence(0, 3)
-        self['Greece'].set_influence(0, 0)
-        self['Austria'].set_influence(0, 0)
-        self['West_Germany'].set_influence(1, 5)
-        self['East_Germany'].set_influence(4, 0)
-        self['Poland'].set_influence(4, 0)
-        self['Czechoslovakia'].set_influence(3, 0)
-        self['Hungary'].set_influence(3, 0)
-        self['Yugoslavia'].set_influence(2, 1)
-        self['Romania'].set_influence(3, 1)
-        self['Bulgaria'].set_influence(3, 0)
-        self['Turkey'].set_influence(0, 2)
-        self['Libya'].set_influence(2, 0)
-        self['Egypt'].set_influence(0, 1)
-        self['Israel'].set_influence(0, 4)
-        self['Lebanon'].set_influence(0, 0)
-        self['Syria'].set_influence(3, 0)
-        self['Iraq'].set_influence(3, 0)
-        self['Iran'].set_influence(0, 2)
-        self['Jordan'].set_influence(2, 2)
-        self['Gulf_States'].set_influence(0, 0)
-        self['Saudi_Arabia'].set_influence(0, 2)
-        self['Afghanistan'].set_influence(2, 0)
-        self['Pakistan'].set_influence(0, 2)
-        self['India'].set_influence(3, 0)
-        self['Burma'].set_influence(1, 0)
-        self['Laos_Cambodia'].set_influence(2, 0)
-        self['Thailand'].set_influence(0, 2)
-        self['Vietnam'].set_influence(5, 0)
-        self['Malaysia'].set_influence(1, 3)
-        self['Australia'].set_influence(0, 4)
-        self['Indonesia'].set_influence(0, 1)
-        self['Philippines'].set_influence(1, 3)
-        self['Japan'].set_influence(0, 4)
-        self['Taiwan'].set_influence(0, 3)
-        self['South_Korea'].set_influence(0, 3)
-        self['North_Korea'].set_influence(3, 0)
-        self['Algeria'].set_influence(2, 0)
-        self['Morocco'].set_influence(0, 0)
-        self['Tunisia'].set_influence(0, 0)
-        self['West_African_States'].set_influence(0, 0)
-        self['Ivory_Coast'].set_influence(0, 0)
-        self['Saharan_States'].set_influence(0, 0)
-        self['Nigeria'].set_influence(0, 1)
-        self['Cameroon'].set_influence(0, 0)
-        self['Zaire'].set_influence(0, 1)
-        self['Angola'].set_influence(3, 1)
-        self['South_Africa'].set_influence(1, 2)
-        self['Botswana'].set_influence(0, 0)
-        self['Zimbabwe'].set_influence(1, 0)
-        self['SE_African_States'].set_influence(2, 0)
-        self['Kenya'].set_influence(0, 2)
-        self['Somalia'].set_influence(0, 2)
-        self['Ethiopia'].set_influence(1, 0)
-        self['Sudan'].set_influence(0, 0)
-        self['Mexico'].set_influence(0, 0)
-        self['Guatemala'].set_influence(0, 0)
-        self['El_Salvador'].set_influence(0, 0)
-        self['Honduras'].set_influence(0, 2)
-        self['Costa_Rica'].set_influence(0, 0)
-        self['Panama'].set_influence(0, 2)
-        self['Nicaragua'].set_influence(0, 1)
-        self['Cuba'].set_influence(0, 3)
-        self['Haiti'].set_influence(0, 1)
-        self['Dominican_Republic'].set_influence(0, 1)
-        self['Colombia'].set_influence(1, 2)
-        self['Ecuador'].set_influence(0, 0)
-        self['Peru'].set_influence(1, 2)
-        self['Chile'].set_influence(0, 3)
-        self['Argentina'].set_influence(0, 2)
-        self['Uruguay'].set_influence(0, 0)
-        self['Paraguay'].set_influence(0, 0)
-        self['Bolivia'].set_influence(0, 0)
-        self['Brazil'].set_influence(0, 0)
-        self['Venezuela'].set_influence(0, 2)
 
 
 class Country:
@@ -568,10 +467,6 @@ class Country:
         self.influence[Side.US] = us_influence
         self.influence[Side.USSR] = ussr_influence
 
-    def reset_influence(self):
-        self.influence[Side.US] = 0
-        self.influence[Side.USSR] = 0
-
     def change_influence(self, ussr_influence: int, us_influence: int):
         self.influence[Side.US] += us_influence
         self.influence[Side.USSR] += ussr_influence
@@ -597,33 +492,17 @@ class Country:
         return True
 
     def match_influence(self, side):
-        self.influence[side] = self.influence[side.opp]
+        self.influence[side] = max(
+            self.influence[side], self.influence[side.opp]
+        )
         return True
-
-    def coup_influence(self, side: Side, swing: int):
-        '''
-        Changes the influence by swing after side performs a coup.
-
-        side: Side
-            The side the coup is in favour of.
-        swing: int
-            The coup value.
-        '''
-        opp_inf = self.influence[side.opp] - swing
-        if opp_inf < 0:
-            self.influence[side.opp] = 0
-            self.influence[side] -= opp_inf
-        else:
-            self.influence[side.opp] = opp_inf
 
 USSR = {
     'name': 'USSR',
     'country_index': 1,
     'superpower': True,
     'stability': 999,
-    'adjacent_countries': ['Finland', 'Poland', 'Romania', 'Afghanistan', 'North_Korea', 'Chinese_Civil_War'],
-    'us_influence': 0,
-    'ussr_influence': 999,
+    'adjacent_countries': ['Finland', 'Poland', 'Romania', 'Afghanistan', 'North_Korea'],
 }
 
 US = {
@@ -632,8 +511,6 @@ US = {
     'superpower': True,
     'stability': 999,
     'adjacent_countries': ['Japan', 'Mexico', 'Cuba', 'Canada'],
-    'us_influence': 999,
-    'ussr_influence': 0,
 }
 
 Canada = {
@@ -642,8 +519,6 @@ Canada = {
     'region': 'Western Europe',
     'stability': 4,
     'adjacent_countries': ['US', 'UK'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 UK = {
@@ -652,8 +527,6 @@ UK = {
     'region': 'Western Europe',
     'stability': 5,
     'adjacent_countries': ['Canada', 'Norway', 'Benelux', 'France'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 Norway = {
@@ -662,8 +535,6 @@ Norway = {
     'region': 'Western Europe',
     'stability': 4,
     'adjacent_countries': ['UK', 'Sweden'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 Sweden = {
@@ -672,8 +543,6 @@ Sweden = {
     'region': 'Western Europe',
     'stability': 4,
     'adjacent_countries': ['Norway', 'Finland', 'Denmark'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 Finland = {
@@ -682,8 +551,6 @@ Finland = {
     'region': 'Europe',
     'stability': 4,
     'adjacent_countries': ['Sweden', 'USSR'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 Denmark = {
@@ -692,8 +559,6 @@ Denmark = {
     'region': 'Western Europe',
     'stability': 3,
     'adjacent_countries': ['Sweden', 'West_Germany'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 Benelux = {
@@ -702,8 +567,6 @@ Benelux = {
     'region': 'Western Europe',
     'stability': 3,
     'adjacent_countries': ['UK', 'West_Germany'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 France = {
@@ -713,8 +576,6 @@ France = {
     'stability': 3,
     'battleground': True,
     'adjacent_countries': ['UK', 'West_Germany', 'Spain_Portugal', 'Italy', 'Algeria'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 Spain_Portugal = {
@@ -723,8 +584,6 @@ Spain_Portugal = {
     'region': 'Western Europe',
     'stability': 2,
     'adjacent_countries': ['France', 'Italy', 'Morocco'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 Italy = {
@@ -734,8 +593,6 @@ Italy = {
     'stability': 2,
     'battleground': True,
     'adjacent_countries': ['France', 'Spain_Portugal', 'Austria', 'Yugoslavia', 'Greece'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 Greece = {
@@ -744,8 +601,6 @@ Greece = {
     'region': 'Western Europe',
     'stability': 2,
     'adjacent_countries': ['Italy', 'Yugoslavia', 'Bulgaria', 'Turkey'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 Austria = {
@@ -754,8 +609,6 @@ Austria = {
     'region': 'Europe',
     'stability': 4,
     'adjacent_countries': ['West_Germany', 'East_Germany', 'Hungary', 'Italy'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 West_Germany = {
@@ -765,8 +618,6 @@ West_Germany = {
     'stability': 4,
     'battleground': True,
     'adjacent_countries': ['France', 'Benelux', 'Denmark', 'East_Germany', 'Austria'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -777,8 +628,6 @@ East_Germany = {
     'stability': 3,
     'battleground': True,
     'adjacent_countries': ['West_Germany', 'Austria', 'Czechoslovakia', 'Poland'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -789,8 +638,6 @@ Poland = {
     'stability': 3,
     'battleground': True,
     'adjacent_countries': ['East_Germany', 'Czechoslovakia', 'USSR'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -800,8 +647,6 @@ Czechoslovakia = {
     'region': 'Eastern Europe',
     'stability': 3,
     'adjacent_countries': ['East_Germany', 'Poland', 'Hungary'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -811,8 +656,6 @@ Hungary = {
     'region': 'Eastern Europe',
     'stability': 3,
     'adjacent_countries': ['Austria', 'Czechoslovakia', 'Romania', 'Yugoslavia'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -822,8 +665,6 @@ Yugoslavia = {
     'region': 'Eastern Europe',
     'stability': 3,
     'adjacent_countries': ['Italy', 'Hungary', 'Greece', 'Romania'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -833,8 +674,6 @@ Romania = {
     'region': 'Eastern Europe',
     'stability': 3,
     'adjacent_countries': ['Hungary', 'Yugoslavia', 'Turkey', 'USSR'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -844,8 +683,6 @@ Bulgaria = {
     'region': 'Eastern Europe',
     'stability': 3,
     'adjacent_countries': ['Greece', 'Turkey'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -855,8 +692,6 @@ Turkey = {
     'region': 'Western Europe',
     'stability': 2,
     'adjacent_countries': ['Greece', 'Bulgaria', 'Romania', 'Syria'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -867,8 +702,6 @@ Libya = {
     'stability': 2,
     'battleground': True,
     'adjacent_countries': ['Tunisia', 'Egypt'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -879,8 +712,6 @@ Egypt = {
     'stability': 2,
     'battleground': True,
     'adjacent_countries': ['Libya', 'Israel', 'Sudan'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -891,8 +722,6 @@ Israel = {
     'stability': 4,
     'battleground': True,
     'adjacent_countries': ['Lebanon', 'Syria', 'Jordan', 'Egypt'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -902,8 +731,6 @@ Lebanon = {
     'region': 'Middle East',
     'stability': 1,
     'adjacent_countries': ['Israel', 'Syria', 'Jordan'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -913,8 +740,6 @@ Syria = {
     'region': 'Middle East',
     'stability': 2,
     'adjacent_countries': ['Israel', 'Lebanon', 'Turkey'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -925,8 +750,6 @@ Iraq = {
     'stability': 3,
     'battleground': True,
     'adjacent_countries': ['Jordan', 'Saudi_Arabia', 'Gulf_States', 'Iran'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -937,8 +760,6 @@ Iran = {
     'stability': 2,
     'battleground': True,
     'adjacent_countries': ['Iraq', 'Afghanistan', 'Pakistan'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -948,8 +769,6 @@ Jordan = {
     'region': 'Middle East',
     'stability': 2,
     'adjacent_countries': ['Iraq', 'Israel', 'Lebanon', 'Saudi_Arabia'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -959,8 +778,6 @@ Gulf_States = {
     'region': 'Middle East',
     'stability': 3,
     'adjacent_countries': ['Iraq', 'Saudi_Arabia'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -971,8 +788,6 @@ Saudi_Arabia = {
     'stability': 3,
     'battleground': True,
     'adjacent_countries': ['Iraq', 'Jordan', 'Gulf_States'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -982,8 +797,6 @@ Afghanistan = {
     'region': 'Asia',
     'stability': 2,
     'adjacent_countries': ['USSR', 'Iran', 'Pakistan'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -994,8 +807,6 @@ Pakistan = {
     'stability': 2,
     'battleground': True,
     'adjacent_countries': ['Afghanistan', 'Iran', 'India'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1006,8 +817,6 @@ India = {
     'stability': 3,
     'battleground': True,
     'adjacent_countries': ['Pakistan', 'Burma'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1017,8 +826,6 @@ Burma = {
     'region': 'Southeast Asia',
     'stability': 2,
     'adjacent_countries': ['India', 'Laos_Cambodia'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1028,8 +835,6 @@ Laos_Cambodia = {
     'region': 'Southeast Asia',
     'stability': 1,
     'adjacent_countries': ['Burma', 'Thailand', 'Vietnam'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1040,8 +845,6 @@ Thailand = {
     'stability': 2,
     'battleground': True,
     'adjacent_countries': ['Laos_Cambodia', 'Vietnam', 'Malaysia'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1051,8 +854,6 @@ Vietnam = {
     'region': 'Southeast Asia',
     'stability': 1,
     'adjacent_countries': ['Laos_Cambodia', 'Thailand'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1062,8 +863,6 @@ Malaysia = {
     'region': 'Southeast Asia',
     'stability': 2,
     'adjacent_countries': ['Thailand', 'Indonesia', 'Australia'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1073,8 +872,6 @@ Australia = {
     'region': 'Asia',
     'stability': 4,
     'adjacent_countries': ['Malaysia'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1084,8 +881,6 @@ Indonesia = {
     'region': 'Southeast Asia',
     'stability': 1,
     'adjacent_countries': ['Malaysia', 'Philippines'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1095,8 +890,6 @@ Philippines = {
     'region': 'Southeast Asia',
     'stability': 2,
     'adjacent_countries': ['Indonesia', 'Japan'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1107,8 +900,6 @@ Japan = {
     'stability': 4,
     'battleground': True,
     'adjacent_countries': ['Philippines', 'Taiwan', 'South_Korea', 'US'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1118,8 +909,6 @@ Taiwan = {
     'region': 'Asia',
     'stability': 3,
     'adjacent_countries': ['Japan', 'South_Korea'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1130,8 +919,6 @@ South_Korea = {
     'stability': 3,
     'battleground': True,
     'adjacent_countries': ['Japan', 'Taiwan', 'North_Korea'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1142,8 +929,6 @@ North_Korea = {
     'stability': 3,
     'battleground': True,
     'adjacent_countries': ['South_Korea', 'USSR'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1154,8 +939,6 @@ Algeria = {
     'stability': 2,
     'battleground': True,
     'adjacent_countries': ['Morocco', 'Saharan_States', 'Tunisia', 'France'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1165,8 +948,6 @@ Morocco = {
     'region': 'Africa',
     'stability': 3,
     'adjacent_countries': ['Algeria', 'West_African_States', 'Spain_Portugal'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1176,8 +957,6 @@ Tunisia = {
     'region': 'Africa',
     'stability': 2,
     'adjacent_countries': ['Algeria', 'Libya'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1187,8 +966,6 @@ West_African_States = {
     'region': 'Africa',
     'stability': 2,
     'adjacent_countries': ['Morocco', 'Ivory_Coast'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1198,8 +975,6 @@ Ivory_Coast = {
     'region': 'Africa',
     'stability': 2,
     'adjacent_countries': ['West_African_States', 'Nigeria'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1209,8 +984,6 @@ Saharan_States = {
     'region': 'Africa',
     'stability': 1,
     'adjacent_countries': ['Algeria', 'Nigeria'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1221,8 +994,6 @@ Nigeria = {
     'stability': 1,
     'battleground': True,
     'adjacent_countries': ['Ivory_Coast', 'Saharan_States', 'Cameroon'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1232,8 +1003,6 @@ Cameroon = {
     'region': 'Africa',
     'stability': 1,
     'adjacent_countries': ['Nigeria', 'Zaire'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1244,8 +1013,6 @@ Zaire = {
     'stability': 1,
     'battleground': True,
     'adjacent_countries': ['Cameroon', 'Angola', 'Zimbabwe'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1256,8 +1023,6 @@ Angola = {
     'stability': 1,
     'battleground': True,
     'adjacent_countries': ['Zaire', 'Botswana', 'South_Africa'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1268,8 +1033,6 @@ South_Africa = {
     'stability': 3,
     'battleground': True,
     'adjacent_countries': ['Angola', 'Botswana'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1279,8 +1042,6 @@ Botswana = {
     'region': 'Africa',
     'stability': 2,
     'adjacent_countries': ['Angola', 'South_Africa', 'Zimbabwe'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1290,8 +1051,6 @@ Zimbabwe = {
     'region': 'Africa',
     'stability': 1,
     'adjacent_countries': ['Zaire', 'Botswana', 'SE_African_States'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1301,8 +1060,6 @@ SE_African_States = {
     'region': 'Africa',
     'stability': 1,
     'adjacent_countries': ['Zimbabwe', 'Kenya'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1312,8 +1069,6 @@ Kenya = {
     'region': 'Africa',
     'stability': 2,
     'adjacent_countries': ['SE_African_States', 'Somalia'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1323,8 +1078,6 @@ Somalia = {
     'region': 'Africa',
     'stability': 2,
     'adjacent_countries': ['Kenya', 'Ethiopia'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1334,8 +1087,6 @@ Ethiopia = {
     'region': 'Africa',
     'stability': 1,
     'adjacent_countries': ['Somalia', 'Sudan'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1345,8 +1096,6 @@ Sudan = {
     'region': 'Africa',
     'stability': 1,
     'adjacent_countries': ['Ethiopia', 'Egypt'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1357,8 +1106,6 @@ Mexico = {
     'stability': 2,
     'battleground': True,
     'adjacent_countries': ['Guatemala', 'US'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1368,8 +1115,6 @@ Guatemala = {
     'region': 'Central America',
     'stability': 1,
     'adjacent_countries': ['Mexico', 'El_Salvador', 'Honduras'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1379,8 +1124,6 @@ El_Salvador = {
     'region': 'Central America',
     'stability': 1,
     'adjacent_countries': ['Guatemala', 'Honduras'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1390,8 +1133,6 @@ Honduras = {
     'region': 'Central America',
     'stability': 2,
     'adjacent_countries': ['Guatemala', 'El_Salvador', 'Costa_Rica', 'Nicaragua'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1401,8 +1142,6 @@ Costa_Rica = {
     'region': 'Central America',
     'stability': 3,
     'adjacent_countries': ['Honduras', 'Nicaragua', 'Panama'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1413,8 +1152,6 @@ Panama = {
     'stability': 2,
     'battleground': True,
     'adjacent_countries': ['Costa_Rica', 'Colombia'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1424,8 +1161,6 @@ Nicaragua = {
     'region': 'Central America',
     'stability': 1,
     'adjacent_countries': ['Costa_Rica', 'Honduras', 'Cuba'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1436,8 +1171,6 @@ Cuba = {
     'stability': 3,
     'battleground': True,
     'adjacent_countries': ['Nicaragua', 'Haiti', 'US'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1447,8 +1180,6 @@ Haiti = {
     'region': 'Central America',
     'stability': 1,
     'adjacent_countries': ['Cuba', 'Dominican_Republic'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1458,8 +1189,6 @@ Dominican_Republic = {
     'region': 'Central America',
     'stability': 1,
     'adjacent_countries': ['Haiti'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 Colombia = {
@@ -1468,8 +1197,6 @@ Colombia = {
     'region': 'South America',
     'stability': 1,
     'adjacent_countries': ['Panama', 'Ecuador', 'Venezuela'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1479,8 +1206,6 @@ Ecuador = {
     'region': 'South America',
     'stability': 2,
     'adjacent_countries': ['Colombia', 'Peru'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1490,8 +1215,6 @@ Peru = {
     'region': 'South America',
     'stability': 2,
     'adjacent_countries': ['Ecuador', 'Bolivia', 'Chile'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1502,8 +1225,6 @@ Chile = {
     'stability': 3,
     'battleground': True,
     'adjacent_countries': ['Peru', 'Argentina'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1514,8 +1235,6 @@ Argentina = {
     'stability': 2,
     'battleground': True,
     'adjacent_countries': ['Chile', 'Uruguay', 'Paraguay'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1525,8 +1244,6 @@ Uruguay = {
     'region': 'South America',
     'stability': 2,
     'adjacent_countries': ['Argentina', 'Paraguay', 'Brazil'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1536,8 +1253,6 @@ Paraguay = {
     'region': 'South America',
     'stability': 2,
     'adjacent_countries': ['Argentina', 'Uruguay', 'Bolivia'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1547,8 +1262,6 @@ Bolivia = {
     'region': 'South America',
     'stability': 2,
     'adjacent_countries': ['Peru', 'Paraguay'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1559,8 +1272,6 @@ Brazil = {
     'stability': 2,
     'battleground': True,
     'adjacent_countries': ['Uruguay', 'Venezuela'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
 
@@ -1571,21 +1282,8 @@ Venezuela = {
     'stability': 2,
     'battleground': True,
     'adjacent_countries': ['Colombia', 'Brazil'],
-    'us_influence': 0,
-    'ussr_influence': 0,
 }
 
-
-Chinese_Civil_War = {
-    'name': 'Chinese_Civil_War',
-    'country_index': 87,
-    'chinese_civil_war': True,
-    'region': 'Asia',
-    'stability': 3,
-    'adjacent_countries': ['USSR'],
-    'us_influence': 0,
-    'ussr_influence': 0,
-}
 
 ''' Creates entire map. '''
 USSR = CountryInfo(**USSR)
@@ -1674,4 +1372,24 @@ Paraguay = CountryInfo(**Paraguay)
 Bolivia = CountryInfo(**Bolivia)
 Brazil = CountryInfo(**Brazil)
 Venezuela = CountryInfo(**Venezuela)
-# Chinese_Civil_War = CountryInfo(**Chinese_Civil_War)
+
+# 按 DEFCON 级别禁政变的国家集合（静态：欧洲 / 欧洲+亚洲 / 欧洲+亚洲+中东）。
+# 预计算一次——can_coup 在 RL rollout 热路径上逐国调用，每次重建 list 是浪费。
+_DEFCON_RESTRICTED = {
+    4: frozenset(CountryInfo.REGION_ALL[MapRegion.EUROPE]),
+    3: frozenset(CountryInfo.REGION_ALL[MapRegion.EUROPE])
+       | frozenset(CountryInfo.REGION_ALL[MapRegion.ASIA]),
+    2: frozenset(CountryInfo.REGION_ALL[MapRegion.EUROPE])
+       | frozenset(CountryInfo.REGION_ALL[MapRegion.ASIA])
+       | frozenset(CountryInfo.REGION_ALL[MapRegion.MIDDLE_EAST]),
+}
+
+# Chernobyl 效果 token → 受限制区域（表化原 6 分支 if/elif）。
+_CHERNOBYL_REGION = {
+    'Chernobyl_Europe': MapRegion.EUROPE,
+    'Chernobyl_Middle_East': MapRegion.MIDDLE_EAST,
+    'Chernobyl_Asia': MapRegion.ASIA,
+    'Chernobyl_Africa': MapRegion.AFRICA,
+    'Chernobyl_Central_America': MapRegion.CENTRAL_AMERICA,
+    'Chernobyl_South_America': MapRegion.SOUTH_AMERICA,
+}
